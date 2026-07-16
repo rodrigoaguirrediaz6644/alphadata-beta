@@ -3,4 +3,4 @@ CENCOSUD,CENCOSUD.SN,Cencosud,accion_local,CLP,piloto
 BSANTANDER,BSANTANDER.SN,Banco Santander Chile,accion_local,CLP,piloto
 SQM-B,SQM-B.SN,SQM Serie B,accion_local,CLP,piloto
 FALABELLA,FALABELLA.SN,Falabella,accion_local,CLP,piloto
-IPSA,SPCLXIPSA.SN,S&P IPSA,benchmark,indice,piloto
+IPSA,^IPSA,S&P IPSA,benchmark,indice,piloto
