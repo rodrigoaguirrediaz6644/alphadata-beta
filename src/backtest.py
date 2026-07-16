@@ -81,7 +81,9 @@ def turnover(previous: dict[str, float], current: dict[str, float]) -> float:
 
 
 def run_backtest(prices: pd.DataFrame, signals: pd.DataFrame, config: dict) -> pd.DataFrame:
-    price_matrix = prices.pivot(index="date", columns="alphadata_ticker", values="close")
+    price_matrix = prices.pivot(
+        index="date", columns="alphadata_ticker", values="adjusted_close"
+    )
     price_matrix.index = pd.to_datetime(price_matrix.index)
     returns = price_matrix.pct_change(fill_method=None)
     cost_rate = config["transaction_cost_bps"] / 10_000
@@ -184,4 +186,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
