@@ -11,6 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = ROOT / "config" / "tickers.csv"
 DATA_DIR = ROOT / "data"
 START_DATE = "2021-01-01"
+MIN_HISTORY_ROWS = 200
 
 
 def load_universe(path: Path = CONFIG_PATH) -> pd.DataFrame:
@@ -55,7 +56,11 @@ def normalize_download(raw: pd.DataFrame, universe: pd.DataFrame) -> pd.DataFram
     return pd.concat(frames, ignore_index=True).sort_values(["date", "alphadata_ticker"])
 
 
-def build_coverage(prices: pd.DataFrame, universe: pd.DataFrame) -> pd.DataFrame:
+def build_coverage(
+    prices: pd.DataFrame,
+    universe: pd.DataFrame,
+    min_rows: int = MIN_HISTORY_ROWS,
+) -> pd.DataFrame:
     checked_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
     rows = []
     for item in universe.itertuples(index=False):
@@ -68,7 +73,13 @@ def build_coverage(prices: pd.DataFrame, universe: pd.DataFrame) -> pd.DataFrame
                 "rows": int(len(subset)),
                 "first_date": subset["date"].min().date().isoformat() if len(subset) else "",
                 "last_date": subset["date"].max().date().isoformat() if len(subset) else "",
-                "status": "OK" if len(subset) else "SIN_DATOS",
+                "status": (
+                    "OK"
+                    if len(subset) >= min_rows
+                    else "INSUFICIENTE"
+                    if len(subset)
+                    else "SIN_DATOS"
+                ),
                 "checked_at_utc": checked_at,
             }
         )
@@ -104,4 +115,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
