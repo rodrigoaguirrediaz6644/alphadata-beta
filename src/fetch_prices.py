@@ -54,13 +54,13 @@ def normalize_download(raw: pd.DataFrame, universe: pd.DataFrame) -> pd.DataFram
             columns=["date", "alphadata_ticker", "yahoo_ticker", "close", "volume"]
         )
     daily = pd.concat(frames, ignore_index=True)
+    daily["week"] = daily["date"].dt.to_period("W-FRI")
     weekly = (
-        daily.set_index("date")
-        .groupby(["alphadata_ticker", "yahoo_ticker"])
-        .resample("W-FRI")
-        .agg(close=("close", "last"), volume=("volume", "sum"))
+        daily.sort_values("date")
+        .groupby(["alphadata_ticker", "yahoo_ticker", "week"], as_index=False)
+        .agg(date=("date", "max"), close=("close", "last"), volume=("volume", "sum"))
         .dropna(subset=["close"])
-        .reset_index()
+        .drop(columns=["week"])
     )
     return weekly.sort_values(["date", "alphadata_ticker"])
 
