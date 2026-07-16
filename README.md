@@ -5,6 +5,7 @@ Este módulo descarga precios históricos semanales para una muestra de instrume
 ## Alcance del piloto
 
 - Fuente: Yahoo Finance mediante `yfinance`.
+- Descarga diaria y consolidación interna al cierre semanal de cada viernes.
 - Mercado local: sufijo `.SN`.
 - Benchmark: `^IPSA`.
 - Frecuencia automática: cada sábado.
@@ -22,4 +23,3 @@ python src/fetch_prices.py
 ## Próxima integración
 
 Cuando la cobertura sea aprobada, el proceso escribirá los precios validados en Google Sheets usando una cuenta de servicio guardada como secreto de GitHub.
-
