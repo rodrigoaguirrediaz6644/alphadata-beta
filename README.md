@@ -10,6 +10,9 @@ Este módulo descarga precios históricos semanales para una muestra de instrume
 - Benchmark: `^IPSA`.
 - Frecuencia automática: cada sábado.
 - Salida: `data/prices_weekly.csv` y `data/coverage_report.csv`.
+- Backtest: consenso semanal sin anticipación, cartera máxima de dos acciones y costos de rotación.
+
+Los parámetros de estrategia están en `config/strategy.json`. Las salidas del piloto son `data/signals_weekly.csv`, `data/backtest_weekly.csv` y `data/backtest_summary.csv`.
 
 El piloto no genera recomendaciones de inversión ni modifica la cartera oficial. Primero verifica cobertura, moneda, fechas y continuidad de precios.
 
