@@ -6,6 +6,7 @@ Este módulo descarga precios históricos semanales para una muestra de instrume
 
 - Fuente: Yahoo Finance mediante `yfinance`.
 - Descarga diaria y consolidación interna al cierre semanal de cada viernes.
+- Rentabilidad calculada con cierre ajustado por dividendos y eventos corporativos; cierre normal conservado para reportes.
 - Mercado local: sufijo `.SN`.
 - Benchmark: `^IPSA`.
 - Frecuencia automática: cada sábado.
