@@ -79,6 +79,7 @@ def build_coverage(
                 "alphadata_ticker": item.alphadata_ticker,
                 "yahoo_ticker": item.yahoo_ticker,
                 "nombre": item.nombre,
+                "tipo": item.tipo,
                 "rows": int(len(subset)),
                 "first_date": subset["date"].min().date().isoformat() if len(subset) else "",
                 "last_date": subset["date"].max().date().isoformat() if len(subset) else "",
@@ -116,9 +117,15 @@ def main() -> None:
     coverage.to_csv(DATA_DIR / "coverage_report.csv", index=False)
 
     missing = coverage.loc[coverage["status"] != "OK", "alphadata_ticker"].tolist()
+    required_missing = coverage.loc[
+        (coverage["status"] != "OK") & (coverage["tipo"] != "benchmark"),
+        "alphadata_ticker",
+    ].tolist()
     print(f"Instrumentos con datos: {(coverage['status'] == 'OK').sum()}/{len(coverage)}")
     if missing:
-        print(f"Sin datos: {', '.join(missing)}")
+        print(f"Sin datos o con cobertura insuficiente: {', '.join(missing)}")
+    if required_missing:
+        print(f"Instrumentos obligatorios fallidos: {', '.join(required_missing)}")
         raise SystemExit(2)
 
 
