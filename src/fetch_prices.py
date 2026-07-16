@@ -28,13 +28,14 @@ def load_universe(path: Path = CONFIG_PATH) -> pd.DataFrame:
 def normalize_download(raw: pd.DataFrame, universe: pd.DataFrame) -> pd.DataFrame:
     if raw.empty:
         return pd.DataFrame(
-            columns=["date", "alphadata_ticker", "yahoo_ticker", "close", "volume"]
+            columns=["date", "alphadata_ticker", "yahoo_ticker", "close", "adjusted_close", "volume"]
         )
 
     frames: list[pd.DataFrame] = []
     for row in universe.itertuples(index=False):
         try:
             close = raw["Close"][row.yahoo_ticker]
+            adjusted_close = raw["Adj Close"][row.yahoo_ticker]
             volume = raw["Volume"][row.yahoo_ticker]
         except (KeyError, TypeError):
             continue
@@ -44,6 +45,7 @@ def normalize_download(raw: pd.DataFrame, universe: pd.DataFrame) -> pd.DataFram
                 "alphadata_ticker": row.alphadata_ticker,
                 "yahoo_ticker": row.yahoo_ticker,
                 "close": pd.to_numeric(close, errors="coerce").to_numpy(),
+                "adjusted_close": pd.to_numeric(adjusted_close, errors="coerce").to_numpy(),
                 "volume": pd.to_numeric(volume, errors="coerce").to_numpy(),
             }
         )
@@ -51,14 +53,19 @@ def normalize_download(raw: pd.DataFrame, universe: pd.DataFrame) -> pd.DataFram
 
     if not frames:
         return pd.DataFrame(
-            columns=["date", "alphadata_ticker", "yahoo_ticker", "close", "volume"]
+            columns=["date", "alphadata_ticker", "yahoo_ticker", "close", "adjusted_close", "volume"]
         )
     daily = pd.concat(frames, ignore_index=True)
     daily["week"] = daily["date"].dt.to_period("W-FRI")
     weekly = (
         daily.sort_values("date")
         .groupby(["alphadata_ticker", "yahoo_ticker", "week"], as_index=False)
-        .agg(date=("date", "max"), close=("close", "last"), volume=("volume", "sum"))
+        .agg(
+            date=("date", "max"),
+            close=("close", "last"),
+            adjusted_close=("adjusted_close", "last"),
+            volume=("volume", "sum"),
+        )
         .dropna(subset=["close"])
         .drop(columns=["week"])
     )
