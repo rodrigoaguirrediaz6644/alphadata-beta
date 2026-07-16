@@ -43,8 +43,7 @@ def test_coverage_marks_missing_symbol() -> None:
     prices = pd.DataFrame(
         [{"date": pd.Timestamp("2024-01-05"), "alphadata_ticker": "ABC", "close": 10.0}]
     )
-    coverage = build_coverage(prices, universe)
+    coverage = build_coverage(prices, universe, min_rows=1)
 
     assert coverage.set_index("alphadata_ticker").loc["ABC", "status"] == "OK"
     assert coverage.set_index("alphadata_ticker").loc["XYZ", "status"] == "SIN_DATOS"
-
