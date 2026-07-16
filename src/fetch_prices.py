@@ -53,7 +53,16 @@ def normalize_download(raw: pd.DataFrame, universe: pd.DataFrame) -> pd.DataFram
         return pd.DataFrame(
             columns=["date", "alphadata_ticker", "yahoo_ticker", "close", "volume"]
         )
-    return pd.concat(frames, ignore_index=True).sort_values(["date", "alphadata_ticker"])
+    daily = pd.concat(frames, ignore_index=True)
+    weekly = (
+        daily.set_index("date")
+        .groupby(["alphadata_ticker", "yahoo_ticker"])
+        .resample("W-FRI")
+        .agg(close=("close", "last"), volume=("volume", "sum"))
+        .dropna(subset=["close"])
+        .reset_index()
+    )
+    return weekly.sort_values(["date", "alphadata_ticker"])
 
 
 def build_coverage(
@@ -92,7 +101,7 @@ def main() -> None:
     raw = yf.download(
         tickers=yahoo_tickers,
         start=START_DATE,
-        interval="1wk",
+        interval="1d",
         auto_adjust=False,
         actions=False,
         group_by="column",
