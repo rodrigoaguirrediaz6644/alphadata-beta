@@ -1,0 +1,7 @@
+{
+  "staleness_days": 120,
+  "min_brokers": 2,
+  "entry_threshold": 0.34,
+  "top_n": 2,
+  "transaction_cost_bps": 20
+}
