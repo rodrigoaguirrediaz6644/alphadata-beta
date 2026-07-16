@@ -36,8 +36,18 @@ def test_load_universe_rejects_duplicates(tmp_path: Path) -> None:
 def test_coverage_marks_missing_symbol() -> None:
     universe = pd.DataFrame(
         [
-            {"alphadata_ticker": "ABC", "yahoo_ticker": "ABC.SN", "nombre": "A"},
-            {"alphadata_ticker": "XYZ", "yahoo_ticker": "XYZ.SN", "nombre": "X"},
+            {
+                "alphadata_ticker": "ABC",
+                "yahoo_ticker": "ABC.SN",
+                "nombre": "A",
+                "tipo": "accion_local",
+            },
+            {
+                "alphadata_ticker": "XYZ",
+                "yahoo_ticker": "XYZ.SN",
+                "nombre": "X",
+                "tipo": "accion_local",
+            },
         ]
     )
     prices = pd.DataFrame(
