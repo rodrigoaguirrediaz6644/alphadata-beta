@@ -13,6 +13,8 @@ Este módulo descarga precios históricos semanales para una muestra de instrume
 
 El piloto no genera recomendaciones de inversión ni modifica la cartera oficial. Primero verifica cobertura, moneda, fechas y continuidad de precios.
 
+Las acciones locales son obligatorias. El benchmark es opcional durante el piloto: si Yahoo no entrega su historial, se registra la advertencia sin bloquear los precios de la cartera.
+
 ## Ejecución local
 
 ```bash
