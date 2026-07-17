@@ -10,4 +10,4 @@
 
 El informe HTML contiene las comparaciones, gráficos, carteras y movimientos. La metodología y sus parámetros son información reservada.
 
-> Resultados históricos simulados y paper trading; no constituyen recomendación de inversión ni garantizan resultados futuros.
+> Los resultados históricos fueron calculados mediante la aplicación retrospectiva del modelo y pueden diferir de una ejecución efectiva.
