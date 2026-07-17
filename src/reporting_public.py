@@ -80,13 +80,28 @@ def _historical_block() -> str:
     values = data[names].apply(pd.to_numeric, errors="coerce")
     lo, hi = float(values.min().min()), float(values.max().max())
     span = hi - lo or 1.0
-    xs = np.linspace(45, 760, len(data))
-    polylines, endpoints = [], []
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    output = ROOT / "reports" / "historical_performance.png"
+    output.parent.mkdir(parents=True, exist_ok=True)
+    fig, axes = plt.subplots(2, 1, figsize=(10, 7), dpi=150, gridspec_kw={"height_ratios": [2, 1]})
     for name in names:
-        ys = 18 + (hi - values[name].to_numpy()) / span * 225
-        points = " ".join(f"{x:.1f},{y:.1f}" for x, y in zip(xs, ys))
-        polylines.append(f'<polyline points="{points}" fill="none" stroke="{COLORS[name]}" stroke-width="4"/>')
-        endpoints.append(f'<circle cx="760" cy="{ys[-1]:.1f}" r="5" fill="{COLORS[name]}"/><text x="770" y="{ys[-1]+4:.1f}" fill="{COLORS[name]}" font-weight="bold">{values[name].iloc[-1]:.0f}</text>')
+        axes[0].plot(data["date"], values[name], label=name, color=COLORS[name], linewidth=2.5)
+        drawdown = values[name] / values[name].cummax() - 1
+        axes[1].plot(data["date"], drawdown * 100, label=name, color=COLORS[name], linewidth=1.8)
+        axes[0].annotate(f"{values[name].iloc[-1]:.0f}", (data["date"].iloc[-1], values[name].iloc[-1]), xytext=(5, 0), textcoords="offset points", color=COLORS[name], weight="bold", va="center")
+    axes[0].set_title("Resultados históricos · índice base 100", loc="left", weight="bold")
+    axes[0].set_ylabel("Índice acumulado")
+    axes[1].set_title("Retrocesos históricos", loc="left", weight="bold")
+    axes[1].set_ylabel("Retroceso (%)")
+    for axis in axes:
+        axis.grid(True, color="#e4e7ec", linewidth=.7)
+        axis.spines[["top", "right"]].set_visible(False)
+    axes[0].legend(frameon=False, ncol=3, loc="upper left")
+    fig.tight_layout()
+    fig.savefig(output, bbox_inches="tight", facecolor="white")
+    plt.close(fig)
     metrics = {name: _metrics(values[name], data["date"]) for name in names}
     metric_rows = []
     for label, key in [("Rentabilidad acumulada", "return"), ("CAGR", "cagr"), ("Volatilidad anual", "vol"), ("Máximo retroceso", "mdd")]:
@@ -95,7 +110,7 @@ def _historical_block() -> str:
     delta_adv = metrics["Delta-12"]["return"] - metrics["IPSA TR"]["return"]
     legends = "".join(f'<span><i style="background:{COLORS[n]}"></i>{n}</span>' for n in names)
     return f'''<div class="callouts"><strong>Sigma-6: {pct(sigma_adv)} más que IPSA</strong><strong>Delta-12: {pct(delta_adv)} más que IPSA</strong></div>
-    <div class="legend">{legends}</div><div class="chart"><div class="chart-title">Resultados históricos · base 100</div><svg viewBox="0 0 840 270" role="img" aria-label="Resultados históricos comparados"><line x1="45" y1="20" x2="760" y2="20" class="grid"/><line x1="45" y1="130" x2="760" y2="130" class="grid"/><line x1="45" y1="243" x2="760" y2="243" class="grid"/>{''.join(polylines)}{''.join(endpoints)}</svg></div>
+    <div class="legend">{legends}</div><div class="chart"><img src="cid:historical_performance" alt="Resultados y retrocesos históricos comparados" style="display:block;width:100%;max-width:900px;height:auto"></div>
     <table><thead><tr><th>Métrica</th>{''.join('<th>'+n+'</th>' for n in names)}</tr></thead><tbody>{''.join(metric_rows)}</tbody></table>
     <p class="muted">Periodo: {data.date.min():%d-%m-%Y} al {data.date.max():%d-%m-%Y}. Costo aplicado sobre rotación: 0,1785%.</p>'''
 
@@ -153,7 +168,7 @@ def build_public_report(
     .callouts{{display:flex;gap:12px;flex-wrap:wrap;margin:12px 0}}.callouts strong{{padding:11px 14px;border-radius:9px;background:#eef6ff;color:#1849a9}}.legend{{display:flex;gap:18px;flex-wrap:wrap;margin:10px 0}}.legend i{{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}}</style></head><body><main class="wrap"><header class="head"><div class="brand">AlphaData</div><div class="sub">Informe de estrategias · {as_of:%d de %m de %Y}</div></header>
     <section><h2>Resumen ejecutivo</h2><div class="cards"><div class="card"><strong>Sigma-6</strong><div class="big">{pct(metrics['Sigma-6']['return'])}</div><div class="muted">Paper trading desde inicio</div><p>{len(sigma)} posiciones · {pct(sigma_cash)} en caja</p></div><div class="card"><strong>Delta-12</strong><div class="big">{pct(metrics['Delta-12']['return'])}</div><div class="muted">Paper trading desde inicio</div><p>{len(delta)} posiciones · {pct(delta_cash)} en caja</p></div><div class="card"><strong>IPSA Total Return</strong><div class="big">{pct(metrics['IPSA TR']['return'])}</div><div class="muted">Benchmark oficial</div><p>Estado de datos: {status}</p></div></div></section>
     <section><h2>Resultados históricos comparados</h2>{_historical_block()}</section>
-    <section><h2>Seguimiento oficial</h2><div class="legend">{legends}</div>{_line_chart(history)}<br>{_line_chart(history, True)}</section>
+    {f'<section><h2>Seguimiento oficial</h2><div class="legend">{legends}</div>{_line_chart(history)}<br>{_line_chart(history, True)}</section>' if len(history) >= 2 else ''}
     <section><h2>Métricas del paper trading</h2><table><thead><tr><th>Métrica</th><th>Sigma-6</th><th>Delta-12</th><th>IPSA TR</th></tr></thead><tbody>{''.join(metric_rows)}</tbody></table></section>
     <section><div class="two"><div><h2>Sigma-6 · cartera</h2>{_table(sigma,['ticker','target_weight'])}<p><strong>Caja:</strong> {pct(sigma_cash)}</p><h3>Movimientos</h3>{_table(sigma_moves,['ticker','action','target_weight','change'])}</div><div><h2>Delta-12 · cartera</h2>{_table(delta,['ticker','target_weight'])}<p><strong>Caja:</strong> {pct(delta_cash)}</p><h3>Movimientos</h3>{_table(delta_moves,['ticker','action','target_weight','change'])}</div></div></section>
     <section><h2>Control del informe</h2><p>Datos actualizados al {as_of:%d-%m-%Y} · Estado: {status} · Filas rechazadas: {len(errors)} · Cobertura suficiente: {int((coverage.status=='OK').sum())}/{len(coverage)}</p><div class="note"><strong>Información reservada:</strong> este informe comunica resultados, cartera y movimientos. No publica fórmulas, indicadores, parámetros ni reglas de decisión.</div></section>
