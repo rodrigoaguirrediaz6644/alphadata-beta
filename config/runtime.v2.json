@@ -1,0 +1,15 @@
+{
+  "methodology_version": "2.0.0",
+  "enabled_strategies": ["SIGMA6", "DELTA12"],
+  "benchmark": {"alphadata_ticker": "IPSA_TR", "provider_ticker": "^IPSA", "name": "S&P IPSA Total Return"},
+  "transaction_cost": {"provider": "Trii/Racional", "rate": 0.001785, "minimum_fee_clp": 1990, "minimum_fee_requires_capital": true},
+  "strategy_modules": {
+    "SIGMA6": "src.strategy_engine:sigma6",
+    "DELTA12": "src.strategy_engine:delta12"
+  },
+  "future_strategy_contract": {
+    "required_outputs": ["portfolio", "audit"],
+    "portfolio_columns": ["ticker", "target_weight"],
+    "registration": "add module path to strategy_modules and strategy code to enabled_strategies"
+  }
+}

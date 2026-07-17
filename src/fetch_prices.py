@@ -2,16 +2,16 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from pathlib import Path
+import os
 
 import pandas as pd
-import yfinance as yf
-
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = ROOT / "config" / "tickers.csv"
 DATA_DIR = ROOT / "data"
-START_DATE = "2021-01-01"
-MIN_HISTORY_ROWS = 200
+START_DATE = os.getenv("ALPHADATA_PRICE_START", "2015-01-01")
+MIN_HISTORY_ROWS = 252
+PRICE_COLUMNS = ["date", "alphadata_ticker", "yahoo_ticker", "open", "high", "low", "close", "adjusted_close", "volume"]
 
 
 def load_universe(path: Path = CONFIG_PATH) -> pd.DataFrame:
@@ -22,118 +22,109 @@ def load_universe(path: Path = CONFIG_PATH) -> pd.DataFrame:
         raise ValueError(f"Faltan columnas en el universo: {sorted(missing)}")
     if universe["alphadata_ticker"].duplicated().any():
         raise ValueError("Existen tickers AlphaData duplicados")
+    if universe["yahoo_ticker"].eq("").any():
+        raise ValueError("Existen instrumentos sin ticker de mercado")
     return universe
 
 
-def normalize_download(raw: pd.DataFrame, universe: pd.DataFrame) -> pd.DataFrame:
+def _ticker_frame(raw: pd.DataFrame, yahoo_ticker: str) -> pd.DataFrame:
     if raw.empty:
-        return pd.DataFrame(
-            columns=["date", "alphadata_ticker", "yahoo_ticker", "close", "adjusted_close", "volume"]
-        )
+        return pd.DataFrame()
+    if isinstance(raw.columns, pd.MultiIndex):
+        if yahoo_ticker in raw.columns.get_level_values(-1):
+            return raw.xs(yahoo_ticker, axis=1, level=-1, drop_level=True)
+        if yahoo_ticker in raw.columns.get_level_values(0):
+            return raw.xs(yahoo_ticker, axis=1, level=0, drop_level=True)
+        return pd.DataFrame()
+    return raw
 
+
+def normalize_daily(raw: pd.DataFrame, universe: pd.DataFrame) -> pd.DataFrame:
     frames: list[pd.DataFrame] = []
-    for row in universe.itertuples(index=False):
-        try:
-            close = raw["Close"][row.yahoo_ticker]
-            adjusted_close = raw["Adj Close"][row.yahoo_ticker]
-            volume = raw["Volume"][row.yahoo_ticker]
-        except (KeyError, TypeError):
+    for item in universe.itertuples(index=False):
+        source = _ticker_frame(raw, item.yahoo_ticker)
+        if source.empty or "Close" not in source:
             continue
-        frame = pd.DataFrame(
-            {
-                "date": pd.to_datetime(close.index).tz_localize(None),
-                "alphadata_ticker": row.alphadata_ticker,
-                "yahoo_ticker": row.yahoo_ticker,
-                "close": pd.to_numeric(close, errors="coerce").to_numpy(),
-                "adjusted_close": pd.to_numeric(adjusted_close, errors="coerce").to_numpy(),
-                "volume": pd.to_numeric(volume, errors="coerce").to_numpy(),
-            }
-        )
-        frames.append(frame.dropna(subset=["close"]))
-
+        adjusted = source["Adj Close"] if "Adj Close" in source else source["Close"]
+        frame = pd.DataFrame({
+            "date": pd.to_datetime(source.index).tz_localize(None),
+            "alphadata_ticker": item.alphadata_ticker,
+            "yahoo_ticker": item.yahoo_ticker,
+            "open": pd.to_numeric(source.get("Open"), errors="coerce").to_numpy(),
+            "high": pd.to_numeric(source.get("High"), errors="coerce").to_numpy(),
+            "low": pd.to_numeric(source.get("Low"), errors="coerce").to_numpy(),
+            "close": pd.to_numeric(source["Close"], errors="coerce").to_numpy(),
+            "adjusted_close": pd.to_numeric(adjusted, errors="coerce").to_numpy(),
+            "volume": pd.to_numeric(source.get("Volume"), errors="coerce").to_numpy(),
+        })
+        frames.append(frame.dropna(subset=["date", "close"]))
     if not frames:
-        return pd.DataFrame(
-            columns=["date", "alphadata_ticker", "yahoo_ticker", "close", "adjusted_close", "volume"]
-        )
+        return pd.DataFrame(columns=PRICE_COLUMNS)
     daily = pd.concat(frames, ignore_index=True)
-    daily["week"] = daily["date"].dt.to_period("W-FRI")
-    weekly = (
-        daily.sort_values("date")
-        .groupby(["alphadata_ticker", "yahoo_ticker", "week"], as_index=False)
-        .agg(
-            date=("date", "max"),
-            close=("close", "last"),
-            adjusted_close=("adjusted_close", "last"),
-            volume=("volume", "sum"),
-        )
-        .dropna(subset=["close"])
-        .drop(columns=["week"])
+    return daily[PRICE_COLUMNS].sort_values(["date", "alphadata_ticker"]).drop_duplicates(["date", "alphadata_ticker"], keep="last")
+
+
+def daily_to_weekly(daily: pd.DataFrame) -> pd.DataFrame:
+    if daily.empty:
+        return daily.copy()
+    work = daily.copy(); work["week"] = work["date"].dt.to_period("W-FRI")
+    weekly = work.sort_values("date").groupby(["alphadata_ticker", "yahoo_ticker", "week"], as_index=False).agg(
+        date=("date", "max"), open=("open", "first"), high=("high", "max"), low=("low", "min"),
+        close=("close", "last"), adjusted_close=("adjusted_close", "last"), volume=("volume", "sum")
     )
-    return weekly.sort_values(["date", "alphadata_ticker"])
+    return weekly.drop(columns="week")[PRICE_COLUMNS].sort_values(["date", "alphadata_ticker"])
 
 
-def build_coverage(
-    prices: pd.DataFrame,
-    universe: pd.DataFrame,
-    min_rows: int = MIN_HISTORY_ROWS,
-) -> pd.DataFrame:
+def normalize_download(raw: pd.DataFrame, universe: pd.DataFrame) -> pd.DataFrame:
+    """Compatibilidad con el piloto: devuelve precios semanales normalizados."""
+    return daily_to_weekly(normalize_daily(raw, universe))
+
+
+def build_coverage(prices: pd.DataFrame, universe: pd.DataFrame, min_rows: int = MIN_HISTORY_ROWS) -> pd.DataFrame:
     checked_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
     rows = []
     for item in universe.itertuples(index=False):
         subset = prices.loc[prices["alphadata_ticker"] == item.alphadata_ticker]
-        rows.append(
-            {
-                "alphadata_ticker": item.alphadata_ticker,
-                "yahoo_ticker": item.yahoo_ticker,
-                "nombre": item.nombre,
-                "tipo": item.tipo,
-                "rows": int(len(subset)),
-                "first_date": subset["date"].min().date().isoformat() if len(subset) else "",
-                "last_date": subset["date"].max().date().isoformat() if len(subset) else "",
-                "status": (
-                    "OK"
-                    if len(subset) >= min_rows
-                    else "INSUFICIENTE"
-                    if len(subset)
-                    else "SIN_DATOS"
-                ),
-                "checked_at_utc": checked_at,
-            }
-        )
+        required_rows = min_rows if item.tipo == "accion_local" else 20
+        rows.append({
+            "alphadata_ticker": item.alphadata_ticker, "yahoo_ticker": item.yahoo_ticker, "nombre": item.nombre,
+            "tipo": item.tipo, "rows": int(len(subset)),
+            "first_date": subset["date"].min().date().isoformat() if len(subset) else "",
+            "last_date": subset["date"].max().date().isoformat() if len(subset) else "",
+            "status": "OK" if len(subset) >= required_rows else "INSUFICIENTE" if len(subset) else "SIN_DATOS",
+            "checked_at_utc": checked_at,
+        })
     return pd.DataFrame(rows)
 
 
 def main() -> None:
-    universe = load_universe()
-    yahoo_tickers = universe["yahoo_ticker"].tolist()
-    raw = yf.download(
-        tickers=yahoo_tickers,
-        start=START_DATE,
-        interval="1d",
-        auto_adjust=False,
-        actions=False,
-        group_by="column",
-        threads=True,
-        progress=False,
-    )
-    prices = normalize_download(raw, universe)
-    coverage = build_coverage(prices, universe)
-
+    import yfinance as yf
+    universe = load_universe(); tickers = universe["yahoo_ticker"].tolist()
+    last_error = None
+    for attempt in range(3):
+        try:
+            raw = yf.download(tickers=tickers, start=START_DATE, interval="1d", auto_adjust=False, actions=False, group_by="column", threads=True, progress=False, timeout=30)
+            if not raw.empty: break
+        except Exception as exc:
+            last_error = exc
+    else:
+        cached = DATA_DIR / "market_prices_daily.csv"
+        if cached.exists():
+            print(f"ADVERTENCIA: descarga falló; se conserva caché existente. Error: {last_error}")
+            return
+        raise SystemExit(f"No fue posible descargar precios y no existe caché: {last_error}")
+    daily = normalize_daily(raw, universe); weekly = daily_to_weekly(daily); coverage = build_coverage(daily, universe)
     DATA_DIR.mkdir(parents=True, exist_ok=True)
-    prices.to_csv(DATA_DIR / "prices_weekly.csv", index=False, date_format="%Y-%m-%d")
+    daily.to_csv(DATA_DIR / "market_prices_daily.csv", index=False, date_format="%Y-%m-%d")
+    weekly.to_csv(DATA_DIR / "prices_weekly.csv", index=False, date_format="%Y-%m-%d")
     coverage.to_csv(DATA_DIR / "coverage_report.csv", index=False)
-
+    local_ok = coverage.loc[(coverage["tipo"] == "accion_local") & (coverage["status"] == "OK")]
+    print(f"Acciones locales con historia suficiente: {len(local_ok)}/{(coverage['tipo'] == 'accion_local').sum()}")
     missing = coverage.loc[coverage["status"] != "OK", "alphadata_ticker"].tolist()
-    required_missing = coverage.loc[
-        (coverage["status"] != "OK") & (coverage["tipo"] != "benchmark"),
-        "alphadata_ticker",
-    ].tolist()
-    print(f"Instrumentos con datos: {(coverage['status'] == 'OK').sum()}/{len(coverage)}")
-    if missing:
-        print(f"Sin datos o con cobertura insuficiente: {', '.join(missing)}")
-    if required_missing:
-        print(f"Instrumentos obligatorios fallidos: {', '.join(required_missing)}")
-        raise SystemExit(2)
+    if missing: print("Cobertura incompleta: " + ", ".join(missing))
+    benchmark_ok = coverage.loc[(coverage.alphadata_ticker == "IPSA_TR") & (coverage.status == "OK")]
+    if daily.empty or len(local_ok) < 20: raise SystemExit("Menos de 20 acciones locales tienen historia suficiente; se cancela el cálculo para evitar una cartera incompleta")
+    if benchmark_ok.empty: raise SystemExit("El benchmark IPSA_TR no tiene cobertura suficiente")
 
 
 if __name__ == "__main__":

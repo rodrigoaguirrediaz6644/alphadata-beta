@@ -1,6 +1,46 @@
 alphadata_ticker,yahoo_ticker,nombre,tipo,moneda,estado
-CENCOSUD,CENCOSUD.SN,Cencosud,accion_local,CLP,piloto
-BSANTANDER,BSANTANDER.SN,Banco Santander Chile,accion_local,CLP,piloto
-SQM-B,SQM-B.SN,SQM Serie B,accion_local,CLP,piloto
-FALABELLA,FALABELLA.SN,Falabella,accion_local,CLP,piloto
-IPSA,^IPSA,S&P IPSA,benchmark,indice,piloto
+AGUAS-A,AGUAS-A.SN,Aguas Andinas A,accion_local,CLP,activo
+ANDINA-B,ANDINA-B.SN,Embotelladora Andina B,accion_local,CLP,activo
+BCI,BCI.SN,Banco de Crédito e Inversiones,accion_local,CLP,activo
+BSANTANDER,BSANTANDER.SN,Banco Santander Chile,accion_local,CLP,activo
+CAP,CAP.SN,CAP,accion_local,CLP,activo
+CCU,CCU.SN,CCU,accion_local,CLP,activo
+CENCOMALLS,CENCOMALLS.SN,Cenco Malls,accion_local,CLP,activo
+CENCOSUD,CENCOSUD.SN,Cencosud,accion_local,CLP,activo
+CHILE,CHILE.SN,Banco de Chile,accion_local,CLP,activo
+CMPC,CMPC.SN,Empresas CMPC,accion_local,CLP,activo
+COLBUN,COLBUN.SN,Colbún,accion_local,CLP,activo
+CONCHATORO,CONCHATORO.SN,Viña Concha y Toro,accion_local,CLP,activo
+COPEC,COPEC.SN,Empresas Copec,accion_local,CLP,activo
+ECL,ECL.SN,Engie Energía Chile,accion_local,CLP,activo
+ENELAM,ENELAM.SN,Enel Américas,accion_local,CLP,activo
+ENELCHILE,ENELCHILE.SN,Enel Chile,accion_local,CLP,activo
+ENTEL,ENTEL.SN,Entel,accion_local,CLP,activo
+FALABELLA,FALABELLA.SN,Falabella,accion_local,CLP,activo
+IAM,IAM.SN,Inversiones Aguas Metropolitanas,accion_local,CLP,activo
+ILC,ILC.SN,Inversiones La Construcción,accion_local,CLP,activo
+ITAUCL,ITAUCL.SN,Itaú Corpbanca,accion_local,CLP,activo
+LTM,LTM.SN,Latam Airlines,accion_local,CLP,activo
+MALLPLAZA,MALLPLAZA.SN,Mallplaza,accion_local,CLP,activo
+PARAUCO,PARAUCO.SN,Parque Arauco,accion_local,CLP,activo
+QUINENCO,QUINENCO.SN,Quiñenco,accion_local,CLP,activo
+RIPLEY,RIPLEY.SN,Ripley,accion_local,CLP,activo
+SALFACORP,SALFACORP.SN,Salfacorp,accion_local,CLP,activo
+SMU,SMU.SN,SMU,accion_local,CLP,activo
+SQM-B,SQM-B.SN,SQM Serie B,accion_local,CLP,activo
+VAPORES,VAPORES.SN,Compañía Sud Americana de Vapores,accion_local,CLP,activo
+LTM-ADR,LTM,Latam Airlines ADR,adr,USD,activo
+SQM-ADR,SQM,SQM ADR,adr,USD,activo
+AESANDES,AESANDES.SN,AES Andes,accion_sigma,CLP,activo
+ANTARCHILE,ANTARCHILE.SN,Antarchile,accion_sigma,CLP,activo
+BESALCO,BESALCO.SN,Besalco,accion_sigma,CLP,activo
+CENCOSHOPP,CENCOSHOPP.SN,Cencosud Shopping,accion_sigma,CLP,legado
+EMBONOR-B,EMBONOR-B.SN,Coca-Cola Embonor B,accion_sigma,CLP,activo
+FORUS,FORUS.SN,Forus,accion_sigma,CLP,activo
+HITES,HITES.SN,Hites,accion_sigma,CLP,activo
+INDISA,INDISA.SN,Indisa,accion_sigma,CLP,activo
+INGEVEC,INGEVEC.SN,Ingevec,accion_sigma,CLP,activo
+MULTIFOODS,MULTIFOODS.SN,Multiexport Foods,accion_sigma,CLP,activo
+SMSAAM,SMSAAM.SN,SAAM,accion_sigma,CLP,activo
+SONDA,SONDA.SN,Sonda,accion_sigma,CLP,activo
+IPSA_TR,^IPSA,S&P IPSA Total Return,benchmark,indice,activo

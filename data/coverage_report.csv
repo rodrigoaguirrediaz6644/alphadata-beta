@@ -1,6 +1,0 @@
-alphadata_ticker,yahoo_ticker,nombre,tipo,rows,first_date,last_date,status,checked_at_utc
-CENCOSUD,CENCOSUD.SN,Cencosud,accion_local,289,2021-01-08,2026-07-15,OK,2026-07-16T03:05:47+00:00
-BSANTANDER,BSANTANDER.SN,Banco Santander Chile,accion_local,289,2021-01-08,2026-07-15,OK,2026-07-16T03:05:47+00:00
-SQM-B,SQM-B.SN,SQM Serie B,accion_local,289,2021-01-08,2026-07-15,OK,2026-07-16T03:05:47+00:00
-FALABELLA,FALABELLA.SN,Falabella,accion_local,289,2021-01-08,2026-07-15,OK,2026-07-16T03:05:47+00:00
-IPSA,^IPSA,S&P IPSA,benchmark,1,2026-07-15,2026-07-15,INSUFICIENTE,2026-07-16T03:05:47+00:00
