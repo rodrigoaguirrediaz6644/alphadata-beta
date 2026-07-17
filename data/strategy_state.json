@@ -2,10 +2,10 @@
   "methodology_version": "2.0.0",
   "sigma_entries": {
     "VAPORES": "2026-07-16",
-    "PARAUCO": "2026-07-16",
     "LTM": "2026-07-16",
+    "BCI": "2026-07-16",
     "CENCOMALLS": "2026-07-16",
-    "BCI": "2026-07-16"
+    "PARAUCO": "2026-07-16"
   },
   "sigma_portfolio": [
     {
@@ -74,5 +74,5 @@
     "uploaded_files": 0,
     "history_rows": 1107
   },
-  "last_run_utc": "2026-07-17T01:52:41.166452+00:00"
+  "last_run_utc": "2026-07-17T02:30:04.490739+00:00"
 }
