@@ -1,16 +1,21 @@
-name: Actualizar precios AlphaData
+name: Ejecutar AlphaData
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: "30 12 * * 6"
+    - cron: "30 12 * * 1-5"
 
 permissions:
   contents: write
 
+concurrency:
+  group: alphadata-production
+  cancel-in-progress: false
+
 jobs:
-  update-prices:
+  calculate-and-report:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Descargar repositorio
         uses: actions/checkout@v6
@@ -24,19 +29,44 @@ jobs:
       - name: Instalar dependencias
         run: python -m pip install -r requirements.txt
 
-      - name: Ejecutar pruebas
-        run: PYTHONPATH=. python -m pytest -q
+      - name: Validar código y metodologías
+        run: |
+          PYTHONPATH=. python -m pytest -q
+          PYTHONPATH=. python -m src.strategy_registry
 
-      - name: Descargar y validar precios
-        run: python src/fetch_prices.py
+      - name: Descargar, calcular y redactar
+        run: PYTHONPATH=. python alphadata.py run
 
-      - name: Calcular consenso y backtest piloto
-        run: python src/backtest.py
+      - name: Enviar informe si el correo está configurado
+        env:
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          SMTP_FROM: ${{ secrets.SMTP_FROM }}
+          REPORT_RECIPIENTS: ${{ secrets.REPORT_RECIPIENTS }}
+        run: python src/send_report.py
 
-      - name: Guardar actualización
+      - name: Conservar informe como artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: informe-alphadata-${{ github.run_number }}
+          path: |
+            reports/latest_report.md
+            reports/latest_report.html
+            data/portfolio_sigma6.csv
+            data/portfolio_delta12.csv
+            data/movements_sigma6.csv
+            data/movements_delta12.csv
+            data/recommendations_errors.csv
+            data/recommendations_history.csv
+            data/coverage_report.csv
+          retention-days: 90
+
+      - name: Guardar carteras, historial e informe
         run: |
           git config user.name "alphadata-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add data/prices_weekly.csv data/coverage_report.csv data/signals_weekly.csv data/backtest_weekly.csv data/backtest_summary.csv
-          git diff --cached --quiet || git commit -m "data: actualizar precios semanales"
+          git add data reports
+          git diff --cached --quiet || git commit -m "data: actualizar estrategias e informe"
           git push

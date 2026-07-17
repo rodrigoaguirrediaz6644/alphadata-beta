@@ -1,31 +1,46 @@
-# AlphaData — automatización de precios (piloto)
+# AlphaData Automation 2.0
 
-Este módulo descarga precios históricos semanales para una muestra de instrumentos de AlphaData.
+Automatiza las estrategias oficiales Sigma-6 y Delta-12. La única entrada manual es un CSV con nuevas recomendaciones de Credicorp Capital.
 
-## Alcance del piloto
+## Flujo automático
 
-- Fuente: Yahoo Finance mediante `yfinance`.
-- Descarga diaria y consolidación interna al cierre semanal de cada viernes.
-- Rentabilidad calculada con cierre ajustado por dividendos y eventos corporativos; cierre normal conservado para reportes.
-- Mercado local: sufijo `.SN`.
-- Benchmark: `^IPSA`.
-- Frecuencia automática: cada sábado.
-- Salida: `data/prices_weekly.csv` y `data/coverage_report.csv`.
-- Backtest: consenso semanal sin anticipación, cartera máxima de dos acciones y costos de rotación.
-
-Los parámetros de estrategia están en `config/strategy.json`. Las salidas del piloto son `data/signals_weekly.csv`, `data/backtest_weekly.csv` y `data/backtest_summary.csv`.
-
-El piloto no genera recomendaciones de inversión ni modifica la cartera oficial. Primero verifica cobertura, moneda, fechas y continuidad de precios.
-
-Las acciones locales son obligatorias. El benchmark es opcional durante el piloto: si Yahoo no entrega su historial, se registra la advertencia sin bloquear los precios de la cartera.
-
-## Ejecución local
+1. Colocar uno o más CSV en `data/inbox/` usando `templates/recomendaciones_credicorp.csv`.
+2. Ejecutar `python alphadata.py run` o iniciar la acción de GitHub.
+3. El sistema consolida y archiva las recomendaciones, descarga precios y benchmark, valida cobertura, calcula carteras y costos, actualiza el estado y redacta informes HTML/Markdown.
 
 ```bash
 python -m pip install -r requirements.txt
-python src/fetch_prices.py
+PYTHONPATH=. python alphadata.py test
+PYTHONPATH=. python alphadata.py run
 ```
 
-## Próxima integración
+Si ya existen precios descargados:
 
-Cuando la cobertura sea aprobada, el proceso escribirá los precios validados en Google Sheets usando una cuenta de servicio guardada como secreto de GitHub.
+```bash
+PYTHONPATH=. python alphadata.py run --offline
+```
+
+## Salidas
+
+- `reports/latest_report.html` y `reports/latest_report.md`
+- `data/portfolio_sigma6.csv` y `data/portfolio_delta12.csv`
+- `data/movements_*.csv` y `data/audit_*.csv`
+- `data/strategy_nav.csv` y `data/strategy_state.json`
+- `data/recommendations_history.csv`, errores y cobertura
+
+## Fuentes automáticas
+
+Los precios se descargan mediante Yahoo Finance usando el catálogo `config/tickers.csv`. El benchmark configurado es `IPSA_TR` con símbolo proveedor `^IPSA`. Cada corrida conserva la fuente y la cobertura; si la descarga falla, sólo se usa la caché existente y se emite una advertencia.
+
+## Costos
+
+Ambas estrategias aplican 0,1785% al monto transado, correspondiente a Trii/Racional (0,15% más IVA). La tarifa mínima de $1.990 sólo puede incorporarse cuando se define capital y tamaño de cada orden.
+
+## Incorporar estrategias futuras
+
+1. Crear una función en `src/strategies/` o un módulo equivalente que devuelva `portfolio` y `audit`.
+2. Registrar `modulo:funcion` en `config/runtime.v2.json`.
+3. Agregar el código a `enabled_strategies`.
+4. Añadir pruebas de señales, fechas, pesos, costos y ausencia de información futura.
+
+La metodología 2.0.0 está separada de la configuración de ejecución para que las versiones históricas no se reescriban.
