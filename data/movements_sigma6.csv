@@ -1,0 +1,6 @@
+ticker,action,previous_weight,target_weight,change
+BCI,ENTRA,0.0,0.1,0.1
+CENCOMALLS,ENTRA,0.0,0.1,0.1
+LTM,ENTRA,0.0,0.1,0.1
+PARAUCO,ENTRA,0.0,0.1,0.1
+VAPORES,ENTRA,0.0,0.1,0.1

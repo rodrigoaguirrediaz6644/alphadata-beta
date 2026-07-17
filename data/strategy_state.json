@@ -1,0 +1,78 @@
+{
+  "methodology_version": "2.0.0",
+  "sigma_entries": {
+    "VAPORES": "2026-07-16",
+    "PARAUCO": "2026-07-16",
+    "LTM": "2026-07-16",
+    "CENCOMALLS": "2026-07-16",
+    "BCI": "2026-07-16"
+  },
+  "sigma_portfolio": [
+    {
+      "ticker": "BCI",
+      "target_weight": 0.1
+    },
+    {
+      "ticker": "CENCOMALLS",
+      "target_weight": 0.1
+    },
+    {
+      "ticker": "LTM",
+      "target_weight": 0.1
+    },
+    {
+      "ticker": "PARAUCO",
+      "target_weight": 0.1
+    },
+    {
+      "ticker": "VAPORES",
+      "target_weight": 0.1
+    }
+  ],
+  "delta_portfolio": [
+    {
+      "ticker": "SQM-B",
+      "target_weight": 0.125
+    },
+    {
+      "ticker": "ILC",
+      "target_weight": 0.125
+    },
+    {
+      "ticker": "PARAUCO",
+      "target_weight": 0.125
+    },
+    {
+      "ticker": "MALLPLAZA",
+      "target_weight": 0.125
+    },
+    {
+      "ticker": "BCI",
+      "target_weight": 0.125
+    },
+    {
+      "ticker": "ITAUCL",
+      "target_weight": 0.125
+    },
+    {
+      "ticker": "ECL",
+      "target_weight": 0.125
+    },
+    {
+      "ticker": "LTM",
+      "target_weight": 0.125
+    }
+  ],
+  "nav": {
+    "Sigma-6": 99.91075000000001,
+    "Delta-12": 99.8215,
+    "IPSA TR": 100.0
+  },
+  "delta_last_period": "2026-06",
+  "valuation_date": "2026-07-16",
+  "ingestion": {
+    "uploaded_files": 0,
+    "history_rows": 1107
+  },
+  "last_run_utc": "2026-07-17T01:52:41.166452+00:00"
+}
