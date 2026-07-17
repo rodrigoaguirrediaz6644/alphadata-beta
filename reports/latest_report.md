@@ -1,6 +1,6 @@
 # AlphaData — informe de estrategias
 
-**Fecha de corte:** 16-07-2026
+**Fecha de corte:** 17-07-2026
 
 ## Resumen
 

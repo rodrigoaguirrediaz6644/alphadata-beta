@@ -1,11 +1,11 @@
 {
   "methodology_version": "2.0.0",
   "sigma_entries": {
-    "BCI": "2026-07-16",
-    "LTM": "2026-07-16",
-    "VAPORES": "2026-07-16",
+    "PARAUCO": "2026-07-16",
     "CENCOMALLS": "2026-07-16",
-    "PARAUCO": "2026-07-16"
+    "BCI": "2026-07-16",
+    "VAPORES": "2026-07-16",
+    "LTM": "2026-07-16"
   },
   "sigma_portfolio": [
     {
@@ -64,15 +64,15 @@
     }
   ],
   "nav": {
-    "Sigma-6": 99.91075000000001,
-    "Delta-12": 99.8215,
-    "IPSA TR": 100.0
+    "Sigma-6": 99.38432116810203,
+    "Delta-12": 98.35941549217563,
+    "IPSA TR": 212.5567414816112
   },
   "delta_last_period": "2026-06",
-  "valuation_date": "2026-07-16",
+  "valuation_date": "2026-07-17",
   "ingestion": {
     "uploaded_files": 0,
     "history_rows": 1107
   },
-  "last_run_utc": "2026-07-17T03:14:14.622259+00:00"
+  "last_run_utc": "2026-07-17T14:13:55.532859+00:00"
 }
