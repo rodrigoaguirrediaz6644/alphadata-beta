@@ -48,7 +48,7 @@ jobs:
         run: python src/send_report.py
 
       - name: Conservar informe como artefacto
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: informe-alphadata-${{ github.run_number }}
           path: |

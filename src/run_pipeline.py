@@ -11,6 +11,7 @@ import pandas as pd
 from src.fetch_prices import load_universe
 from src.ingest_recommendations import ingest
 from src.strategy_registry import validate_registry
+from src.reporting_public import build_public_report
 from src.strategy_engine import RECOMMENDATION_COLUMNS, delta12, movements, sigma6, validate_recommendations
 
 ROOT=Path(__file__).resolve().parents[1]; DATA=ROOT/'data'; REPORTS=ROOT/'reports'; STATE=DATA/'strategy_state.json'; NAV=DATA/'strategy_nav.csv'
@@ -161,7 +162,7 @@ def main()->None:
     if len(history): history=history[history.date.astype(str)!=navrow['date']]
     history=pd.concat([history,pd.DataFrame([navrow])],ignore_index=True);history.to_csv(NAV,index=False)
     coverage=pd.read_csv(DATA/'coverage_report.csv')
-    md,html=report(as_of,sigma,delta,smove,dmove,s_audit,d_audit,coverage,errors,state,navrow);(REPORTS/'latest_report.md').write_text(md,encoding='utf-8');(REPORTS/'latest_report.html').write_text(html,encoding='utf-8')
+    md,html=build_public_report(as_of,sigma,delta,smove,dmove,coverage,errors,history);(REPORTS/'latest_report.md').write_text(md,encoding='utf-8');(REPORTS/'latest_report.html').write_text(html,encoding='utf-8')
     sigma.to_csv(DATA/'portfolio_sigma6.csv',index=False);delta.to_csv(DATA/'portfolio_delta12.csv',index=False);s_audit.to_csv(DATA/'audit_sigma6.csv',index=False);d_audit.to_csv(DATA/'audit_delta12.csv',index=False);smove.to_csv(DATA/'movements_sigma6.csv',index=False);dmove.to_csv(DATA/'movements_delta12.csv',index=False)
     state.update({'methodology_version':'2.0.0','sigma_portfolio':sigma.to_dict('records'),'delta_portfolio':delta.to_dict('records'),'valuation_date':as_of.date().isoformat(),'nav':{k:navrow[k] for k in ['Sigma-6','Delta-12','IPSA TR']},'ingestion':ingest_summary,'last_run_utc':datetime.now(timezone.utc).isoformat()});STATE.write_text(json.dumps(state,ensure_ascii=False,indent=2),encoding='utf-8')
     print(intro if (intro:='Informe generado: '+str(REPORTS/'latest_report.md')) else '')
