@@ -1,10 +1,10 @@
 # AlphaData — informe de estrategias
 
-**Fecha de corte:** 22-07-2026
+**Fecha de corte:** 23-07-2026
 
 ## Resumen
 
-- Sigma-6: 4 posiciones; caja 60.0%.
+- Sigma-6: 5 posiciones; caja 50.0%.
 - Delta-12: 8 posiciones; caja 0.0%.
 - Estado de datos: Con observaciones.
 
