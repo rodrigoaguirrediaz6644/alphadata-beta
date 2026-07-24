@@ -1,11 +1,10 @@
 {
   "methodology_version": "2.0.0",
   "sigma_entries": {
-    "PARAUCO": "2026-07-16",
+    "LTM": "2026-07-16",
     "CENCOMALLS": "2026-07-16",
-    "VAPORES": "2026-07-23",
-    "BCI": "2026-07-16",
-    "LTM": "2026-07-16"
+    "PARAUCO": "2026-07-16",
+    "BCI": "2026-07-16"
   },
   "sigma_portfolio": [
     {
@@ -22,10 +21,6 @@
     },
     {
       "ticker": "PARAUCO",
-      "target_weight": 0.1
-    },
-    {
-      "ticker": "VAPORES",
       "target_weight": 0.1
     }
   ],
@@ -64,15 +59,15 @@
     }
   ],
   "nav": {
-    "Sigma-6": 100.20466023687965,
-    "Delta-12": 97.9986954696108,
+    "Sigma-6": 99.86856971203994,
+    "Delta-12": 97.52348181263062,
     "IPSA TR": 212.5567414816112
   },
   "delta_last_period": "2026-06",
-  "valuation_date": "2026-07-23",
+  "valuation_date": "2026-07-24",
   "ingestion": {
     "uploaded_files": 0,
     "history_rows": 1107
   },
-  "last_run_utc": "2026-07-23T14:42:20.755794+00:00"
+  "last_run_utc": "2026-07-24T14:22:04.057249+00:00"
 }
