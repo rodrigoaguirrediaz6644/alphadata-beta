@@ -1,73 +1,109 @@
 {
   "methodology_version": "2.1.0",
   "sigma_entries": {
-    "BCI": "2026-06-29",
-    "LTM": "2026-06-29",
     "PARAUCO": "2026-06-29",
-    "CENCOMALLS": "2026-06-29"
+    "LTM": "2026-06-29",
+    "CENCOMALLS": "2026-06-29",
+    "BCI": "2026-06-29"
   },
   "sigma_portfolio": [
     {
       "ticker": "BCI",
       "target_weight": 0.1,
-      "opened_at": "2026-06-29"
+      "opened_at": "2026-06-30",
+      "entry_price": 60569.0,
+      "current_price": 62502.0,
+      "open_return": 0.030075330954675517
     },
     {
       "ticker": "CENCOMALLS",
       "target_weight": 0.1,
-      "opened_at": "2026-06-29"
+      "opened_at": "2026-06-30",
+      "entry_price": 2362.0,
+      "current_price": 2210.0,
+      "open_return": -0.06601939923350275
     },
     {
       "ticker": "LTM",
       "target_weight": 0.1,
-      "opened_at": "2026-06-29"
+      "opened_at": "2026-06-30",
+      "entry_price": 26.86000061035156,
+      "current_price": 24.690000534057617,
+      "open_return": -0.08242714628491188
     },
     {
       "ticker": "PARAUCO",
       "target_weight": 0.1,
-      "opened_at": "2026-06-29"
+      "opened_at": "2026-06-30",
+      "entry_price": 3864.89990234375,
+      "current_price": 4039.89990234375,
+      "open_return": 0.04341681078648163
     }
   ],
   "delta_portfolio": [
     {
       "ticker": "SQM-B",
       "target_weight": 0.125,
-      "opened_at": "2026-02-02"
+      "opened_at": "2026-02-02",
+      "entry_price": 64955.2421875,
+      "current_price": 65450.0,
+      "open_return": 0.005821512115325556
     },
     {
       "ticker": "ILC",
       "target_weight": 0.125,
-      "opened_at": "2026-07-01"
+      "opened_at": "2026-07-01",
+      "entry_price": 22000.0,
+      "current_price": 21450.0,
+      "open_return": -0.026737273965970587
     },
     {
       "ticker": "PARAUCO",
       "target_weight": 0.125,
-      "opened_at": "2026-04-01"
+      "opened_at": "2026-04-01",
+      "entry_price": 4037.793212890625,
+      "current_price": 4039.89990234375,
+      "open_return": -0.0012610063244126168
     },
     {
       "ticker": "MALLPLAZA",
       "target_weight": 0.125,
-      "opened_at": "2026-01-02"
+      "opened_at": "2026-01-02",
+      "entry_price": 3166.654052734375,
+      "current_price": 3950.0,
+      "open_return": 0.24515079560357855
     },
     {
       "ticker": "BCI",
       "target_weight": 0.125,
-      "opened_at": "2026-03-02"
+      "opened_at": "2026-03-02",
+      "entry_price": 55498.47265625,
+      "current_price": 62502.0,
+      "open_return": 0.12418648179802805
     },
     {
       "ticker": "ITAUCL",
       "target_weight": 0.125,
-      "opened_at": "2026-03-02"
+      "opened_at": "2026-03-02",
+      "entry_price": 18980.5625,
+      "current_price": 20678.0,
+      "open_return": 0.08748913723530594
     },
     {
       "ticker": "ECL",
       "target_weight": 0.125,
-      "opened_at": "2026-04-01"
+      "opened_at": "2026-04-01",
+      "entry_price": 1538.9454345703125,
+      "current_price": 1807.0,
+      "open_return": 0.17208850406925968
     },
     {
       "ticker": "CHILE",
       "target_weight": 0.125,
-      "opened_at": "2026-07-01"
+      "opened_at": "2026-07-01",
+      "entry_price": 179.50999450683594,
+      "current_price": 188.5,
+      "open_return": 0.04820975316825704
     }
   ],
   "nav": {
@@ -81,7 +117,7 @@
     "uploaded_files": 0,
     "history_rows": 1108
   },
-  "last_run_utc": "2026-07-27T12:04:59.254670+00:00",
+  "last_run_utc": "2026-07-27T12:29:18.255444+00:00",
   "delta_entries": {
     "SQM-B": "2026-02-02",
     "ILC": "2026-07-01",
