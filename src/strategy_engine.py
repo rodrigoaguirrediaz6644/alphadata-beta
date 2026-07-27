@@ -102,13 +102,52 @@ def delta12(prices: pd.DataFrame, universe: pd.DataFrame, as_of: pd.Timestamp) -
     if len(close)<252: return pd.DataFrame(columns=["ticker","target_weight"]),pd.DataFrame(columns=["ticker","reason"])
     momentum=close.shift(21).iloc[-1]/close.shift(252).iloc[-1]-1
     sma=close.rolling(200,min_periods=200).mean().iloc[-1]; last=close.iloc[-1]
+    delta=close.diff()
+    gain=delta.clip(lower=0).ewm(alpha=1/14,adjust=False,min_periods=14).mean()
+    loss=(-delta.clip(upper=0)).ewm(alpha=1/14,adjust=False,min_periods=14).mean()
+    rs=gain/loss.replace(0,np.nan)
+    rsi14=(100-(100/(1+rs))).fillna(100).iloc[-1]
     turnover=(close*volume).rolling(60,min_periods=30).median().iloc[-1]; liquidity_pct=turnover.rank(pct=True)*100
-    obs=close.notna().sum(); audit=pd.DataFrame({"ticker":close.columns,"adjusted_close":last,"momentum_12_1":momentum,"sma200":sma,"liquidity_percentile":liquidity_pct,"history_rows":obs}).set_index("ticker")
-    audit["eligible"]=(audit.momentum_12_1>0)&(audit.adjusted_close>audit.sma200)&(audit.liquidity_percentile>=20)&(audit.history_rows>=252)
-    audit["reason"]=np.select([audit.history_rows<252,audit.momentum_12_1<=0,audit.adjusted_close<=audit.sma200,audit.liquidity_percentile<20],["historia insuficiente","momentum no positivo","bajo SMA200","liquidez inferior al percentil 20"],default="elegible")
+    obs=close.notna().sum(); audit=pd.DataFrame({"ticker":close.columns,"adjusted_close":last,"momentum_12_1":momentum,"sma200":sma,"rsi14":rsi14,"liquidity_percentile":liquidity_pct,"history_rows":obs}).set_index("ticker")
+    audit["eligible"]=(audit.momentum_12_1>0)&(audit.adjusted_close>audit.sma200)&(audit.rsi14<=65)&(audit.liquidity_percentile>=20)&(audit.history_rows>=252)
+    audit["reason"]=np.select([audit.history_rows<252,audit.momentum_12_1<=0,audit.adjusted_close<=audit.sma200,audit.rsi14>65,audit.liquidity_percentile<20],["historia insuficiente","momentum no positivo","bajo SMA200","RSI14 superior a 65","liquidez inferior al percentil 20"],default="elegible")
     selected=audit[audit.eligible].nlargest(8,"momentum_12_1"); weights=capped_pro_rata(pd.Series(1.,index=selected.index),.15)
     portfolio=pd.DataFrame({"ticker":weights.index,"target_weight":weights.values}) if len(weights) else pd.DataFrame(columns=["ticker","target_weight"])
     return portfolio.sort_values("target_weight",ascending=False),audit.reset_index().sort_values(["eligible","momentum_12_1"],ascending=[False,False])
+
+
+
+def delta12_historical_nav(prices: pd.DataFrame, universe: pd.DataFrame, start: pd.Timestamp, end: pd.Timestamp, cost_rate: float = .001785) -> pd.DataFrame:
+    """Reconstruct Delta-12 2.1.0 using only information available at each monthly review."""
+    local=set(universe.loc[universe.tipo=="accion_local","alphadata_ticker"])
+    panel=prices.loc[prices.alphadata_ticker.isin(local)&prices.date.between(start-pd.Timedelta(days=400),end)].pivot(index="date",columns="alphadata_ticker",values="adjusted_close").sort_index().ffill(limit=3)
+    sessions=panel.index[panel.index>=pd.Timestamp(start)]
+    if len(sessions)==0:
+        return pd.DataFrame(columns=["date","Delta-12"])
+    weights: dict[str,float]={}; nav=100.; rows=[]
+    previous_date=None; current_month=None
+    for session in sessions:
+        if previous_date is None:
+            rows.append({"date":session,"Delta-12":nav}); previous_date=session; current_month=session.to_period("M"); continue
+        day_return=0.
+        for ticker,weight in weights.items():
+            if ticker in panel and pd.notna(panel.at[previous_date,ticker]) and pd.notna(panel.at[session,ticker]) and panel.at[previous_date,ticker]>0:
+                day_return+=weight*(panel.at[session,ticker]/panel.at[previous_date,ticker]-1)
+        nav*=1+day_return
+        month=session.to_period("M")
+        if month!=current_month:
+            review_dates=panel.index[panel.index<session]
+            if len(review_dates):
+                portfolio,_=delta12(prices,universe,pd.Timestamp(review_dates[-1]))
+                new_weights=dict(zip(portfolio.ticker,portfolio.target_weight))
+                risky=sum(abs(new_weights.get(t,0)-weights.get(t,0)) for t in set(weights)|set(new_weights))
+                cash=abs((1-sum(new_weights.values()))-(1-sum(weights.values())))
+                nav*=1-.5*(risky+cash)*cost_rate
+                weights=new_weights
+            current_month=month
+        rows.append({"date":session,"Delta-12":nav})
+        previous_date=session
+    return pd.DataFrame(rows)
 
 
 def movements(previous: list[dict[str, Any]], current: pd.DataFrame) -> pd.DataFrame:

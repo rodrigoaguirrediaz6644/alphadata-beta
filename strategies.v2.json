@@ -1,12 +1,15 @@
 {
   "schema_version": "2.0.0",
-  "methodology_version": "2.0.0",
-  "effective_from": "2026-07-16",
+  "methodology_version": "2.1.0",
+  "effective_from": "2026-07-27",
   "platform": "AlphaData",
   "timezone": "America/Santiago",
   "base_currency": "CLP",
   "status": "paper_trading",
-  "official_strategies": ["SIGMA6", "DELTA12"],
+  "official_strategies": [
+    "SIGMA6",
+    "DELTA12"
+  ],
   "strategies": [
     {
       "id": "alphadata-sigma6",
@@ -24,9 +27,24 @@
         "adr_separate_from_local_share": true
       },
       "data": {
-        "recommendation_source": ["Credicorp Capital"],
-        "recommendations_required_fields": ["published_at", "available_at", "broker", "ticker", "recommendation_text"],
-        "prices_required_fields": ["date", "ticker", "adjusted_close", "open", "close", "volume"],
+        "recommendation_source": [
+          "Credicorp Capital"
+        ],
+        "recommendations_required_fields": [
+          "published_at",
+          "available_at",
+          "broker",
+          "ticker",
+          "recommendation_text"
+        ],
+        "prices_required_fields": [
+          "date",
+          "ticker",
+          "adjusted_close",
+          "open",
+          "close",
+          "volume"
+        ],
         "prices": "adjusted_close_for_indicators_and_returns; adjusted_open_for_execution",
         "corporate_action_adjustment_required": true,
         "reject_without_explicit_action": true,
@@ -76,7 +94,7 @@
       "sizing": {
         "method": "equal_weight_among_eligible_positions_subject_to_cap",
         "raw_weight_formula": "1 / eligible_count",
-        "maximum_weight_per_instrument": 0.10,
+        "maximum_weight_per_instrument": 0.1,
         "maximum_positions": null,
         "redistribution": "iterative_equal_redistribution_among_uncapped_positions",
         "unallocated_capital": "cash",
@@ -109,7 +127,11 @@
         "minimum_fee_clp": 1990,
         "minimum_fee_rule": "for capital-specific simulations use max(variable_commission, minimum_fee_clp) when provider low-amount tariff applies",
         "capital_independent_backtest_rule": "apply 0.1785% to traded notional; exclude minimum fee until model capital is specified",
-        "apply_to": ["entries", "exits", "rebalances"],
+        "apply_to": [
+          "entries",
+          "exits",
+          "rebalances"
+        ],
         "slippage_model": "pending_volume_based_model"
       },
       "calculation_schedule": {
@@ -134,9 +156,9 @@
       "id": "alphadata-delta12",
       "commercial_name": "Delta-12",
       "strategy_code": "DELTA12",
-      "version": "2.0.0",
+      "version": "2.1.0",
       "status": "official_paper_trading",
-      "description": "Cartera mensual de momentum 12-1, tendencia SMA200 y filtro de liquidez, independiente de las corredoras.",
+      "description": "Cartera mensual de momentum 12-1, tendencia SMA200, RSI(14) y filtro de liquidez, independiente de las corredoras.",
       "universe": {
         "market": "Chile",
         "membership": "historical_investable_universe_as_of_each_calculation_date",
@@ -146,7 +168,15 @@
       },
       "data": {
         "frequency": "daily",
-        "required_fields": ["date", "ticker", "adjusted_close", "open", "high", "low", "volume"],
+        "required_fields": [
+          "date",
+          "ticker",
+          "adjusted_close",
+          "open",
+          "high",
+          "low",
+          "volume"
+        ],
         "corporate_action_adjustment_required": true,
         "future_information_allowed": false,
         "maximum_forward_fill_trading_days": 3,
@@ -173,6 +203,12 @@
           "minimum_observations": 30,
           "exclude_bottom_cross_section_percent": 20,
           "boundary_rule": "exclude liquidity_percentile < 20"
+        },
+        "rsi14": {
+          "formula": "Wilder RSI sobre adjusted_close con 14 sesiones",
+          "window_trading_days": 14,
+          "minimum_observations": 14,
+          "required": "rsi14 <= 65"
         }
       },
       "entry": {
@@ -181,6 +217,7 @@
         "eligibility": [
           "momentum_12_1 > 0",
           "adjusted_close > sma200",
+          "rsi14 <= 65",
           "liquidity_percentile >= 20",
           "complete_and_nonstale_required_data"
         ],
@@ -204,6 +241,7 @@
           "not_in_top_8",
           "momentum_12_1 <= 0",
           "adjusted_close <= sma200",
+          "rsi14 > 65",
           "liquidity_percentile < 20",
           "invalid_or_stale_data"
         ],
@@ -220,7 +258,11 @@
         "minimum_fee_clp": 1990,
         "minimum_fee_rule": "for capital-specific simulations use max(variable_commission, minimum_fee_clp) when provider low-amount tariff applies",
         "capital_independent_backtest_rule": "apply 0.1785% to traded notional; exclude minimum fee until model capital is specified",
-        "apply_to": ["entries", "exits", "rebalances"],
+        "apply_to": [
+          "entries",
+          "exits",
+          "rebalances"
+        ],
         "slippage_model": "pending_volume_based_model"
       },
       "calculation_schedule": {
@@ -233,15 +275,20 @@
       "historical_reference": {
         "common_comparison_period": "2021-07-09/2026-07-15",
         "cost_rate": 0.001785,
-        "total_return": 2.0315958817,
-        "cagr": 0.2474694841,
-        "volatility": 0.1685564974,
-        "maximum_drawdown": -0.2003103135,
-        "sharpe_zero_rf": 1.4681693553,
-        "sortino_zero_target": 2.4549403291,
-        "planning_return_range": [0.10, 0.16],
-        "planning_drawdown_range": [-0.30, -0.20],
-        "note": "Resultado con posible sesgo de supervivencia; requiere validación prospectiva."
+        "total_return": 2.7406,
+        "cagr": 0.3052,
+        "volatility": 0.1593,
+        "maximum_drawdown": -0.1385,
+        "sharpe_zero_rf": 1.75,
+        "planning_return_range": [
+          0.1,
+          0.18
+        ],
+        "planning_drawdown_range": [
+          -0.25,
+          -0.13
+        ],
+        "note": "Resultado retrospectivo de la metodología 2.1.0 con RSI(14) <= 65; puede contener sesgo de supervivencia y requiere validación prospectiva."
       }
     }
   ],
@@ -272,10 +319,45 @@
       "name": "S&P IPSA Index (CLP) Total Return",
       "series_code": "SPCLXIPSAT"
     },
-    "minimum_metrics": ["total_return", "cagr", "maximum_drawdown", "volatility", "sharpe", "sortino", "turnover", "cash_weight", "benchmark_excess", "transaction_costs"],
-    "required_run_log": ["cutoff_time", "methodology_version", "input_files", "data_errors", "exclusions", "indicators", "signals", "previous_portfolio", "new_portfolio", "entries", "exits", "holds", "weights", "cash", "turnover", "costs", "benchmark"],
+    "minimum_metrics": [
+      "total_return",
+      "cagr",
+      "maximum_drawdown",
+      "volatility",
+      "sharpe",
+      "sortino",
+      "turnover",
+      "cash_weight",
+      "benchmark_excess",
+      "transaction_costs"
+    ],
+    "required_run_log": [
+      "cutoff_time",
+      "methodology_version",
+      "input_files",
+      "data_errors",
+      "exclusions",
+      "indicators",
+      "signals",
+      "previous_portfolio",
+      "new_portfolio",
+      "entries",
+      "exits",
+      "holds",
+      "weights",
+      "cash",
+      "turnover",
+      "costs",
+      "benchmark"
+    ],
     "subscriber_onboarding": {
-      "new_subscriber_receives": ["current_portfolio", "current_target_weights", "cash_weight", "next_review_date", "methodology_version"],
+      "new_subscriber_receives": [
+        "current_portfolio",
+        "current_target_weights",
+        "cash_weight",
+        "next_review_date",
+        "methodology_version"
+      ],
       "do_not_reconstruct_original_entry_price": true,
       "performance_reporting_basis": "official_model_portfolio_not_subscriber_personal_return"
     }
