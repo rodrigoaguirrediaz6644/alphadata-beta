@@ -19,8 +19,8 @@ ROOT=Path(__file__).resolve().parents[1]; DATA=ROOT/'data'; REPORTS=ROOT/'report
 def load_state()->dict:
     if STATE.exists():
         state=json.loads(STATE.read_text(encoding='utf-8'))
-        if state.get('methodology_version')=='2.0.0': return state
-    return {'methodology_version':'2.0.0','sigma_entries':{},'delta_entries':{},'sigma_portfolio':[],'delta_portfolio':[],'nav':{'Sigma-6':100.,'Delta-12':100.,'IPSA TR':100.}}
+        if state.get('methodology_version') in {'2.0.0','2.1.0'}: return state
+    return {'methodology_version':'2.1.0','sigma_entries':{},'delta_entries':{},'sigma_portfolio':[],'delta_portfolio':[],'nav':{'Sigma-6':100.,'Delta-12':100.,'IPSA TR':100.}}
 
 def portfolio_return(prices:pd.DataFrame,weights:list[dict],start:pd.Timestamp,end:pd.Timestamp)->float:
     if not weights or start>=end:return 0.
@@ -143,17 +143,17 @@ def main()->None:
     input_path=DATA/'recommendations_input.csv'; raw=pd.read_csv(input_path,dtype=str).fillna('') if input_path.exists() else pd.DataFrame(columns=RECOMMENDATION_COLUMNS)
     valid,errors=validate_recommendations(raw,set(universe.alphadata_ticker)); valid.to_csv(DATA/'recommendations_validated_live.csv',index=False,date_format='%Y-%m-%d');errors.to_csv(DATA/'recommendations_errors.csv',index=False,date_format='%Y-%m-%d')
     old_sigma=state.get('sigma_portfolio',[]); old_delta=state.get('delta_portfolio',[])
-    if state.get('entry_dates_version') != 2:
+    if state.get('entry_dates_version') != 3:
         sigma_entries, delta_entries = reconstruct_entry_dates(valid, prices, universe, as_of)
         state['sigma_entries'] = sigma_entries
         state['delta_entries'] = delta_entries
-        state['entry_dates_version'] = 2
+        state['entry_dates_version'] = 3
     sigma,s_audit,state=sigma6(valid,prices,as_of,state)
     sigma['opened_at'] = sigma.ticker.map(state.get('sigma_entries', {}))
     delta_signal_period=(as_of.to_period('M')-1)
     delta_period=delta_signal_period.strftime('%Y-%m')
     delta_cutoff=prices.loc[(prices.alphadata_ticker!='IPSA_TR')&(prices.date.dt.to_period('M')==delta_signal_period),'date'].max()
-    if state.get('delta_last_period')==delta_period and old_delta:
+    if state.get('delta_last_period')==delta_period and state.get('delta_rule_version')=='2.1.0' and old_delta:
         delta=pd.DataFrame(old_delta); d_audit=pd.DataFrame()
     else:
         delta,d_audit=delta12(prices,universe,delta_cutoff)
@@ -162,6 +162,7 @@ def main()->None:
         execution_date = (execution_dates.iloc[0] if len(execution_dates) else as_of).date().isoformat()
         state['delta_entries'] = {ticker: previous_delta_entries.get(ticker, execution_date) for ticker in delta.ticker}
         state['delta_last_period']=delta_period
+        state['delta_rule_version']='2.1.0'
     if 'opened_at' not in delta.columns:
         delta['opened_at'] = delta.ticker.map(state.get('delta_entries', {}))
     smove=movements(old_sigma,sigma);dmove=movements(old_delta,delta)
@@ -177,7 +178,7 @@ def main()->None:
     coverage=pd.read_csv(DATA/'coverage_report.csv')
     md,html=build_public_report(as_of,sigma,delta,smove,dmove,coverage,errors,history);(REPORTS/'latest_report.md').write_text(md,encoding='utf-8');(REPORTS/'latest_report.html').write_text(html,encoding='utf-8')
     sigma.to_csv(DATA/'portfolio_sigma6.csv',index=False);delta.to_csv(DATA/'portfolio_delta12.csv',index=False);s_audit.to_csv(DATA/'audit_sigma6.csv',index=False);d_audit.to_csv(DATA/'audit_delta12.csv',index=False);smove.to_csv(DATA/'movements_sigma6.csv',index=False);dmove.to_csv(DATA/'movements_delta12.csv',index=False)
-    state.update({'methodology_version':'2.0.0','sigma_portfolio':sigma.to_dict('records'),'delta_portfolio':delta.to_dict('records'),'valuation_date':as_of.date().isoformat(),'nav':{k:navrow[k] for k in ['Sigma-6','Delta-12','IPSA TR']},'ingestion':ingest_summary,'last_run_utc':datetime.now(timezone.utc).isoformat()});STATE.write_text(json.dumps(state,ensure_ascii=False,indent=2),encoding='utf-8')
+    state.update({'methodology_version':'2.1.0','sigma_portfolio':sigma.to_dict('records'),'delta_portfolio':delta.to_dict('records'),'valuation_date':as_of.date().isoformat(),'nav':{k:navrow[k] for k in ['Sigma-6','Delta-12','IPSA TR']},'ingestion':ingest_summary,'last_run_utc':datetime.now(timezone.utc).isoformat()});STATE.write_text(json.dumps(state,ensure_ascii=False,indent=2),encoding='utf-8')
     print(intro if (intro:='Informe generado: '+str(REPORTS/'latest_report.md')) else '')
     if len(errors): print(f'ADVERTENCIA: {len(errors)} recomendaciones fueron rechazadas; revisar data/recommendations_errors.csv')
 
