@@ -102,10 +102,15 @@ def delta12(prices: pd.DataFrame, universe: pd.DataFrame, as_of: pd.Timestamp) -
     if len(close)<252: return pd.DataFrame(columns=["ticker","target_weight"]),pd.DataFrame(columns=["ticker","reason"])
     momentum=close.shift(21).iloc[-1]/close.shift(252).iloc[-1]-1
     sma=close.rolling(200,min_periods=200).mean().iloc[-1]; last=close.iloc[-1]
+    delta=close.diff()
+    gain=delta.clip(lower=0).ewm(alpha=1/14,adjust=False,min_periods=14).mean()
+    loss=(-delta.clip(upper=0)).ewm(alpha=1/14,adjust=False,min_periods=14).mean()
+    rs=gain/loss.replace(0,np.nan)
+    rsi14=(100-(100/(1+rs))).fillna(100).iloc[-1]
     turnover=(close*volume).rolling(60,min_periods=30).median().iloc[-1]; liquidity_pct=turnover.rank(pct=True)*100
-    obs=close.notna().sum(); audit=pd.DataFrame({"ticker":close.columns,"adjusted_close":last,"momentum_12_1":momentum,"sma200":sma,"liquidity_percentile":liquidity_pct,"history_rows":obs}).set_index("ticker")
-    audit["eligible"]=(audit.momentum_12_1>0)&(audit.adjusted_close>audit.sma200)&(audit.liquidity_percentile>=20)&(audit.history_rows>=252)
-    audit["reason"]=np.select([audit.history_rows<252,audit.momentum_12_1<=0,audit.adjusted_close<=audit.sma200,audit.liquidity_percentile<20],["historia insuficiente","momentum no positivo","bajo SMA200","liquidez inferior al percentil 20"],default="elegible")
+    obs=close.notna().sum(); audit=pd.DataFrame({"ticker":close.columns,"adjusted_close":last,"momentum_12_1":momentum,"sma200":sma,"rsi14":rsi14,"liquidity_percentile":liquidity_pct,"history_rows":obs}).set_index("ticker")
+    audit["eligible"]=(audit.momentum_12_1>0)&(audit.adjusted_close>audit.sma200)&(audit.rsi14<=65)&(audit.liquidity_percentile>=20)&(audit.history_rows>=252)
+    audit["reason"]=np.select([audit.history_rows<252,audit.momentum_12_1<=0,audit.adjusted_close<=audit.sma200,audit.rsi14>65,audit.liquidity_percentile<20],["historia insuficiente","momentum no positivo","bajo SMA200","RSI14 superior a 65","liquidez inferior al percentil 20"],default="elegible")
     selected=audit[audit.eligible].nlargest(8,"momentum_12_1"); weights=capped_pro_rata(pd.Series(1.,index=selected.index),.15)
     portfolio=pd.DataFrame({"ticker":weights.index,"target_weight":weights.values}) if len(weights) else pd.DataFrame(columns=["ticker","target_weight"])
     return portfolio.sort_values("target_weight",ascending=False),audit.reset_index().sort_values(["eligible","momentum_12_1"],ascending=[False,False])
