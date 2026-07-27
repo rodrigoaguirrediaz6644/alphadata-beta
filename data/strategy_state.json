@@ -1,10 +1,10 @@
 {
-  "methodology_version": "2.0.0",
+  "methodology_version": "2.1.0",
   "sigma_entries": {
-    "LTM": "2026-06-29",
-    "CENCOMALLS": "2026-06-29",
     "BCI": "2026-06-29",
-    "PARAUCO": "2026-06-29"
+    "LTM": "2026-06-29",
+    "PARAUCO": "2026-06-29",
+    "CENCOMALLS": "2026-06-29"
   },
   "sigma_portfolio": [
     {
@@ -37,27 +37,27 @@
     {
       "ticker": "ILC",
       "target_weight": 0.125,
-      "opened_at": "2025-12-01"
+      "opened_at": "2026-07-01"
     },
     {
       "ticker": "PARAUCO",
       "target_weight": 0.125,
-      "opened_at": "2025-10-01"
+      "opened_at": "2026-04-01"
     },
     {
       "ticker": "MALLPLAZA",
       "target_weight": 0.125,
-      "opened_at": "2024-10-01"
+      "opened_at": "2026-01-02"
     },
     {
       "ticker": "BCI",
       "target_weight": 0.125,
-      "opened_at": "2025-11-03"
+      "opened_at": "2026-03-02"
     },
     {
       "ticker": "ITAUCL",
       "target_weight": 0.125,
-      "opened_at": "2025-12-01"
+      "opened_at": "2026-03-02"
     },
     {
       "ticker": "ECL",
@@ -65,32 +65,33 @@
       "opened_at": "2026-04-01"
     },
     {
-      "ticker": "LTM",
+      "ticker": "CHILE",
       "target_weight": 0.125,
       "opened_at": "2026-07-01"
     }
   ],
   "nav": {
     "Sigma-6": 99.86856971203994,
-    "Delta-12": 97.52348181263062,
+    "Delta-12": 97.50172188575118,
     "IPSA TR": 212.5567414816112
   },
   "delta_last_period": "2026-06",
   "valuation_date": "2026-07-24",
   "ingestion": {
-    "uploaded_files": 1,
+    "uploaded_files": 0,
     "history_rows": 1108
   },
-  "last_run_utc": "2026-07-27T11:27:21.105513+00:00",
+  "last_run_utc": "2026-07-27T12:04:59.254670+00:00",
   "delta_entries": {
-    "MALLPLAZA": "2024-10-01",
-    "PARAUCO": "2025-10-01",
-    "BCI": "2025-11-03",
-    "ITAUCL": "2025-12-01",
-    "ILC": "2025-12-01",
     "SQM-B": "2026-02-02",
+    "ILC": "2026-07-01",
+    "PARAUCO": "2026-04-01",
+    "MALLPLAZA": "2026-01-02",
+    "BCI": "2026-03-02",
+    "ITAUCL": "2026-03-02",
     "ECL": "2026-04-01",
-    "LTM": "2026-07-01"
+    "CHILE": "2026-07-01"
   },
-  "entry_dates_version": 2
+  "entry_dates_version": 3,
+  "delta_rule_version": "2.1.0"
 }
