@@ -2,9 +2,9 @@
   "methodology_version": "2.1.0",
   "sigma_entries": {
     "BCI": "2026-06-29",
+    "PARAUCO": "2026-06-29",
     "CENCOMALLS": "2026-06-29",
-    "LTM": "2026-06-29",
-    "PARAUCO": "2026-06-29"
+    "LTM": "2026-06-29"
   },
   "sigma_portfolio": [
     {
@@ -117,7 +117,7 @@
     "uploaded_files": 0,
     "history_rows": 1108
   },
-  "last_run_utc": "2026-07-27T12:41:42.603357+00:00",
+  "last_run_utc": "2026-07-27T12:49:27.777152+00:00",
   "delta_entries": {
     "SQM-B": "2026-02-02",
     "ILC": "2026-07-01",
