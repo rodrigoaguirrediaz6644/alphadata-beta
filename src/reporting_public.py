@@ -120,7 +120,9 @@ def _table(df: pd.DataFrame, columns: list[str]) -> str:
         return '<p class="empty">Sin posiciones o movimientos.</p>'
     labels = {"ticker": "Acción", "target_weight": "Peso objetivo", "opened_at": "Abierta desde", "action": "Movimiento", "change": "Cambio"}
     rows = []
-    for record in df[columns].to_dict("records"):
+    display = df.reindex(columns=columns, fill_value="—")
+    display = display.fillna("—")
+    for record in display.to_dict("records"):
         cells = []
         for column in columns:
             value = record[column]
