@@ -20,6 +20,7 @@ def test_public_report_hides_strategy_methodology():
     assert "Precio ingreso" in html
     assert "Precio actual" in html
     assert "Rentabilidad actual" in html
+    assert "Retrocesos del paper trading" not in html
     assert "—" in html
     assert "momentum_12_1" not in html
     assert "SMA200" not in html
