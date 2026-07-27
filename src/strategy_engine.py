@@ -116,6 +116,40 @@ def delta12(prices: pd.DataFrame, universe: pd.DataFrame, as_of: pd.Timestamp) -
     return portfolio.sort_values("target_weight",ascending=False),audit.reset_index().sort_values(["eligible","momentum_12_1"],ascending=[False,False])
 
 
+
+def delta12_historical_nav(prices: pd.DataFrame, universe: pd.DataFrame, start: pd.Timestamp, end: pd.Timestamp, cost_rate: float = .001785) -> pd.DataFrame:
+    """Reconstruct Delta-12 2.1.0 using only information available at each monthly review."""
+    local=set(universe.loc[universe.tipo=="accion_local","alphadata_ticker"])
+    panel=prices.loc[prices.alphadata_ticker.isin(local)&prices.date.between(start-pd.Timedelta(days=400),end)].pivot(index="date",columns="alphadata_ticker",values="adjusted_close").sort_index().ffill(limit=3)
+    sessions=panel.index[panel.index>=pd.Timestamp(start)]
+    if len(sessions)==0:
+        return pd.DataFrame(columns=["date","Delta-12"])
+    weights: dict[str,float]={}; nav=100.; rows=[]
+    previous_date=None; current_month=None
+    for session in sessions:
+        if previous_date is None:
+            rows.append({"date":session,"Delta-12":nav}); previous_date=session; current_month=session.to_period("M"); continue
+        day_return=0.
+        for ticker,weight in weights.items():
+            if ticker in panel and pd.notna(panel.at[previous_date,ticker]) and pd.notna(panel.at[session,ticker]) and panel.at[previous_date,ticker]>0:
+                day_return+=weight*(panel.at[session,ticker]/panel.at[previous_date,ticker]-1)
+        nav*=1+day_return
+        month=session.to_period("M")
+        if month!=current_month:
+            review_dates=panel.index[panel.index<session]
+            if len(review_dates):
+                portfolio,_=delta12(prices,universe,pd.Timestamp(review_dates[-1]))
+                new_weights=dict(zip(portfolio.ticker,portfolio.target_weight))
+                risky=sum(abs(new_weights.get(t,0)-weights.get(t,0)) for t in set(weights)|set(new_weights))
+                cash=abs((1-sum(new_weights.values()))-(1-sum(weights.values())))
+                nav*=1-.5*(risky+cash)*cost_rate
+                weights=new_weights
+            current_month=month
+        rows.append({"date":session,"Delta-12":nav})
+        previous_date=session
+    return pd.DataFrame(rows)
+
+
 def movements(previous: list[dict[str, Any]], current: pd.DataFrame) -> pd.DataFrame:
     old={x["ticker"]:float(x["target_weight"]) for x in previous}; new=dict(zip(current.ticker,current.target_weight)); rows=[]
     for ticker in sorted(set(old)|set(new)):
