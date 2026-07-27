@@ -81,7 +81,7 @@ def _historical_block() -> str:
     metrics = {name: _metrics(values[name], data["date"]) for name in names}
 
     chart_end = data["date"].max()
-    chart_start = chart_end - pd.DateOffset(years=1)
+    chart_start = chart_end - pd.DateOffset(years=5)
     annual = data.loc[data["date"] >= chart_start, ["date", *names]].copy()
     annual_values = annual[names].apply(pd.to_numeric, errors="coerce")
     normalized = annual_values.copy()
@@ -111,7 +111,7 @@ def _historical_block() -> str:
                 va="center",
             )
     axis.axhline(100, color="#98a2b3", linewidth=1, linestyle="--")
-    axis.set_title("Fluctuaciones del último año · índice base 100", loc="left", weight="bold")
+    axis.set_title("Fluctuaciones de los últimos 5 años o historial disponible · índice base 100", loc="left", weight="bold")
     axis.set_ylabel("Índice acumulado")
     axis.grid(True, color="#e4e7ec", linewidth=.7)
     axis.spines[["top", "right"]].set_visible(False)
@@ -126,7 +126,7 @@ def _historical_block() -> str:
     delta_adv = metrics["Delta-12"]["return"] - metrics["IPSA TR"]["return"]
     legends = "".join(f'<span><i style="background:{COLORS[n]}"></i>{n}</span>' for n in names)
     return f'''<div class="callouts"><strong>Sigma-6: {pct(sigma_adv)} más que IPSA</strong><strong>Delta-12: {pct(delta_adv)} más que IPSA</strong></div>
-    <div class="legend">{legends}</div><div class="chart"><img src="cid:historical_performance" alt="Fluctuaciones de Sigma-6, Delta-12 e IPSA TR durante el último año" style="display:block;width:100%;max-width:900px;height:auto"></div>
+    <div class="legend">{legends}</div><div class="chart"><img src="cid:historical_performance" alt="Fluctuaciones de Sigma-6, Delta-12 e IPSA TR durante los últimos 5 años o historial disponible" style="display:block;width:100%;max-width:900px;height:auto"></div>
     <table><thead><tr><th>Métrica</th>{''.join('<th>'+n+'</th>' for n in names)}</tr></thead><tbody>{''.join(metric_rows)}</tbody></table>
     <p class="muted">Periodo: {data.date.min():%d-%m-%Y} al {data.date.max():%d-%m-%Y}. Costo aplicado sobre rotación: 0,1785%.</p>'''
 
