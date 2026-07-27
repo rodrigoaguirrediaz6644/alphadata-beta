@@ -118,7 +118,7 @@ def _historical_block() -> str:
 def _table(df: pd.DataFrame, columns: list[str]) -> str:
     if df.empty:
         return '<p class="empty">Sin posiciones o movimientos.</p>'
-    labels = {"ticker": "Acción", "target_weight": "Peso objetivo", "action": "Movimiento", "change": "Cambio"}
+    labels = {"ticker": "Acción", "target_weight": "Peso objetivo", "opened_at": "Abierta desde", "action": "Movimiento", "change": "Cambio"}
     rows = []
     for record in df[columns].to_dict("records"):
         cells = []
@@ -170,7 +170,7 @@ def build_public_report(
     <section><h2>Resultados históricos comparados</h2>{_historical_block()}</section>
     {f'<section><h2>Seguimiento oficial</h2><div class="legend">{legends}</div>{_line_chart(history)}<br>{_line_chart(history, True)}</section>' if len(history) >= 2 else ''}
     <section><h2>Métricas del paper trading</h2><table><thead><tr><th>Métrica</th><th>Sigma-6</th><th>Delta-12</th><th>IPSA TR</th></tr></thead><tbody>{''.join(metric_rows)}</tbody></table></section>
-    <section><div class="two"><div><h2>Sigma-6 · cartera</h2>{_table(sigma,['ticker','target_weight'])}<p><strong>Caja:</strong> {pct(sigma_cash)}</p><h3>Movimientos</h3>{_table(sigma_moves,['ticker','action','target_weight','change'])}</div><div><h2>Delta-12 · cartera</h2>{_table(delta,['ticker','target_weight'])}<p><strong>Caja:</strong> {pct(delta_cash)}</p><h3>Movimientos</h3>{_table(delta_moves,['ticker','action','target_weight','change'])}</div></div></section>
+    <section><div class="two"><div><h2>Sigma-6 · cartera</h2>{_table(sigma,['ticker','target_weight','opened_at'])}<p><strong>Caja:</strong> {pct(sigma_cash)}</p><h3>Movimientos</h3>{_table(sigma_moves,['ticker','action','target_weight','change'])}</div><div><h2>Delta-12 · cartera</h2>{_table(delta,['ticker','target_weight','opened_at'])}<p><strong>Caja:</strong> {pct(delta_cash)}</p><h3>Movimientos</h3>{_table(delta_moves,['ticker','action','target_weight','change'])}</div></div></section>
     <section><h2>Control del informe</h2><p>Datos actualizados al {as_of:%d-%m-%Y} · Estado: {status} · Filas rechazadas: {len(errors)} · Cobertura suficiente: {int((coverage.status=='OK').sum())}/{len(coverage)}</p><div class="note"><strong>Información reservada:</strong> este informe comunica resultados, cartera y movimientos. No publica fórmulas, indicadores, parámetros ni reglas de decisión.</div></section>
     <footer class="foot"><strong>Nota:</strong> los resultados históricos fueron calculados mediante la aplicación retrospectiva del modelo y pueden diferir de una ejecución efectiva. No garantizan resultados futuros.</footer></main></body></html>'''
 
