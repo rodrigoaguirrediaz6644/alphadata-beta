@@ -1,61 +1,73 @@
 {
   "methodology_version": "2.0.0",
   "sigma_entries": {
-    "LTM": "2026-07-16",
-    "CENCOMALLS": "2026-07-16",
-    "PARAUCO": "2026-07-16",
-    "BCI": "2026-07-16"
+    "LTM": "2026-06-29",
+    "CENCOMALLS": "2026-06-29",
+    "BCI": "2026-06-29",
+    "PARAUCO": "2026-06-29"
   },
   "sigma_portfolio": [
     {
       "ticker": "BCI",
-      "target_weight": 0.1
+      "target_weight": 0.1,
+      "opened_at": "2026-06-29"
     },
     {
       "ticker": "CENCOMALLS",
-      "target_weight": 0.1
+      "target_weight": 0.1,
+      "opened_at": "2026-06-29"
     },
     {
       "ticker": "LTM",
-      "target_weight": 0.1
+      "target_weight": 0.1,
+      "opened_at": "2026-06-29"
     },
     {
       "ticker": "PARAUCO",
-      "target_weight": 0.1
+      "target_weight": 0.1,
+      "opened_at": "2026-06-29"
     }
   ],
   "delta_portfolio": [
     {
       "ticker": "SQM-B",
-      "target_weight": 0.125
+      "target_weight": 0.125,
+      "opened_at": "2026-02-02"
     },
     {
       "ticker": "ILC",
-      "target_weight": 0.125
+      "target_weight": 0.125,
+      "opened_at": "2025-12-01"
     },
     {
       "ticker": "PARAUCO",
-      "target_weight": 0.125
+      "target_weight": 0.125,
+      "opened_at": "2025-10-01"
     },
     {
       "ticker": "MALLPLAZA",
-      "target_weight": 0.125
+      "target_weight": 0.125,
+      "opened_at": "2024-10-01"
     },
     {
       "ticker": "BCI",
-      "target_weight": 0.125
+      "target_weight": 0.125,
+      "opened_at": "2025-11-03"
     },
     {
       "ticker": "ITAUCL",
-      "target_weight": 0.125
+      "target_weight": 0.125,
+      "opened_at": "2025-12-01"
     },
     {
       "ticker": "ECL",
-      "target_weight": 0.125
+      "target_weight": 0.125,
+      "opened_at": "2026-04-01"
     },
     {
       "ticker": "LTM",
-      "target_weight": 0.125
+      "target_weight": 0.125,
+      "opened_at": "2026-07-01"
     }
   ],
   "nav": {
@@ -66,8 +78,19 @@
   "delta_last_period": "2026-06",
   "valuation_date": "2026-07-24",
   "ingestion": {
-    "uploaded_files": 0,
-    "history_rows": 1107
+    "uploaded_files": 1,
+    "history_rows": 1108
   },
-  "last_run_utc": "2026-07-24T14:22:04.057249+00:00"
+  "last_run_utc": "2026-07-27T11:27:21.105513+00:00",
+  "delta_entries": {
+    "MALLPLAZA": "2024-10-01",
+    "PARAUCO": "2025-10-01",
+    "BCI": "2025-11-03",
+    "ITAUCL": "2025-12-01",
+    "ILC": "2025-12-01",
+    "SQM-B": "2026-02-02",
+    "ECL": "2026-04-01",
+    "LTM": "2026-07-01"
+  },
+  "entry_dates_version": 2
 }

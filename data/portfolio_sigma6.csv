@@ -1,5 +1,5 @@
-ticker,target_weight
-BCI,0.1
-CENCOMALLS,0.1
-LTM,0.1
-PARAUCO,0.1
+ticker,target_weight,opened_at
+BCI,0.1,2026-06-29
+CENCOMALLS,0.1,2026-06-29
+LTM,0.1,2026-06-29
+PARAUCO,0.1,2026-06-29
