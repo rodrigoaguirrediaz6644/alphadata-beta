@@ -16,5 +16,7 @@ def test_public_report_hides_strategy_methodology():
     history = pd.DataFrame([{"date": "2026-07-16", "Sigma-6": 100, "Delta-12": 100, "IPSA TR": 100}])
     _, html = build_public_report(pd.Timestamp("2026-07-16"), portfolio, portfolio, moves, moves, coverage, pd.DataFrame(), history)
     assert "Información reservada" in html
+    assert "Abierta desde" in html
+    assert "—" in html
     assert "momentum_12_1" not in html
     assert "SMA200" not in html
