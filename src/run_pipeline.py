@@ -33,6 +33,46 @@ def portfolio_return(prices:pd.DataFrame,weights:list[dict],start:pd.Timestamp,e
         if t in matrix and pd.notna(a.iloc[0][t]) and pd.notna(z.iloc[0][t]) and a.iloc[0][t]>0: total+=w*(z.iloc[0][t]/a.iloc[0][t]-1)
     return total
 
+def enrich_open_positions(portfolio: pd.DataFrame, prices: pd.DataFrame, as_of: pd.Timestamp, buy_cost: float = .001785) -> pd.DataFrame:
+    """Add entry/current prices and unrealized return for every open position."""
+    result = portfolio.copy()
+    for column in ["entry_price", "current_price", "open_return"]:
+        result[column] = pd.NA
+    for index, row in result.iterrows():
+        opened_at = pd.to_datetime(row.get("opened_at"), errors="coerce")
+        series = prices.loc[
+            (prices.alphadata_ticker == row["ticker"]) & (prices.date <= as_of),
+            ["date", "adjusted_close"],
+        ].dropna().sort_values("date")
+        if pd.isna(opened_at) or series.empty:
+            continue
+        entry = series.loc[series.date >= opened_at].head(1)
+        if entry.empty:
+            entry = series.loc[series.date <= opened_at].tail(1)
+        current = series.tail(1)
+        if entry.empty or current.empty or float(entry.adjusted_close.iloc[0]) <= 0:
+            continue
+        entry_price = float(entry.adjusted_close.iloc[0])
+        current_price = float(current.adjusted_close.iloc[0])
+        result.at[index, "opened_at"] = entry.date.iloc[0].date().isoformat()
+        result.at[index, "entry_price"] = entry_price
+        result.at[index, "current_price"] = current_price
+        result.at[index, "open_return"] = current_price / (entry_price * (1 + buy_cost)) - 1
+    return result
+
+
+def movements_for_report(current: pd.DataFrame, previous_path: Path) -> pd.DataFrame:
+    """Keep the latest meaningful rebalance visible between routine daily runs."""
+    meaningful = current.loc[current.action != "MANTIENE"] if len(current) else current
+    if len(meaningful):
+        return current
+    if previous_path.exists():
+        previous = pd.read_csv(previous_path)
+        if len(previous) and (previous.action != "MANTIENE").any():
+            return previous
+    return current
+
+
 def benchmark_return(prices,start,end)->float:
     ipsa=prices[prices.alphadata_ticker=='IPSA_TR'].sort_values('date')
     if len(ipsa):
@@ -165,7 +205,10 @@ def main()->None:
         state['delta_rule_version']='2.1.0'
     if 'opened_at' not in delta.columns:
         delta['opened_at'] = delta.ticker.map(state.get('delta_entries', {}))
-    smove=movements(old_sigma,sigma);dmove=movements(old_delta,delta)
+    sigma=enrich_open_positions(sigma,prices,as_of)
+    delta=enrich_open_positions(delta,prices,as_of)
+    smove=movements_for_report(movements(old_sigma,sigma),DATA/'movements_sigma6.csv')
+    dmove=movements_for_report(movements(old_delta,delta),DATA/'movements_delta12.csv')
     last_date=pd.Timestamp(state.get('valuation_date',as_of.date().isoformat())); nav=state.get('nav',{'Sigma-6':100.,'Delta-12':100.,'IPSA TR':100.})
     if 'IPSA' in nav and 'IPSA TR' not in nav: nav['IPSA TR']=nav.pop('IPSA')
     sigma_r=portfolio_return(prices,old_sigma,last_date,as_of)-turnover_cost(old_sigma,sigma,.001785)

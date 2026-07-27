@@ -118,7 +118,7 @@ def _historical_block() -> str:
 def _table(df: pd.DataFrame, columns: list[str]) -> str:
     if df.empty:
         return '<p class="empty">Sin posiciones o movimientos.</p>'
-    labels = {"ticker": "Acción", "target_weight": "Peso objetivo", "opened_at": "Abierta desde", "action": "Movimiento", "change": "Cambio"}
+    labels = {"ticker": "Acción", "target_weight": "Peso", "opened_at": "Ingreso", "entry_price": "Precio ingreso", "current_price": "Precio actual", "open_return": "Rentabilidad actual", "action": "Movimiento", "previous_weight": "Peso anterior", "change": "Cambio"}
     rows = []
     display = df.reindex(columns=columns, fill_value="—")
     display = display.fillna("—")
@@ -126,8 +126,13 @@ def _table(df: pd.DataFrame, columns: list[str]) -> str:
         cells = []
         for column in columns:
             value = record[column]
-            if column in {"target_weight", "change"}:
-                value = pct(float(value))
+            if value != "—" and column in {"target_weight", "previous_weight", "change", "open_return"}:
+                value = pct(float(value), 2)
+            elif value != "—" and column in {"entry_price", "current_price"}:
+                value = f"$ {float(value):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+            elif value != "—" and column == "opened_at":
+                parsed = pd.to_datetime(value, errors="coerce")
+                value = parsed.strftime("%d-%m-%Y") if pd.notna(parsed) else value
             cells.append(f"<td>{escape(str(value))}</td>")
         rows.append("<tr>" + "".join(cells) + "</tr>")
     heads = "".join(f"<th>{labels.get(c, c.replace('_', ' ').title())}</th>" for c in columns)
@@ -172,7 +177,8 @@ def build_public_report(
     <section><h2>Resultados históricos comparados</h2>{_historical_block()}</section>
     {f'<section><h2>Seguimiento oficial</h2><div class="legend">{legends}</div>{_line_chart(history)}<br>{_line_chart(history, True)}</section>' if len(history) >= 2 else ''}
     <section><h2>Métricas del paper trading</h2><table><thead><tr><th>Métrica</th><th>Sigma-6</th><th>Delta-12</th><th>IPSA TR</th></tr></thead><tbody>{''.join(metric_rows)}</tbody></table></section>
-    <section><div class="two"><div><h2>Sigma-6 · cartera</h2>{_table(sigma,['ticker','target_weight','opened_at'])}<p><strong>Caja:</strong> {pct(sigma_cash)}</p><h3>Movimientos</h3>{_table(sigma_moves,['ticker','action','target_weight','change'])}</div><div><h2>Delta-12 · cartera</h2>{_table(delta,['ticker','target_weight','opened_at'])}<p><strong>Caja:</strong> {pct(delta_cash)}</p><h3>Movimientos</h3>{_table(delta_moves,['ticker','action','target_weight','change'])}</div></div></section>
+    <section><h2>Posiciones abiertas · Sigma-6</h2>{_table(sigma,['ticker','target_weight','opened_at','entry_price','current_price','open_return'])}<p><strong>Caja:</strong> {pct(sigma_cash)}</p><h3>Cambios de Sigma-6</h3>{_table(sigma_moves,['ticker','action','previous_weight','target_weight','change'])}</section>
+    <section><h2>Posiciones abiertas · Delta-12</h2>{_table(delta,['ticker','target_weight','opened_at','entry_price','current_price','open_return'])}<p><strong>Caja:</strong> {pct(delta_cash)}</p><h3>Cambios de Delta-12</h3>{_table(delta_moves,['ticker','action','previous_weight','target_weight','change'])}</section>
     <section><h2>Control del informe</h2><p>Datos actualizados al {as_of:%d-%m-%Y} · Estado: {status} · Filas rechazadas: {len(errors)} · Cobertura suficiente: {int((coverage.status=='OK').sum())}/{len(coverage)}</p><div class="note"><strong>Información reservada:</strong> este informe comunica resultados, cartera y movimientos. No publica fórmulas, indicadores, parámetros ni reglas de decisión.</div></section>
     <footer class="foot"><strong>Nota:</strong> los resultados históricos fueron calculados mediante la aplicación retrospectiva del modelo y pueden diferir de una ejecución efectiva. No garantizan resultados futuros.</footer></main></body></html>'''
 

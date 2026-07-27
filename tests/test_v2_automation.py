@@ -4,6 +4,7 @@ from pathlib import Path
 import pandas as pd
 
 from src.ingest_recommendations import ingest
+from src.run_pipeline import enrich_open_positions, movements_for_report
 from src.strategy_engine import movements, normalize_broker, normalize_signal
 from src.strategy_registry import load_registry
 
@@ -30,3 +31,25 @@ def test_position_metadata_does_not_change_movement_logic():
     current = pd.DataFrame([{"ticker": "BCI", "target_weight": .1, "opened_at": "2026-07-06"}])
     result = movements(previous, current)
     assert result.iloc[0].action == "MANTIENE"
+
+
+def test_open_position_return_uses_entry_date_and_buy_cost():
+    prices = pd.DataFrame({
+        "date": pd.to_datetime(["2026-07-01", "2026-07-24"]),
+        "alphadata_ticker": ["BCI", "BCI"],
+        "adjusted_close": [100.0, 110.0],
+    })
+    portfolio = pd.DataFrame([{"ticker": "BCI", "target_weight": .1, "opened_at": "2026-07-01"}])
+    result = enrich_open_positions(portfolio, prices, pd.Timestamp("2026-07-24"))
+    assert result.iloc[0].entry_price == 100.0
+    assert result.iloc[0].current_price == 110.0
+    assert abs(result.iloc[0].open_return - (110 / 100.1785 - 1)) < 1e-10
+
+
+def test_latest_meaningful_movements_are_kept(tmp_path):
+    prior = pd.DataFrame([{"ticker": "LTM", "action": "SALE", "previous_weight": .125, "target_weight": 0.0, "change": -.125}])
+    path = tmp_path / "movements.csv"
+    prior.to_csv(path, index=False)
+    routine = pd.DataFrame([{"ticker": "BCI", "action": "MANTIENE", "previous_weight": .125, "target_weight": .125, "change": 0.0}])
+    result = movements_for_report(routine, path)
+    assert result.iloc[0].action == "SALE"
