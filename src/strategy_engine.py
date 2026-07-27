@@ -117,3 +117,50 @@ def movements(previous: list[dict[str, Any]], current: pd.DataFrame) -> pd.DataF
         before=old.get(ticker,0.); after=new.get(ticker,0.); action="ENTRA" if before==0 and after>0 else "SALE" if before>0 and after==0 else "AUMENTA" if after>before+1e-9 else "REDUCE" if after<before-1e-9 else "MANTIENE"
         rows.append({"ticker":ticker,"action":action,"previous_weight":before,"target_weight":after,"change":after-before})
     return pd.DataFrame(rows)
+
+
+def reconstruct_entry_dates(valid: pd.DataFrame, prices: pd.DataFrame, universe: pd.DataFrame, as_of: pd.Timestamp) -> tuple[dict[str, str], dict[str, str]]:
+    """Rebuild the last uninterrupted entry date for every position still active.
+
+    Entry dates come from each strategy's historical decision calendar, never
+    from the date when prospective tracking happened to start.
+    """
+    sessions = pd.DatetimeIndex(sorted(prices.loc[(prices.alphadata_ticker != "IPSA_TR") & (prices.date <= as_of), "date"].dropna().unique()))
+    if sessions.empty:
+        return {}, {}
+
+    def next_session(after: pd.Timestamp) -> pd.Timestamp:
+        future = sessions[sessions > pd.Timestamp(after).normalize()]
+        return future[0] if len(future) else pd.Timestamp(after).normalize()
+
+    # Sigma-6: last session of every week, executed on the next market session.
+    weekly = pd.Series(sessions, index=sessions).groupby(sessions.to_period("W-FRI")).max().tolist()
+    sigma_state: dict[str, Any] = {"sigma_entries": {}}
+    previous: set[str] = set()
+    for review in weekly:
+        if review < pd.Timestamp("2021-07-09"):
+            continue
+        portfolio, _, sigma_state = sigma6(valid, prices, pd.Timestamp(review), sigma_state)
+        current = set(portfolio.ticker)
+        execution = next_session(pd.Timestamp(review)).date().isoformat()
+        for ticker in current - previous:
+            sigma_state["sigma_entries"][ticker] = execution
+        previous = current
+
+    # Delta-12: month-end decision, executed on the first following session.
+    delta_entries: dict[str, str] = {}
+    previous = set()
+    eligible_sessions = sessions[sessions.to_period("M") < as_of.to_period("M")]
+    monthly = pd.Series(eligible_sessions, index=eligible_sessions).groupby(eligible_sessions.to_period("M")).max().tolist()
+    for review in monthly:
+        if review < pd.Timestamp("2021-07-01"):
+            continue
+        portfolio, _ = delta12(prices, universe, pd.Timestamp(review))
+        current = set(portfolio.ticker)
+        execution = next_session(pd.Timestamp(review)).date().isoformat()
+        for ticker in current - previous:
+            delta_entries[ticker] = execution
+        for ticker in previous - current:
+            delta_entries.pop(ticker, None)
+        previous = current
+    return sigma_state.get("sigma_entries", {}), delta_entries
