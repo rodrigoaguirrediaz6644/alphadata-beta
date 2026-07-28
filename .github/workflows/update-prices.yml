@@ -37,8 +37,8 @@ jobs:
       - name: Descargar y calcular estrategias bursátiles
         run: PYTHONPATH=. python alphadata.py run
 
-      - name: Descargar, calcular e incorporar Cuprum A/E
-        run: PYTHONPATH=. python -m src.cuprum_ae
+      - name: Descargar, calcular e incorporar Estrategia Horizonte
+        run: PYTHONPATH=. python -m src.horizonte
 
       - name: Enviar informe semanal
         env:
@@ -63,12 +63,12 @@ jobs:
             data/portfolio_delta12.csv
             data/movements_sigma6.csv
             data/movements_delta12.csv
-            data/cuprum_ae_state.json
-            data/cuprum_ae_quotes.csv
-            data/cuprum_ae_signals.csv
-            data/cuprum_ae_trades.csv
-            data/cuprum_ae_backtest_summary.csv
-            data/cuprum_ae_annual.csv
+            data/horizonte_state.json
+            data/horizonte_quotes.csv
+            data/horizonte_signals.csv
+            data/horizonte_trades.csv
+            data/horizonte_backtest_summary.csv
+            data/horizonte_annual.csv
             data/recommendations_errors.csv
             data/recommendations_history.csv
             data/coverage_report.csv
