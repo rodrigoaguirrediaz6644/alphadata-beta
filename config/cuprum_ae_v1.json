@@ -1,0 +1,22 @@
+{
+  "strategy_code": "CUPRUM_AE",
+  "commercial_name": "Cuprum A/E",
+  "version": "1.0.0",
+  "status": "official_paper_tracking",
+  "afp": "CUPRUM",
+  "frequency": "monthly",
+  "execution": "fourth_subsequent_cuprum_quote",
+  "fund_a_minimum_score": 2,
+  "signals": {
+    "relative_momentum": "Fondo A 12m > Fondo E 12m",
+    "absolute_momentum": "Fondo A 12m > 0",
+    "cuprum_a_trend": "Fondo A > media mensual 6m",
+    "nasdaq_trend": "NASDAQ Composite > media mensual 6m",
+    "vix_below_30": "VIX < 30"
+  },
+  "switch_limit": null,
+  "development_period": "2012-08-01/2016-12-31",
+  "validation_period": "2017-01-01/2020-12-31",
+  "out_of_sample_period": "2021-01-01/latest",
+  "fund_data_source": "AFP Cuprum only"
+}
