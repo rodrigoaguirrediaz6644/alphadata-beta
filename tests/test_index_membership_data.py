@@ -6,7 +6,8 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 MEMBERSHIP = ROOT / "config" / "index_membership_observations.csv"
 ALTERNATIVES = ROOT / "config" / "peru_alternative_sources.csv"
-PERU_UNIVERSE = ROOT / "config" / "universe_peru.csv"\nEVENTS = ROOT / "config" / "index_membership_events.csv"
+PERU_UNIVERSE = ROOT / "config" / "universe_peru.csv"
+EVENTS = ROOT / "config" / "index_membership_events.csv"
 
 
 def test_membership_observations_are_point_in_time_and_unique():
