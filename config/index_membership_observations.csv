@@ -1,0 +1,27 @@
+country,index_name,observation_date,local_ticker,membership_state,effective_from,effective_to,source_url,source_type,notes
+PERU,S&P/BVL Peru Select,2024-12-27,ALICORC1,OBSERVED,,,https://documents.bvl.com.pe/pubdif/boldia/20241227.pdf,official_daily_bulletin,Snapshot only
+PERU,S&P/BVL Peru Select,2024-12-27,BAP,OBSERVED,,,https://documents.bvl.com.pe/pubdif/boldia/20241227.pdf,official_daily_bulletin,Snapshot only
+PERU,S&P/BVL Peru Select,2024-12-27,BBVAC1,OBSERVED,,,https://documents.bvl.com.pe/pubdif/boldia/20241227.pdf,official_daily_bulletin,Snapshot only
+PERU,S&P/BVL Peru Select,2024-12-27,BVN,OBSERVED,,,https://documents.bvl.com.pe/pubdif/boldia/20241227.pdf,official_daily_bulletin,Snapshot only
+PERU,S&P/BVL Peru Select,2024-12-27,CPACASC1,OBSERVED,,,https://documents.bvl.com.pe/pubdif/boldia/20241227.pdf,official_daily_bulletin,Snapshot only
+PERU,S&P/BVL Peru Select,2024-12-27,CVERDEC1,OBSERVED,,,https://documents.bvl.com.pe/pubdif/boldia/20241227.pdf,official_daily_bulletin,Snapshot only
+PERU,S&P/BVL Peru Select,2024-12-27,FERREYC1,OBSERVED,,,https://documents.bvl.com.pe/pubdif/boldia/20241227.pdf,official_daily_bulletin,Snapshot only
+PERU,S&P/BVL Peru Select,2024-12-27,IFS,OBSERVED,,,https://documents.bvl.com.pe/pubdif/boldia/20241227.pdf,official_daily_bulletin,Snapshot only
+PERU,S&P/BVL Peru Select,2024-12-27,INRETC1,OBSERVED,,,https://documents.bvl.com.pe/pubdif/boldia/20241227.pdf,official_daily_bulletin,Snapshot only
+PERU,S&P/BVL Peru Select,2024-12-27,IPCHBC1,OBSERVED,,,https://documents.bvl.com.pe/pubdif/boldia/20241227.pdf,official_daily_bulletin,Snapshot only; missing from research universe
+PERU,S&P/BVL Peru Select,2024-12-27,MINSURI1,OBSERVED,,,https://documents.bvl.com.pe/pubdif/boldia/20241227.pdf,official_daily_bulletin,Snapshot only
+PERU,S&P/BVL Peru Select,2024-12-27,SCCO,OBSERVED,,,https://documents.bvl.com.pe/pubdif/boldia/20241227.pdf,official_daily_bulletin,Snapshot only
+PERU,S&P/BVL Peru Select,2024-12-27,VOLCABC1,OBSERVED,,,https://documents.bvl.com.pe/pubdif/boldia/20241227.pdf,official_daily_bulletin,Snapshot only
+PERU,S&P/BVL Peru Select,2025-01-24,ALICORC1,OBSERVED,,,https://documents.bvl.com.pe/pubdif/boldia/20250124.pdf,official_daily_bulletin,Snapshot only
+PERU,S&P/BVL Peru Select,2025-01-24,BAP,OBSERVED,,,https://documents.bvl.com.pe/pubdif/boldia/20250124.pdf,official_daily_bulletin,Snapshot only
+PERU,S&P/BVL Peru Select,2025-01-24,BBVAC1,OBSERVED,,,https://documents.bvl.com.pe/pubdif/boldia/20250124.pdf,official_daily_bulletin,Snapshot only
+PERU,S&P/BVL Peru Select,2025-01-24,BVN,OBSERVED,,,https://documents.bvl.com.pe/pubdif/boldia/20250124.pdf,official_daily_bulletin,Snapshot only
+PERU,S&P/BVL Peru Select,2025-01-24,CPACASC1,OBSERVED,,,https://documents.bvl.com.pe/pubdif/boldia/20250124.pdf,official_daily_bulletin,Snapshot only
+PERU,S&P/BVL Peru Select,2025-01-24,CVERDEC1,OBSERVED,,,https://documents.bvl.com.pe/pubdif/boldia/20250124.pdf,official_daily_bulletin,Snapshot only
+PERU,S&P/BVL Peru Select,2025-01-24,FERREYC1,OBSERVED,,,https://documents.bvl.com.pe/pubdif/boldia/20250124.pdf,official_daily_bulletin,Snapshot only
+PERU,S&P/BVL Peru Select,2025-01-24,IFS,OBSERVED,,,https://documents.bvl.com.pe/pubdif/boldia/20250124.pdf,official_daily_bulletin,Snapshot only
+PERU,S&P/BVL Peru Select,2025-01-24,INRETC1,OBSERVED,,,https://documents.bvl.com.pe/pubdif/boldia/20250124.pdf,official_daily_bulletin,Snapshot only
+PERU,S&P/BVL Peru Select,2025-01-24,IPCHBC1,OBSERVED,,,https://documents.bvl.com.pe/pubdif/boldia/20250124.pdf,official_daily_bulletin,Snapshot only; missing from research universe
+PERU,S&P/BVL Peru Select,2025-01-24,MINSURI1,OBSERVED,,,https://documents.bvl.com.pe/pubdif/boldia/20250124.pdf,official_daily_bulletin,Snapshot only
+PERU,S&P/BVL Peru Select,2025-01-24,SCCO,OBSERVED,,,https://documents.bvl.com.pe/pubdif/boldia/20250124.pdf,official_daily_bulletin,Snapshot only
+PERU,S&P/BVL Peru Select,2025-01-24,VOLCABC1,OBSERVED,,,https://documents.bvl.com.pe/pubdif/boldia/20250124.pdf,official_daily_bulletin,Snapshot only
