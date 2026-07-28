@@ -1,0 +1,35 @@
+name: Evaluar universo Perú y Colombia
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "config/universe_peru.csv"
+      - "config/universe_colombia.csv"
+      - "src/evaluate_regional_universe.py"
+      - "tests/test_regional_universe.py"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: PYTHONPATH=. pytest -q tests/test_regional_universe.py
+      - name: Medir cobertura y liquidez
+        if: github.event_name == 'workflow_dispatch'
+        run: PYTHONPATH=. python src/evaluate_regional_universe.py --output-dir regional-results
+      - name: Guardar inventario medido
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: inventario-peru-colombia
+          path: regional-results/*.csv
+          retention-days: 30
