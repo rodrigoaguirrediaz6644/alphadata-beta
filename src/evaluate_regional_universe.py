@@ -112,13 +112,29 @@ def evaluate_country(
         rows.append({**item, **metrics, "market_coverage": market_coverage})
 
     result = pd.DataFrame(rows)
-    selectable = ~result["eligibility_status"].eq("benchmark_operable")
-    liquid_values = result.loc[
-        selectable & result["download_status"].eq("OK") & result["median_value_traded_local"].gt(0),
-        "median_value_traded_local",
-    ]
-    liquidity_floor = float(liquid_values.quantile(thresholds.liquidity_quantile)) if len(liquid_values) else np.inf
-    result["liquidity_floor_country"] = liquidity_floor
+    is_benchmark = result["eligibility_status"].eq("benchmark_operable")
+    is_proxy = result.get("data_role", pd.Series("", index=result.index)).eq("proxy_senal_no_liquidez_local")
+    selectable = ~is_benchmark & ~is_proxy
+
+    # La liquidez sólo es comparable dentro de la misma plaza y moneda.
+    # Una serie NYSE/ADR nunca puede convertir una acción BVL en líquida.
+    scope = result.get("listing_scope", pd.Series("sin_clasificar", index=result.index)).fillna("sin_clasificar")
+    quote_currency = result.get("quote_currency", result["currency"]).fillna(result["currency"])
+    result["liquidity_group"] = scope.astype(str) + ":" + quote_currency.astype(str)
+    result["liquidity_floor_group"] = np.nan
+    for _, indexes in result.groupby("liquidity_group").groups.items():
+        group_selectable = selectable.loc[indexes]
+        group_values = result.loc[
+            indexes[
+                group_selectable
+                & result.loc[indexes, "download_status"].eq("OK")
+                & result.loc[indexes, "median_value_traded_local"].gt(0)
+            ],
+            "median_value_traded_local",
+        ]
+        floor = float(group_values.quantile(thresholds.liquidity_quantile)) if len(group_values) else np.inf
+        result.loc[indexes, "liquidity_floor_group"] = floor
+
     technical = (
         result["download_status"].eq("OK")
         & result["history_years"].ge(thresholds.min_history_years)
@@ -128,17 +144,19 @@ def evaluate_country(
     )
     liquid = (
         result["traded_day_ratio"].ge(thresholds.min_traded_day_ratio)
-        & result["median_value_traded_local"].ge(liquidity_floor)
+        & result["median_value_traded_local"].ge(result["liquidity_floor_group"])
     )
     result["technical_status"] = np.where(technical, "OK", "NO_CUMPLE")
     result["liquidity_status"] = np.where(liquid, "OK", "NO_CUMPLE")
     result["measured_eligibility"] = np.select(
         [
-            result["eligibility_status"].eq("benchmark_operable"),
+            is_benchmark,
+            is_proxy & technical,
+            is_proxy,
             technical & liquid & selectable,
             technical & selectable,
         ],
-        ["BENCHMARK", "ELEGIBLE", "CONDICIONADO_LIQUIDEZ"],
+        ["BENCHMARK", "PROXY_SENAL", "PROXY_SIN_DATOS", "ELEGIBLE", "CONDICIONADO_LIQUIDEZ"],
         default="NO_ELEGIBLE",
     )
     result["checked_at_utc"] = checked_at.isoformat()
