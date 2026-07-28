@@ -8,6 +8,7 @@ on:
       - "config/universe_colombia.csv"
       - "config/index_membership_observations.csv"
       - "config/index_membership_events.csv"
+      - "config/index_review_results.csv"
       - "config/peru_alternative_sources.csv"
       - "src/evaluate_regional_universe.py"
       - "tests/test_regional_universe.py"
