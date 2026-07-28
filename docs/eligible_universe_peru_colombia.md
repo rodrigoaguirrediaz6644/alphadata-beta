@@ -106,3 +106,27 @@ Resultado de los diez candidatos añadidos:
 | Colombia | Davivienda Group preferencial | No elegible | Historia posterior a reorganización insuficiente; conciliar con PFDAVVNDA |
 
 La elegibilidad técnica no equivale todavía a pertenencia histórica demostrada. Para backtests se aplicará máximo una clase por emisor y límites por grupo económico. En particular, se elegirá una sola clase de Cibest, Grupo Sura, Grupo Argos, Corficolombiana, Grupo Aval y Backus.
+
+
+## Reconstrucción histórica inicial de Colombia
+
+La página oficial de la BVC publica canastas históricas discriminadas por año. Cuando el archivo oficial no puede descargarse automáticamente, se conserva una observación parcial respaldada por una fuente de mercado que identifica expresamente la canasta BVC; no se completa la lista por inferencia.
+
+Se registraron snapshots parciales para 2022-12-01, 2023-12-01 y 2025-11-26. Todos mantienen vacíos `effective_from` y `effective_to`: prueban presencia en una fecha, no continuidad entre fechas.
+
+Los cambios explícitos se almacenan por separado en `config/index_membership_events.csv`:
+
+- Éxito: entrada efectiva en diciembre de 2023.
+- Éxito: nueva entrada informada en noviembre de 2025; esta segunda entrada demuestra que no puede asumirse continuidad desde 2023.
+- ETB y Canacol Energy: salida informada en noviembre de 2025.
+
+Los nemónicos históricos `BCOLOMBIA` y `PFBCOLOM` se preservan en los snapshots anteriores a la reorganización de Grupo Cibest. No se sustituyen retroactivamente por `CIBEST` o `PFCIBEST`, porque hacerlo mezclaría identidades de cotización y eventos corporativos.
+
+Fuentes de esta etapa:
+
+- BVC, página de canasta histórica MSCI COLCAP: https://www.bvc.com.co/indices/msci%20colcap
+- Rebalanceo de diciembre de 2022 basado en la canasta BVC: https://www.accivalores.com/otros-informes/6824-bvc-publica-canasta-proforma-del-indice-msci-colcap/
+- Canasta de diciembre de 2023: https://www.larepublica.co/finanzas/a-pesar-de-la-opa-grupo-exito-ingresa-a-la-canasta-proforma-del-indice-msci-colcap-3754047
+- Canasta pro forma de noviembre de 2025: https://www.accivalores.com/wp-content/uploads/Rebalanceo-COLCAP-Nov-2025-13.11.2025.pdf
+
+La reconstrucción completa por trimestre sigue pendiente de recuperar los archivos oficiales faltantes. Hasta entonces, estos snapshots pueden filtrar candidatos por presencia demostrada, pero no habilitan un backtest libre de sesgo por sí solos.
