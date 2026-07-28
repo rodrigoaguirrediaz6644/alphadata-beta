@@ -48,3 +48,15 @@ Los umbrales definitivos se fijarán después de medir la distribución real de 
 ## Limitación conocida
 
 Las listas completas actuales no se exponen de forma uniforme en páginas estáticas. Los registros marcados `candidato_por_verificar` son un universo de investigación, no una afirmación de pertenencia vigente. La siguiente tarea debe descargar o reconstruir la composición oficial por fecha y validar cada símbolo antes de habilitarlo.
+
+
+## Medición automática
+
+La rama incluye `src/evaluate_regional_universe.py`, que descarga cada símbolo de manera independiente y genera:
+
+- `data/regional_universe_coverage.csv`: métricas y decisión por instrumento;
+- `data/regional_universe_summary.csv`: conteo por país y estado medido.
+
+La decisión medida usa inicialmente tres años de historia, 95% de cobertura del calendario observado del país, 95% de precios ajustados válidos, dato no más antiguo que diez días, negociación en 80% de las ruedas y liquidez por encima del percentil 40 del país. Estos umbrales son criterios de investigación y deberán revisarse después de observar la distribución real; no activan estrategias ni tickers productivos.
+
+El flujo manual `Evaluar universo Perú y Colombia` ejecuta las pruebas, mide los símbolos y publica ambos CSV como artefactos durante 30 días. En pull requests sólo ejecuta las pruebas unitarias para que una falla temporal del proveedor no bloquee cambios de código.
