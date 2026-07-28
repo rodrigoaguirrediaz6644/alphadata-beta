@@ -53,7 +53,6 @@ Los umbrales definitivos se fijarán después de medir la distribución real de 
 
 Las listas completas actuales no se exponen de forma uniforme en páginas estáticas. Los registros marcados `candidato_por_verificar` son un universo de investigación, no una afirmación de pertenencia vigente. La siguiente tarea debe descargar o reconstruir la composición oficial por fecha y validar cada símbolo antes de habilitarlo.
 
-
 ## Medición automática
 
 La rama incluye `src/evaluate_regional_universe.py`, que descarga cada símbolo de manera independiente y genera:
@@ -64,7 +63,6 @@ La rama incluye `src/evaluate_regional_universe.py`, que descarga cada símbolo 
 La decisión medida usa inicialmente tres años de historia, 95% de cobertura del calendario observado del país, 95% de precios ajustados válidos, dato no más antiguo que diez días, negociación en 80% de las ruedas y liquidez por encima del percentil 40 del país. Estos umbrales son criterios de investigación y deberán revisarse después de observar la distribución real; no activan estrategias ni tickers productivos.
 
 El flujo manual `Evaluar universo Perú y Colombia` ejecuta las pruebas, mide los símbolos y publica ambos CSV como artefactos durante 30 días. En pull requests sólo ejecuta las pruebas unitarias para que una falla temporal del proveedor no bloquee cambios de código.
-
 
 ## Depuración de símbolos y plazas
 
@@ -87,3 +85,24 @@ Los boletines históricos S&P/BVL pueden utilizarse como puente para reconstruir
 ## Pendiente de datos
 
 Yahoo no es una fuente suficiente para conciliar dividendos locales ni membresía histórica. Los eventos corporativos deben contrastarse con las bolsas o emisores antes de calcular retorno total. Hasta entonces, `dividend_events = 0` significa “no observado por el proveedor”, no “la empresa no pagó dividendos”.
+
+## Resultado medido del universo ampliado
+
+La corrida 30397222230 evaluó los 50 registros el 28 de julio de 2026. Resultado bruto: Perú 9 elegibles, 5 condicionados por liquidez, 5 no elegibles y 4 proxies de señal; Colombia 13 elegibles, 10 condicionados, 3 no elegibles y 1 benchmark.
+
+Resultado de los diez candidatos añadidos:
+
+| País | Instrumento | Resultado | Decisión de investigación |
+|---|---|---|---|
+| Perú | Backus B | Sin datos | Reserva; buscar símbolo o fuente alternativa |
+| Perú | Backus inversión | Condicionado por liquidez | Mantener como reserva; elegir una sola clase Backus |
+| Perú | Minera Poderosa | Sin datos | No excluir financieramente; buscar fuente alternativa |
+| Perú | Orygen | Sin datos | Reconstruir continuidad con Enel Generación Perú |
+| Perú | Aenza | Sin datos | Reserva; buscar fuente alternativa |
+| Colombia | Éxito | Elegible técnico | Candidato inmediato, sujeto a membresía histórica |
+| Colombia | PEI | No elegible | Historia disponible menor a tres años y vehículo no ordinario |
+| Colombia | Grupo Bolívar | Condicionado por liquidez | Reserva |
+| Colombia | Grupo Aval ordinaria | Condicionado por liquidez | Reserva; preferir una sola exposición del grupo |
+| Colombia | Davivienda Group preferencial | No elegible | Historia posterior a reorganización insuficiente; conciliar con PFDAVVNDA |
+
+La elegibilidad técnica no equivale todavía a pertenencia histórica demostrada. Para backtests se aplicará máximo una clase por emisor y límites por grupo económico. En particular, se elegirá una sola clase de Cibest, Grupo Sura, Grupo Argos, Corficolombiana, Grupo Aval y Backus.
