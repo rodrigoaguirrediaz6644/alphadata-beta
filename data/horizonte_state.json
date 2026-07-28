@@ -1,0 +1,9 @@
+{
+  "as_of": "2026-07-23",
+  "signal_date": "2026-06-30",
+  "recommendation": "A",
+  "score": 5,
+  "current_fund": "A",
+  "next_execution_date": null,
+  "source": "Superintendencia de Pensiones, distribución CSV de collabmarket/data_afp"
+}

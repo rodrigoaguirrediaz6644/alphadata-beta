@@ -1,11 +1,11 @@
 {
   "methodology_version": "2.1.0",
   "sigma_entries": {
-    "BCI": "2026-06-29",
-    "PARAUCO": "2026-06-29",
     "VAPORES": "2026-07-27",
+    "CENCOMALLS": "2026-06-29",
+    "BCI": "2026-06-29",
     "LTM": "2026-06-29",
-    "CENCOMALLS": "2026-06-29"
+    "PARAUCO": "2026-06-29"
   },
   "sigma_portfolio": [
     {
@@ -13,40 +13,40 @@
       "target_weight": 0.1,
       "opened_at": "2026-06-30",
       "entry_price": 60569.0,
-      "current_price": 65499.0,
-      "open_return": 0.07946792266167946
+      "current_price": 64200.0,
+      "open_return": 0.058059522051937096
     },
     {
       "ticker": "CENCOMALLS",
       "target_weight": 0.1,
       "opened_at": "2026-06-30",
       "entry_price": 2362.0,
-      "current_price": 2311.0,
-      "open_return": -0.023335217931504393
+      "current_price": 2300.0,
+      "open_return": -0.027983990152514182
     },
     {
       "ticker": "LTM",
       "target_weight": 0.1,
       "opened_at": "2026-06-30",
       "entry_price": 26.86000061035156,
-      "current_price": 24.43000030517578,
-      "open_return": -0.09208972817317862
+      "current_price": 24.600000381469727,
+      "open_return": -0.08577188889562792
     },
     {
       "ticker": "PARAUCO",
       "target_weight": 0.1,
       "opened_at": "2026-06-30",
       "entry_price": 3864.89990234375,
-      "current_price": 3889.699951171875,
-      "open_return": 0.004623484758497165
+      "current_price": 3895.0,
+      "open_return": 0.00599237017123877
     },
     {
       "ticker": "VAPORES",
       "target_weight": 0.1,
       "opened_at": "2026-07-27",
-      "entry_price": 48.93000030517578,
-      "current_price": 48.93000030517578,
-      "open_return": -0.001781819452277511
+      "entry_price": 48.5,
+      "current_price": 48.5,
+      "open_return": -0.001781819452277622
     }
   ],
   "delta_portfolio": [
@@ -55,64 +55,64 @@
       "target_weight": 0.125,
       "opened_at": "2026-02-02",
       "entry_price": 64955.2421875,
-      "current_price": 63711.0,
-      "open_return": -0.020903065570977764
+      "current_price": 64650.0,
+      "open_return": -0.0064727156874592184
     },
     {
       "ticker": "ILC",
       "target_weight": 0.125,
       "opened_at": "2026-07-01",
       "entry_price": 22000.0,
-      "current_price": 21450.0,
-      "open_return": -0.026737273965970587
+      "current_price": 21417.0,
+      "open_return": -0.028234601236792223
     },
     {
       "ticker": "PARAUCO",
       "target_weight": 0.125,
       "opened_at": "2026-04-01",
       "entry_price": 4037.793212890625,
-      "current_price": 3889.699951171875,
-      "open_return": -0.03839325011998096
+      "current_price": 3895.0,
+      "open_return": -0.03708297868727484
     },
     {
       "ticker": "MALLPLAZA",
       "target_weight": 0.125,
       "opened_at": "2026-01-02",
       "entry_price": 3166.654052734375,
-      "current_price": 3740.10009765625,
-      "open_return": 0.17898445879334224
+      "current_price": 3689.0,
+      "open_return": 0.16287627467888655
     },
     {
       "ticker": "BCI",
       "target_weight": 0.125,
       "opened_at": "2026-03-02",
       "entry_price": 55498.47265625,
-      "current_price": 65499.0,
-      "open_return": 0.1780917470047203
+      "current_price": 64200.0,
+      "open_return": 0.1547274028260439
     },
     {
       "ticker": "ITAUCL",
       "target_weight": 0.125,
       "opened_at": "2026-03-02",
       "entry_price": 18980.5625,
-      "current_price": 21525.0,
-      "open_return": 0.13203422376390184
+      "current_price": 21379.0,
+      "open_return": 0.12435584993488757
     },
     {
       "ticker": "ECL",
       "target_weight": 0.125,
       "opened_at": "2026-04-01",
       "entry_price": 1538.9454345703125,
-      "current_price": 1862.5,
-      "open_return": 0.20808790195295845
+      "current_price": 1865.0,
+      "open_return": 0.20970949645222414
     },
     {
       "ticker": "CHILE",
       "target_weight": 0.125,
       "opened_at": "2026-07-01",
       "entry_price": 179.50999450683594,
-      "current_price": 194.0,
-      "open_return": 0.07879412262409469
+      "current_price": 193.25999450683597,
+      "open_return": 0.07467910418731671
     }
   ],
   "nav": {
@@ -126,7 +126,7 @@
     "uploaded_files": 0,
     "history_rows": 1108
   },
-  "last_run_utc": "2026-07-27T15:25:39.089155+00:00",
+  "last_run_utc": "2026-07-28T01:15:28.956928+00:00",
   "delta_entries": {
     "SQM-B": "2026-02-02",
     "ILC": "2026-07-01",

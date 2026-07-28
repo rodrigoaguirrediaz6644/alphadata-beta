@@ -11,3 +11,13 @@
 El informe HTML contiene las comparaciones, gráficos, carteras y movimientos. La metodología y sus parámetros son información reservada.
 
 > Los resultados históricos fueron calculados mediante la aplicación retrospectiva del modelo y pueden diferir de una ejecución efectiva.
+
+
+<!-- HORIZONTE_START -->
+## Estrategia Horizonte
+
+- Fondo vigente: **Fondo A**.
+- Última señal: Fondo A (5/5), fecha 2026-06-30.
+- Datos Cuprum actualizados al 2026-07-23.
+- Backtest y tablas: `data/horizonte_backtest_summary.csv`, `data/horizonte_annual.csv`, `data/horizonte_trades.csv` y `data/horizonte_signals.csv`.
+<!-- HORIZONTE_END -->
