@@ -3,6 +3,7 @@ from __future__ import annotations
 from io import StringIO
 import json
 from pathlib import Path
+import time
 from urllib.request import Request, urlopen
 
 import numpy as np
@@ -13,16 +14,75 @@ DATA = ROOT / "data"
 REPORTS = ROOT / "reports"
 CUOTA_URL = "https://raw.githubusercontent.com/collabmarket/data_afp/master/data/VC-CUPRUM.csv"
 FRED_URL = "https://fred.stlouisfed.org/graph/fredgraph.csv?id=NASDAQCOM,VIXCLS"
+EXTERNAL_CACHE = DATA / "horizonte_external.csv"
 START = pd.Timestamp("2012-08-01")
 TEST_START = pd.Timestamp("2021-01-01")
 REPORT_START = "<!-- HORIZONTE_START -->"
 REPORT_END = "<!-- HORIZONTE_END -->"
 
 
-def _download(url: str) -> str:
-    request = Request(url, headers={"User-Agent": "AlphaData/2.0"})
-    with urlopen(request, timeout=60) as response:
-        return response.read().decode("utf-8")
+def _download(url: str, attempts: int = 3, timeout: int = 30) -> str:
+    last_error: Exception | None = None
+    for attempt in range(attempts):
+        try:
+            request = Request(url, headers={"User-Agent": "AlphaData/2.0"})
+            with urlopen(request, timeout=timeout) as response:
+                return response.read().decode("utf-8")
+        except Exception as error:
+            last_error = error
+            if attempt + 1 < attempts:
+                time.sleep(2 ** attempt)
+    raise RuntimeError(f"No fue posible descargar {url} después de {attempts} intentos") from last_error
+
+
+def _parse_external(csv_text: str) -> pd.DataFrame:
+    external = pd.read_csv(StringIO(csv_text))
+    external = external.rename(columns={"observation_date": "date", "NASDAQCOM": "nasdaq", "VIXCLS": "vix"})
+    external["date"] = pd.to_datetime(external["date"])
+    for column in ["nasdaq", "vix"]:
+        external[column] = pd.to_numeric(external[column], errors="coerce")
+    external = external[["date", "nasdaq", "vix"]].sort_values("date")
+    if external[["nasdaq", "vix"]].notna().sum().min() == 0:
+        raise ValueError("FRED no entregó datos válidos de NASDAQ y VIX")
+    return external
+
+
+def _fetch_external_secondary() -> pd.DataFrame:
+    import yfinance as yf
+
+    series = {}
+    for symbol, column in [("^IXIC", "nasdaq"), ("^VIX", "vix")]:
+        history = yf.Ticker(symbol).history(start="2012-01-01", auto_adjust=False)
+        if history.empty or "Close" not in history:
+            raise RuntimeError(f"Fuente secundaria sin datos para {symbol}")
+        values = history["Close"].rename(column)
+        values.index = pd.to_datetime(values.index).tz_localize(None)
+        series[column] = values
+    external = pd.concat(series.values(), axis=1).reset_index()
+    external = external.rename(columns={external.columns[0]: "date"})
+    return external[["date", "nasdaq", "vix"]].sort_values("date")
+
+
+def _fetch_external() -> pd.DataFrame:
+    DATA.mkdir(parents=True, exist_ok=True)
+    try:
+        external = _parse_external(_download(FRED_URL))
+        source = "FRED"
+    except Exception as fred_error:
+        print(f"Advertencia: FRED no respondió ({fred_error}); usando fuente secundaria.")
+        try:
+            external = _fetch_external_secondary()
+            source = "Yahoo Finance"
+        except Exception as secondary_error:
+            if not EXTERNAL_CACHE.exists():
+                raise RuntimeError(
+                    "No fue posible obtener NASDAQ/VIX y no existe un respaldo local válido"
+                ) from secondary_error
+            external = pd.read_csv(EXTERNAL_CACHE, parse_dates=["date"])
+            source = "respaldo local"
+    external.to_csv(EXTERNAL_CACHE, index=False)
+    print(f"NASDAQ/VIX obtenidos desde {source}; {len(external)} observaciones.")
+    return external
 
 
 def fetch_inputs() -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -30,13 +90,7 @@ def fetch_inputs() -> tuple[pd.DataFrame, pd.DataFrame]:
     cuotas = cuotas.rename(columns={"Fecha": "date", "A": "a", "E": "e"})
     cuotas["date"] = pd.to_datetime(cuotas["date"])
     cuotas = cuotas[["date", "a", "e"]].dropna().sort_values("date")
-    external = pd.read_csv(StringIO(_download(FRED_URL)))
-    external = external.rename(columns={"observation_date": "date", "NASDAQCOM": "nasdaq", "VIXCLS": "vix"})
-    external["date"] = pd.to_datetime(external["date"])
-    for column in ["nasdaq", "vix"]:
-        external[column] = pd.to_numeric(external[column], errors="coerce")
-    return cuotas, external
-
+    return cuotas, _fetch_external()
 
 def monthly_features(cuotas: pd.DataFrame, external: pd.DataFrame) -> pd.DataFrame:
     q = cuotas.set_index("date").resample("ME").last().dropna()
