@@ -50,7 +50,7 @@ def test_new_peru_candidates_remain_non_productive():
 def test_colombia_snapshots_are_partial_observations_not_assumed_intervals():
     data = pd.read_csv(MEMBERSHIP)
     colombia = data[data["country"].eq("COLOMBIA")]
-    assert {"2022-12-01", "2023-12-01", "2025-11-26"}.issubset(
+    assert {"2022-12-01", "2023-12-01", "2025-11-26", "2026-06-30"}.issubset(
         set(colombia["observation_date"])
     )
     assert colombia["effective_from"].isna().all()
@@ -76,3 +76,14 @@ def test_colombia_membership_events_only_record_explicit_changes():
         ("2025-11-26", "ETB", "REMOVE"),
         ("2025-11-26", "CNEC", "REMOVE"),
     }.issubset(set(events[["event_date", "local_ticker", "event_type"]].itertuples(index=False, name=None)))
+
+
+def test_colombia_symbol_lineage_is_preserved_by_observation_date():
+    data = pd.read_csv(MEMBERSHIP)
+    colombia = data[data["country"].eq("COLOMBIA")]
+    historical = colombia[colombia["observation_date"].lt("2025-01-01")]
+    current = colombia[colombia["observation_date"].eq("2026-06-30")]
+    # Historical Bancolombia symbols must not be rewritten as Grupo Cibest.
+    assert {"BCOLOMBIA", "PFBCOLOM"}.issubset(set(historical["local_ticker"]))
+    assert not {"CIBEST", "PFCIBEST"}.intersection(set(historical["local_ticker"]))
+    assert {"CIBEST", "PFCIBEST"}.issubset(set(current["local_ticker"]))
