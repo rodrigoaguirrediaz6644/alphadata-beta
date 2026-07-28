@@ -8,6 +8,7 @@ MEMBERSHIP = ROOT / "config" / "index_membership_observations.csv"
 ALTERNATIVES = ROOT / "config" / "peru_alternative_sources.csv"
 PERU_UNIVERSE = ROOT / "config" / "universe_peru.csv"
 EVENTS = ROOT / "config" / "index_membership_events.csv"
+REVIEWS = ROOT / "config" / "index_review_results.csv"
 
 
 def test_membership_observations_are_point_in_time_and_unique():
@@ -117,3 +118,50 @@ def test_august_2024_snapshot_remains_partial_despite_no_composition_changes():
     assert august["notes"].str.contains("Partial snapshot").all()
     assert august["effective_from"].isna().all()
     assert august["effective_to"].isna().all()
+
+
+def test_no_change_reviews_are_recorded_without_fake_membership_events():
+    reviews = pd.read_csv(REVIEWS)
+    required = {
+        "country", "index_name", "review_date", "effective_date",
+        "composition_change", "source_url", "source_type", "completeness",
+    }
+    assert required.issubset(reviews.columns)
+    assert not reviews.duplicated(["country", "index_name", "review_date"]).any()
+    assert reviews["composition_change"].eq("NO_CHANGE").all()
+    assert reviews["completeness"].eq("explicit_review_result").all()
+    assert {"2024-11-14", "2025-02-18", "2025-05-20", "2025-08-26"} == set(reviews["review_date"])
+    events = pd.read_csv(EVENTS)
+    assert not set(reviews["effective_date"]).intersection(set(events["event_date"]))
+
+
+def test_2025_partial_snapshots_preserve_symbol_lineage():
+    data = pd.read_csv(MEMBERSHIP)
+    february = data[
+        data["country"].eq("COLOMBIA")
+        & data["observation_date"].eq("2025-02-28")
+    ]
+    may = data[
+        data["country"].eq("COLOMBIA")
+        & data["observation_date"].eq("2025-05-30")
+    ]
+    assert set(february["local_ticker"]) == {
+        "PFBCOLOM", "BCOLOMBIA", "ECOPETROL", "PFCORFICOL", "CNEC", "ETB"
+    }
+    assert set(may["local_ticker"]) == {
+        "PFCIBEST", "CIBEST", "ISA", "ECOPETROL", "PFCORFICOL", "CNEC", "ETB"
+    }
+    assert not {"CIBEST", "PFCIBEST"}.intersection(set(february["local_ticker"]))
+    assert not {"BCOLOMBIA", "PFBCOLOM"}.intersection(set(may["local_ticker"]))
+    assert february["effective_from"].isna().all()
+    assert may["effective_to"].isna().all()
+
+
+def test_2025_no_change_reviews_do_not_claim_complete_snapshots():
+    reviews = pd.read_csv(REVIEWS)
+    reviews_2025 = reviews[reviews["review_date"].str.startswith("2025-")]
+    assert len(reviews_2025) == 3
+    observations = pd.read_csv(MEMBERSHIP)
+    snapshot_dates = set(observations["observation_date"])
+    assert {"2025-02-28", "2025-05-30"}.issubset(snapshot_dates)
+    assert "2025-08-26" not in snapshot_dates
