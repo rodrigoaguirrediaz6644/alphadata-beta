@@ -3,7 +3,7 @@ name: Ejecutar AlphaData
 on:
   workflow_dispatch:
   schedule:
-    - cron: "30 12 * * 1-5"
+    - cron: "30 20 * * 5"
 
 permissions:
   contents: write
@@ -34,10 +34,13 @@ jobs:
           PYTHONPATH=. python -m pytest -q
           PYTHONPATH=. python -m src.strategy_registry
 
-      - name: Descargar, calcular y redactar
+      - name: Descargar y calcular estrategias bursátiles
         run: PYTHONPATH=. python alphadata.py run
 
-      - name: Enviar informe si el correo está configurado
+      - name: Descargar, calcular e incorporar Cuprum A/E
+        run: PYTHONPATH=. python -m src.cuprum_ae
+
+      - name: Enviar informe semanal
         env:
           SMTP_HOST: ${{ secrets.SMTP_HOST }}
           SMTP_PORT: ${{ secrets.SMTP_PORT }}
@@ -45,6 +48,7 @@ jobs:
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
           SMTP_FROM: ${{ secrets.SMTP_FROM }}
           REPORT_RECIPIENTS: ${{ secrets.REPORT_RECIPIENTS }}
+          REPORT_SUBJECT: "AlphaData — informe semanal de estrategias"
         run: python src/send_report.py
 
       - name: Conservar informe como artefacto
@@ -54,10 +58,17 @@ jobs:
           path: |
             reports/latest_report.md
             reports/latest_report.html
+            reports/historical_performance.png
             data/portfolio_sigma6.csv
             data/portfolio_delta12.csv
             data/movements_sigma6.csv
             data/movements_delta12.csv
+            data/cuprum_ae_state.json
+            data/cuprum_ae_quotes.csv
+            data/cuprum_ae_signals.csv
+            data/cuprum_ae_trades.csv
+            data/cuprum_ae_backtest_summary.csv
+            data/cuprum_ae_annual.csv
             data/recommendations_errors.csv
             data/recommendations_history.csv
             data/coverage_report.csv
@@ -68,5 +79,5 @@ jobs:
           git config user.name "alphadata-bot"
           git config user.email "actions@users.noreply.github.com"
           git add data reports
-          git diff --cached --quiet || git commit -m "data: actualizar estrategias e informe"
+          git diff --cached --quiet || git commit -m "data: actualizar estrategias e informe semanal"
           git push
