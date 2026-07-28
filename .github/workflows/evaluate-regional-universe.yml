@@ -6,7 +6,8 @@ on:
     paths:
       - "config/universe_peru.csv"
       - "config/universe_colombia.csv"
-      - "config/index_membership_observations.csv"\n      - "config/index_membership_events.csv"
+      - "config/index_membership_observations.csv"
+      - "config/index_membership_events.csv"
       - "config/peru_alternative_sources.csv"
       - "src/evaluate_regional_universe.py"
       - "tests/test_regional_universe.py"
