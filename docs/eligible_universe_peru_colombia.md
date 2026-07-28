@@ -130,3 +130,18 @@ Fuentes de esta etapa:
 - Canasta pro forma de noviembre de 2025: https://www.accivalores.com/wp-content/uploads/Rebalanceo-COLCAP-Nov-2025-13.11.2025.pdf
 
 La reconstrucción completa por trimestre sigue pendiente de recuperar los archivos oficiales faltantes. Hasta entonces, estos snapshots pueden filtrar candidatos por presencia demostrada, pero no habilitan un backtest libre de sesgo por sí solos.
+
+
+## Evidencia colombiana de 2024
+
+La reconstrucción añade dos puntos verificables sin tratar las fuentes parciales como canastas completas:
+
+- El ingreso de PEI fue anunciado en la canasta pro forma de mayo y entró en vigor el lunes 3 de junio de 2024, con una ponderación publicada de 2,9%. Se registra como evento explícito ADD.
+- La canasta pro forma de agosto de 2024 no informó entradas ni salidas. La fuente identifica como mayores ponderaciones a PFBCOLOM, ECOPETROL y BCOLOMBIA, y como menores a CNEC, PFCORFICOL y ETB. Sólo esas seis observaciones se almacenan para el 30 de agosto de 2024.
+
+Fuentes:
+
+- https://www.larepublica.co/finanzas/pei-es-el-nuevo-emisor-en-la-lista-proforma-del-msci-colcap-para-el-rebalanceo-de-mayo-3865619
+- https://accivalores.com/media/attachments/2024/08/21/canasta-proforma-rebalanceo-colcap-agosto-2024.pdf
+
+La ausencia de cambios informada en agosto demuestra continuidad de la composición inmediatamente anterior, pero no completa por sí sola los nombres ausentes en la fuente ni autoriza a reconstruir períodos anteriores o posteriores por inferencia.
