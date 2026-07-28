@@ -90,6 +90,21 @@ def test_colombia_symbol_lineage_is_preserved_by_observation_date():
     assert {"CIBEST", "PFCIBEST"}.issubset(set(current["local_ticker"]))
 
 
+def test_june_2024_snapshot_records_only_published_constituents():
+    data = pd.read_csv(MEMBERSHIP)
+    june = data[
+        data["country"].eq("COLOMBIA")
+        & data["observation_date"].eq("2024-06-03")
+    ]
+    assert set(june["local_ticker"]) == {
+        "PEI", "PFBCOLOM", "ECOPETROL", "BCOLOMBIA",
+        "PFCORFICOL", "MINEROS", "ETB",
+    }
+    assert june["notes"].str.contains("Partial snapshot").all()
+    assert june["effective_from"].isna().all()
+    assert june["effective_to"].isna().all()
+
+
 def test_august_2024_snapshot_remains_partial_despite_no_composition_changes():
     data = pd.read_csv(MEMBERSHIP)
     august = data[
