@@ -1,5 +1,6 @@
 import pandas as pd
 
+from src import horizonte
 from src.horizonte import backtest, monthly_features
 
 
@@ -41,7 +42,6 @@ def test_switch_executes_on_fourth_subsequent_quote():
     _, trades = backtest(cuotas, features)
     assert trades.iloc[0]["execution_date"] == dates[34].date().isoformat()
 
-import pandas as pd
 
 def test_download_retries_before_succeeding(monkeypatch):
     attempts = []
