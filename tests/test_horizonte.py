@@ -40,3 +40,45 @@ def test_switch_executes_on_fourth_subsequent_quote():
     features = pd.DataFrame({"recommendation": ["A"]}, index=[signal_date])
     _, trades = backtest(cuotas, features)
     assert trades.iloc[0]["execution_date"] == dates[34].date().isoformat()
+
+import pandas as pd
+
+def test_download_retries_before_succeeding(monkeypatch):
+    attempts = []
+
+    class Response:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return None
+
+        def read(self):
+            return b"ok"
+
+    def fake_urlopen(request, timeout):
+        attempts.append(timeout)
+        if len(attempts) < 3:
+            raise TimeoutError("temporary")
+        return Response()
+
+    monkeypatch.setattr(horizonte, "urlopen", fake_urlopen)
+    monkeypatch.setattr(horizonte.time, "sleep", lambda _: None)
+    assert horizonte._download("https://example.test", attempts=3, timeout=5) == "ok"
+    assert attempts == [5, 5, 5]
+
+
+def test_external_uses_cache_when_both_sources_fail(monkeypatch, tmp_path):
+    cache = tmp_path / "external.csv"
+    expected = pd.DataFrame(
+        {"date": pd.to_datetime(["2026-07-24"]), "nasdaq": [23000.0], "vix": [17.0]}
+    )
+    expected.to_csv(cache, index=False)
+    monkeypatch.setattr(horizonte, "DATA", tmp_path)
+    monkeypatch.setattr(horizonte, "EXTERNAL_CACHE", cache)
+    monkeypatch.setattr(horizonte, "_download", lambda _: (_ for _ in ()).throw(TimeoutError()))
+    monkeypatch.setattr(
+        horizonte, "_fetch_external_secondary", lambda: (_ for _ in ()).throw(RuntimeError())
+    )
+    result = horizonte._fetch_external()
+    pd.testing.assert_frame_equal(result.reset_index(drop=True), expected)
