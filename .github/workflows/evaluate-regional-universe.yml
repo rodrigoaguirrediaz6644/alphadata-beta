@@ -6,8 +6,13 @@ on:
     paths:
       - "config/universe_peru.csv"
       - "config/universe_colombia.csv"
+      - "config/index_membership_observations.csv"
+      - "config/index_membership_events.csv"
+      - "config/index_review_results.csv"
+      - "config/peru_alternative_sources.csv"
       - "src/evaluate_regional_universe.py"
       - "tests/test_regional_universe.py"
+      - "tests/test_index_membership_data.py"
 
 permissions:
   contents: read
@@ -22,7 +27,7 @@ jobs:
           python-version: "3.11"
           cache: pip
       - run: pip install -r requirements.txt
-      - run: PYTHONPATH=. pytest -q tests/test_regional_universe.py
+      - run: PYTHONPATH=. pytest -q tests/test_regional_universe.py tests/test_index_membership_data.py
       - name: Medir cobertura y liquidez
         if: github.event_name == 'workflow_dispatch'
         run: PYTHONPATH=. python src/evaluate_regional_universe.py --output-dir regional-results

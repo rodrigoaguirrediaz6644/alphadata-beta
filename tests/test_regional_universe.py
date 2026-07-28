@@ -16,7 +16,8 @@ def frame(start="2021-01-01", periods=900, volume=1000, adjusted=True):
 def universe(status="candidato"):
     return pd.DataFrame([{
         "country": "PERU", "local_ticker": "TEST", "data_symbol_candidate": "TEST.LM",
-        "eligibility_status": status,
+        "eligibility_status": status, "currency": "PEN", "quote_currency": "PEN",
+        "listing_scope": "local_bvl", "data_role": "precio_y_liquidez_local",
     }])
 
 
@@ -65,3 +66,33 @@ def test_thin_trading_is_conditioned():
     assert report.iloc[0]["technical_status"] == "OK"
     assert report.iloc[0]["liquidity_status"] == "NO_CUMPLE"
     assert report.iloc[0]["measured_eligibility"] == "CONDICIONADO_LIQUIDEZ"
+
+
+def test_proxy_is_not_classified_as_local_eligible():
+    prices = frame()
+    checked = prices.index.max() + pd.Timedelta(days=1)
+    proxy = universe()
+    proxy.loc[0, "listing_scope"] = "internacional_proxy"
+    proxy.loc[0, "quote_currency"] = "USD"
+    proxy.loc[0, "data_role"] = "proxy_senal_no_liquidez_local"
+    report = evaluate_country(proxy, {"TEST.LM": prices}, checked)
+    assert report.iloc[0]["measured_eligibility"] == "PROXY_SENAL"
+    assert report.iloc[0]["liquidity_group"] == "internacional_proxy:USD"
+
+
+def test_liquidity_floor_is_calculated_per_scope_and_currency():
+    prices = frame(volume=1000)
+    local_thin = frame(volume=0)
+    local_thin.loc[local_thin.index[::5], "Volume"] = 1
+    items = pd.concat([universe(), universe()], ignore_index=True)
+    items.loc[0, ["local_ticker", "data_symbol_candidate"]] = ["LOCAL", "LOCAL.LM"]
+    items.loc[1, ["local_ticker", "data_symbol_candidate", "listing_scope", "quote_currency", "data_role"]] = [
+        "PROXY", "PROXY", "internacional_proxy", "USD", "proxy_senal_no_liquidez_local"
+    ]
+    checked = prices.index.max() + pd.Timedelta(days=1)
+    report = evaluate_country(items, {"LOCAL.LM": local_thin, "PROXY": prices}, checked)
+    local = report.loc[report["local_ticker"].eq("LOCAL")].iloc[0]
+    proxy = report.loc[report["local_ticker"].eq("PROXY")].iloc[0]
+    assert local["liquidity_group"] == "local_bvl:PEN"
+    assert proxy["liquidity_group"] == "internacional_proxy:USD"
+    assert proxy["measured_eligibility"] == "PROXY_SENAL"
