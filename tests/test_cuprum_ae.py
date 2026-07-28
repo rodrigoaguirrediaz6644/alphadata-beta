@@ -30,7 +30,7 @@ def test_five_signals_are_boolean_and_threshold_selects_a():
         "nasdaq_trend",
         "vix_below_30",
     ]:
-        assert isinstance(latest[column], bool)
+        assert bool(latest[column]) is True
 
 
 def test_switch_executes_on_fourth_subsequent_quote():
