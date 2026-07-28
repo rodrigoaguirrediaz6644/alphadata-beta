@@ -15,8 +15,8 @@ CUOTA_URL = "https://raw.githubusercontent.com/collabmarket/data_afp/master/data
 FRED_URL = "https://fred.stlouisfed.org/graph/fredgraph.csv?id=NASDAQCOM,VIXCLS"
 START = pd.Timestamp("2012-08-01")
 TEST_START = pd.Timestamp("2021-01-01")
-REPORT_START = "<!-- CUPRUM_AE_START -->"
-REPORT_END = "<!-- CUPRUM_AE_END -->"
+REPORT_START = "<!-- HORIZONTE_START -->"
+REPORT_END = "<!-- HORIZONTE_END -->"
 
 
 def _download(url: str) -> str:
@@ -112,7 +112,7 @@ def build_outputs(cuotas: pd.DataFrame, features: pd.DataFrame, returns: pd.Seri
     DATA.mkdir(parents=True, exist_ok=True)
     daily = cuotas.set_index("date")
     alternatives = {
-        "Cuprum A/E": returns,
+        "Estrategia Horizonte": returns,
         "Fondo A Cuprum": daily["a"].pct_change().fillna(0),
         "Fondo E Cuprum": daily["e"].pct_change().fillna(0),
         "Cuprum 50/50": daily[["a", "e"]].pct_change().mean(axis=1).fillna(0),
@@ -138,11 +138,11 @@ def build_outputs(cuotas: pd.DataFrame, features: pd.DataFrame, returns: pd.Seri
         "nasdaq_trend", "vix_below_30", "score", "recommendation",
     ]
     signals = features[signal_columns].dropna(subset=["recommendation"]).reset_index()
-    signals.to_csv(DATA / "cuprum_ae_signals.csv", index=False)
-    trades.to_csv(DATA / "cuprum_ae_trades.csv", index=False)
-    summary.to_csv(DATA / "cuprum_ae_backtest_summary.csv", index=False)
-    pd.DataFrame(annual_rows).to_csv(DATA / "cuprum_ae_annual.csv", index=False)
-    cuotas.to_csv(DATA / "cuprum_ae_quotes.csv", index=False)
+    signals.to_csv(DATA / "horizonte_signals.csv", index=False)
+    trades.to_csv(DATA / "horizonte_trades.csv", index=False)
+    summary.to_csv(DATA / "horizonte_backtest_summary.csv", index=False)
+    pd.DataFrame(annual_rows).to_csv(DATA / "horizonte_annual.csv", index=False)
+    cuotas.to_csv(DATA / "horizonte_quotes.csv", index=False)
     latest = signals.iloc[-1]
     executed = trades[pd.to_datetime(trades["execution_date"]) <= cuotas["date"].max()]
     current_fund = executed.iloc[-1]["to_fund"] if len(executed) else latest["recommendation"]
@@ -155,7 +155,7 @@ def build_outputs(cuotas: pd.DataFrame, features: pd.DataFrame, returns: pd.Seri
         "next_execution_date": None if executed.index.max() == trades.index.max() else trades.iloc[-1]["execution_date"],
         "source": "Superintendencia de Pensiones, distribución CSV de collabmarket/data_afp",
     }
-    (DATA / "cuprum_ae_state.json").write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
+    (DATA / "horizonte_state.json").write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
     return {"summary": summary, "annual": pd.DataFrame(annual_rows), "state": state, "trades": trades}
 
 
@@ -176,7 +176,7 @@ def update_report(outputs: dict) -> None:
         f"<td>{r.annualized_volatility:.2%}</td><td>{r.max_drawdown:.2%}</td></tr>"
         for r in oos.itertuples()
     )
-    section = f"""{REPORT_START}<section><h2>Cuprum A/E</h2>
+    section = f"""{REPORT_START}<section><h2>Estrategia Horizonte</h2>
     <p><strong>Fondo vigente:</strong> Fondo {state['current_fund']} ·
     <strong>última señal:</strong> Fondo {state['recommendation']} ({state['score']}/5) ·
     <strong>fecha de señal:</strong> {state['signal_date']} ·
@@ -189,12 +189,12 @@ def update_report(outputs: dict) -> None:
     html_path.write_text(_replace_section(html_path.read_text(encoding="utf-8"), section), encoding="utf-8")
     md_path = REPORTS / "latest_report.md"
     md_section = (
-        f"\n{REPORT_START}\n## Cuprum A/E\n\n"
+        f"\n{REPORT_START}\n## Estrategia Horizonte\n\n"
         f"- Fondo vigente: **Fondo {state['current_fund']}**.\n"
         f"- Última señal: Fondo {state['recommendation']} ({state['score']}/5), fecha {state['signal_date']}.\n"
         f"- Datos Cuprum actualizados al {state['as_of']}.\n"
-        f"- Backtest y tablas: `data/cuprum_ae_backtest_summary.csv`, `data/cuprum_ae_annual.csv`, "
-        f"`data/cuprum_ae_trades.csv` y `data/cuprum_ae_signals.csv`.\n{REPORT_END}\n"
+        f"- Backtest y tablas: `data/horizonte_backtest_summary.csv`, `data/horizonte_annual.csv`, "
+        f"`data/horizonte_trades.csv` y `data/horizonte_signals.csv`.\n{REPORT_END}\n"
     )
     md_path.write_text(_replace_section(md_path.read_text(encoding="utf-8"), md_section), encoding="utf-8")
 
@@ -205,7 +205,7 @@ def main() -> None:
     returns, trades = backtest(cuotas, features)
     outputs = build_outputs(cuotas, features, returns, trades)
     update_report(outputs)
-    print(f"Cuprum A/E actualizada al {outputs['state']['as_of']}; fondo vigente {outputs['state']['current_fund']}")
+    print(f"Estrategia Horizonte actualizada al {outputs['state']['as_of']}; fondo vigente {outputs['state']['current_fund']}")
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 import pandas as pd
 
-from src.cuprum_ae import backtest, monthly_features
+from src.horizonte import backtest, monthly_features
 
 
 def test_five_signals_are_boolean_and_threshold_selects_a():
