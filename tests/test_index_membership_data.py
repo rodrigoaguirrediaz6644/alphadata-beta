@@ -50,7 +50,7 @@ def test_new_peru_candidates_remain_non_productive():
 def test_colombia_snapshots_are_partial_observations_not_assumed_intervals():
     data = pd.read_csv(MEMBERSHIP)
     colombia = data[data["country"].eq("COLOMBIA")]
-    assert {"2022-12-01", "2023-12-01", "2025-11-26", "2026-06-30"}.issubset(
+    assert {"2022-12-01", "2023-12-01", "2024-06-03", "2024-08-30", "2025-11-26", "2026-06-30"}.issubset(
         set(colombia["observation_date"])
     )
     assert colombia["effective_from"].isna().all()
@@ -72,6 +72,7 @@ def test_colombia_membership_events_only_record_explicit_changes():
     assert events["completeness"].eq("explicit_event").all()
     assert {
         ("2023-12-01", "EXITO", "ADD"),
+        ("2024-06-03", "PEI", "ADD"),
         ("2025-11-26", "EXITO", "ADD"),
         ("2025-11-26", "ETB", "REMOVE"),
         ("2025-11-26", "CNEC", "REMOVE"),
@@ -87,3 +88,17 @@ def test_colombia_symbol_lineage_is_preserved_by_observation_date():
     assert {"BCOLOMBIA", "PFBCOLOM"}.issubset(set(historical["local_ticker"]))
     assert not {"CIBEST", "PFCIBEST"}.intersection(set(historical["local_ticker"]))
     assert {"CIBEST", "PFCIBEST"}.issubset(set(current["local_ticker"]))
+
+
+def test_august_2024_snapshot_remains_partial_despite_no_composition_changes():
+    data = pd.read_csv(MEMBERSHIP)
+    august = data[
+        data["country"].eq("COLOMBIA")
+        & data["observation_date"].eq("2024-08-30")
+    ]
+    assert set(august["local_ticker"]) == {
+        "PFBCOLOM", "ECOPETROL", "BCOLOMBIA", "CNEC", "PFCORFICOL", "ETB"
+    }
+    assert august["notes"].str.contains("Partial snapshot").all()
+    assert august["effective_from"].isna().all()
+    assert august["effective_to"].isna().all()
