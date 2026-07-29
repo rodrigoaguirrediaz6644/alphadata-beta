@@ -15,7 +15,7 @@
     "atr_period": 14,
     "atr_stop_multiple": 3.0,
     "index_ma": 200,
-    "vix_max": 32.0,
+    "vix_max": 25.0,
     "vix_panic": 40.0,
     "max_positions": 5,
     "cost_rate": 0.001785
