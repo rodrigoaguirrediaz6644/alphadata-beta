@@ -50,7 +50,7 @@ jobs:
       - name: Run tests
         run: PYTHONPATH=. python -m pytest -q tests/test_global_instrument_backtest.py tests/test_global_momentum_strategy.py
 
-      - name: Run real backtest
+      - name: Run real backtests and combined diagnostics
         run: |
           PYTHONPATH=. python scripts/run_global_block_01.py
           PYTHONPATH=. python scripts/run_global_block_01.py \
@@ -58,7 +58,8 @@ jobs:
             --output artifacts/global_block_02
           PYTHONPATH=. python scripts/run_global_block_01.py \
             --block config/global_universe_blocks_01_02.json \
-            --output artifacts/global_blocks_01_02
+            --output artifacts/global_blocks_01_02 \
+            --diagnostics
 
       - name: Upload reproducible results
         uses: actions/upload-artifact@v4
