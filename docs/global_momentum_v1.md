@@ -41,3 +41,9 @@ universos históricos de acciones.
 Este bloque es diagnóstico y no implica que los ETF sustituyan la selección
 final de acciones. Los bloques posteriores incorporarán acciones con membresía,
 liquidez y deslistados fechados por mercado.
+
+La corrida reproducible del bloque usa precios ajustados por dividendos y
+splits, ejecuta cada señal al cierre de la rueda siguiente, cobra 0,1785% sobre
+el monto transado y deja que los pesos deriven entre rebalanceos mensuales.
+Conserva precios, NAV, pesos, retornos anuales y métricas como artefactos de
+GitHub Actions.
