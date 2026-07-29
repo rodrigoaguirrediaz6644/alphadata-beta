@@ -18,12 +18,13 @@ class Rules:
     slow_ma: int = 200
     breakout_days: int = 20
     relative_strength_days: int = 126
-    atr_period: int = 14
-    atr_stop_multiple: float = 3.0
+    stop_vol_period: int = 63
+    stop_vol_multiple: float = 3.0
     index_ma: int = 200
-    vix_max: float = 32.0
+    vix_max: float = 25.0
     vix_panic: float = 40.0
     max_positions: int = 5
+    max_position_weight: float = 0.25
     cost_rate: float = 0.001785
 
 
@@ -36,12 +37,7 @@ def rsi(price: pd.Series, period: int = 14) -> pd.Series:
     return out.where(loss.ne(0), 100.0)
 
 
-def _indicators(
-    prices: pd.DataFrame,
-    benchmark: pd.Series,
-    vix: pd.Series,
-    rules: Rules,
-) -> dict[str, pd.DataFrame | pd.Series]:
+def _indicators(prices, benchmark, vix, rules):
     returns = prices.pct_change(fill_method=None)
     fast = prices.rolling(rules.fast_ma).mean()
     slow = prices.rolling(rules.slow_ma).mean()
@@ -50,104 +46,119 @@ def _indicators(
     asset_mom = prices / prices.shift(rules.relative_strength_days) - 1
     bench_mom = benchmark / benchmark.shift(rules.relative_strength_days) - 1
     strength = asset_mom.sub(bench_mom, axis=0)
-    vol = returns.rolling(63).std() * np.sqrt(252)
+    daily_vol = returns.rolling(rules.stop_vol_period).std()
     bench_ma = benchmark.rolling(rules.index_ma).mean()
     aligned_vix = vix.reindex(prices.index).ffill()
     return {
-        "fast": fast,
-        "slow": slow,
-        "rsi": rsi_frame,
-        "breakout": breakout,
-        "strength": strength,
-        "vol": vol,
+        "fast": fast, "slow": slow, "rsi": rsi_frame, "breakout": breakout,
+        "strength": strength, "daily_vol": daily_vol,
         "market_ok": benchmark.gt(bench_ma) & aligned_vix.lt(rules.vix_max),
         "panic": aligned_vix.ge(rules.vix_panic),
     }
 
 
-def backtest_signals(
-    prices: pd.DataFrame,
-    benchmark: pd.Series,
-    vix: pd.Series,
-    rules: Rules = Rules(),
-) -> tuple[pd.Series, pd.DataFrame, pd.DataFrame]:
-    """Long-only backtest; signals at close t execute for return t+1."""
+def _period_end(index: pd.DatetimeIndex, position: int, frequency: str) -> bool:
+    if position + 1 == len(index):
+        return True
+    current, following = index[position], index[position + 1]
+    if frequency == "month":
+        return (current.year, current.month) != (following.year, following.month)
+    return current.to_period("W-FRI") != following.to_period("W-FRI")
+
+
+def backtest_signals(prices, benchmark, vix, rules=Rules()):
+    """Long-only: monthly entries, weekly exits, signals at close apply to t+1."""
     prices = prices.sort_index()
     benchmark = benchmark.reindex(prices.index).ffill()
     ind = _indicators(prices, benchmark, vix, rules)
     returns = prices.pct_change(fill_method=None).fillna(0.0)
     weights = pd.Series(0.0, index=prices.columns)
     nav = 1.0
-    nav_rows: list[tuple[pd.Timestamp, float]] = []
-    weight_rows: list[pd.Series] = []
-    trades: list[dict] = []
+    nav_rows, weight_rows, trades = [], [], []
     peaks = pd.Series(np.nan, index=prices.columns)
 
-    for date in prices.index:
+    for position, date in enumerate(prices.index):
         day_return = float((weights * returns.loc[date]).sum())
         nav *= 1.0 + day_return
-        gross = weights * (1 + returns.loc[date])
-        if gross.sum() > 0:
-            weights = gross / gross.sum()
-
+        # Cash is implicit. Never renormalize risky assets to 100%.
+        weights = weights * (1.0 + returns.loc[date]) / (1.0 + day_return)
         held = weights.gt(0)
-        position = prices.index.get_loc(date)
-        next_date = prices.index[position + 1] if position + 1 < len(prices.index) else None
-        month_end = next_date is None or (date.year, date.month) != (next_date.year, next_date.month)
-        if not month_end and not bool(ind["panic"].loc[date]):
+        peaks.loc[held] = pd.concat(
+            [peaks.loc[held], prices.loc[date, held]], axis=1
+        ).max(axis=1)
+
+        month_end = _period_end(prices.index, position, "month")
+        week_end = _period_end(prices.index, position, "week")
+        panic = bool(ind["panic"].loc[date])
+        if not month_end and not week_end and not panic:
             nav_rows.append((date, nav))
             weight_rows.append(weights.rename(date))
             continue
 
-        peaks.loc[held] = pd.concat([peaks.loc[held], prices.loc[date, held]], axis=1).max(axis=1)
-        trailing_floor = peaks * (1 - rules.atr_stop_multiple * ind["vol"].loc[date] / np.sqrt(252))
+        trailing_floor = peaks * (
+            1 - rules.stop_vol_multiple * ind["daily_vol"].loc[date]
+        )
         exit_signal = (
             prices.loc[date].lt(ind["slow"].loc[date])
             | ind["rsi"].loc[date].lt(rules.rsi_exit)
             | prices.loc[date].lt(trailing_floor)
-            | bool(ind["panic"].loc[date])
+            | panic
         ) & held
+        # Enforce the concentration ceiling at every weekly control point.
+        target = weights.clip(upper=rules.max_position_weight)
+        target.loc[exit_signal] = 0.0
 
-        eligible = (
-            prices.loc[date].gt(ind["fast"].loc[date])
-            & ind["fast"].loc[date].gt(ind["slow"].loc[date])
-            & prices.loc[date].ge(ind["breakout"].loc[date])
-            & ind["rsi"].loc[date].between(rules.rsi_entry_min, rules.rsi_entry_max)
-            & ind["strength"].loc[date].gt(0)
-            & bool(ind["market_ok"].loc[date])
-        )
-        score = (
-            ind["strength"].loc[date].rank(pct=True)
-            + ind["rsi"].loc[date].sub(50).clip(lower=0).rank(pct=True)
-            - ind["vol"].loc[date].rank(pct=True)
-        )
-        selected = score.where(eligible).nlargest(rules.max_positions).dropna().index
-        target_names = set(weights.index[held & ~exit_signal]) | set(selected)
-        ranked = score.reindex(list(target_names)).sort_values(ascending=False).head(rules.max_positions)
-        target = pd.Series(0.0, index=prices.columns)
-        if len(ranked):
-            target.loc[ranked.index] = 1 / len(ranked)
+        if month_end and not panic:
+            eligible = (
+                prices.loc[date].gt(ind["fast"].loc[date])
+                & ind["fast"].loc[date].gt(ind["slow"].loc[date])
+                & prices.loc[date].ge(ind["breakout"].loc[date])
+                & ind["rsi"].loc[date].between(rules.rsi_entry_min, rules.rsi_entry_max)
+                & ind["strength"].loc[date].gt(0)
+                & bool(ind["market_ok"].loc[date])
+            )
+            score = (
+                ind["strength"].loc[date].rank(pct=True)
+                + ind["rsi"].loc[date].sub(50).clip(lower=0).rank(pct=True)
+                - ind["daily_vol"].loc[date].rank(pct=True)
+            )
+            survivors = set(target.index[target.gt(0)])
+            selected = set(
+                score.where(eligible).nlargest(rules.max_positions).dropna().index
+            )
+            ranked = score.reindex(list(survivors | selected)).sort_values(
+                ascending=False
+            ).head(rules.max_positions)
+            target[:] = 0.0
+            target.loc[ranked.index] = rules.max_position_weight
 
         delta = target - weights
         turnover = float(delta.abs().sum())
         if turnover:
             nav *= 1 - turnover * rules.cost_rate
             for ticker, amount in delta[delta.ne(0)].items():
-                trades.append(
-                    {"date": date, "ticker": ticker, "action": "BUY" if amount > 0 else "SELL",
-                     "weight_change": float(amount), "price": float(prices.loc[date, ticker])}
-                )
+                trades.append({
+                    "date": date, "ticker": ticker,
+                    "action": "BUY" if amount > 0 else "SELL",
+                    "weight_change": float(amount),
+                    "price": float(prices.loc[date, ticker]),
+                })
         exited = weights.gt(0) & target.eq(0)
+        entered = weights.eq(0) & target.gt(0)
         peaks.loc[exited] = np.nan
+        peaks.loc[entered] = prices.loc[date, entered]
         weights = target
         nav_rows.append((date, nav))
         weight_rows.append(weights.rename(date))
 
-    nav_series = pd.Series(dict(nav_rows), name="COLOMBIA_SIGNALS")
-    return nav_series, pd.DataFrame(weight_rows), pd.DataFrame(trades)
+    return (
+        pd.Series(dict(nav_rows), name="COLOMBIA_SIGNALS"),
+        pd.DataFrame(weight_rows),
+        pd.DataFrame(trades),
+    )
 
 
-def performance(nav: pd.Series) -> dict[str, float]:
+def performance(nav):
     nav = nav.dropna()
     daily = nav.pct_change().dropna()
     years = (nav.index[-1] - nav.index[0]).days / 365.25
