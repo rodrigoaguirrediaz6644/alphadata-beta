@@ -28,3 +28,16 @@ Esta versión implementa el motor de selección y control de concentración.
 Todavía no declara rentabilidad esperada: antes de promoverla se debe construir
 el universo histórico, ejecutar un backtest walk-forward con costos y comparar
 contra MSCI ACWI, una cartera global equiponderada y momentum global simple.
+
+## Incorporación por bloques
+
+El universo se incorporará y validará de forma incremental. El Bloque 1,
+`GLOBAL_ETF_DEVELOPED_01`, contiene diez ETF-país líquidos cotizados en USD:
+Estados Unidos, Canadá, Reino Unido, Alemania, Francia, Suiza, Suecia, Japón,
+Australia y Singapur. Su objetivo es validar el backtest económico, los costos,
+la ejecución en la rueda siguiente y la comparación con ACWI antes de añadir
+universos históricos de acciones.
+
+Este bloque es diagnóstico y no implica que los ETF sustituyan la selección
+final de acciones. Los bloques posteriores incorporarán acciones con membresía,
+liquidez y deslistados fechados por mercado.
