@@ -53,7 +53,12 @@ def backtest_from_prices(
     block: dict,
     config: GlobalMomentumConfig | None = None,
 ) -> tuple[pd.Series, pd.DataFrame]:
-    """Ejecuta al cierre, aplica pesos desde la rueda siguiente y cobra costos."""
+    """Ejecuta al cierre siguiente, deja derivar posiciones y cobra costos.
+
+    Las señales calculadas con el cierre de una rueda se ejecutan al cierre de
+    la rueda siguiente. Por tanto, el nuevo peso participa en los retornos
+    recién desde la jornada posterior a su ejecución.
+    """
     config = config or GlobalMomentumConfig(
         max_positions=len(block["instruments"]),
         max_weight_per_asset=0.12,
@@ -70,17 +75,61 @@ def backtest_from_prices(
         .fillna(0.0)
     )
     calendar = prices.index.sort_values()
-    target_daily = asset_targets.reindex(calendar).ffill().shift(1).fillna(0.0)
-    returns = prices.reindex(columns=target_daily.columns).pct_change(fill_method=None)
-    usable = returns.notna().astype(float)
-    weights = target_daily * usable
-    gross_return = (weights * returns.fillna(0.0)).sum(axis=1)
-    turnover = weights.diff().abs().sum(axis=1)
-    if len(turnover):
-        turnover.iloc[0] = weights.iloc[0].abs().sum()
-    net_return = gross_return - turnover * float(block["cost_rate"])
-    nav = (1.0 + net_return).cumprod().rename(block["block_code"])
+    columns = asset_targets.columns
+    returns = prices.reindex(index=calendar, columns=columns).pct_change(fill_method=None)
+
+    execution_targets: dict[pd.Timestamp, pd.Series] = {}
+    for decision_date, target in asset_targets.iterrows():
+        next_dates = calendar[calendar > decision_date]
+        if len(next_dates):
+            execution_targets[next_dates[0]] = target
+
+    asset_values = pd.Series(0.0, index=columns)
+    cash = 1.0
+    nav_records: list[float] = []
+    weight_records: list[pd.Series] = []
+    cost_rate = float(block["cost_rate"])
+
+    for date in calendar:
+        daily_return = returns.loc[date].fillna(0.0)
+        asset_values *= 1.0 + daily_return
+        nav_before_trade = float(asset_values.sum() + cash)
+
+        if date in execution_targets:
+            target = execution_targets[date].copy()
+            unavailable = prices.loc[date, columns].isna()
+            target.loc[unavailable] = 0.0
+            pretrade_weights = (
+                asset_values / nav_before_trade
+                if nav_before_trade > 0
+                else pd.Series(0.0, index=columns)
+            )
+            turnover = float((target - pretrade_weights).abs().sum())
+            nav_after_cost = nav_before_trade * (1.0 - turnover * cost_rate)
+            asset_values = target * nav_after_cost
+            cash = nav_after_cost * max(0.0, 1.0 - float(target.sum()))
+        else:
+            nav_after_cost = nav_before_trade
+
+        nav_records.append(nav_after_cost)
+        if nav_after_cost > 0:
+            weight_records.append(asset_values / nav_after_cost)
+        else:
+            weight_records.append(pd.Series(0.0, index=columns))
+
+    nav = pd.Series(nav_records, index=calendar, name=block["block_code"])
+    weights = pd.DataFrame(weight_records, index=calendar, columns=columns)
     return nav, weights
+
+
+def benchmark_nav(prices: pd.DataFrame, ticker: str) -> pd.Series:
+    """Normaliza un benchmark de comprar y mantener en su primera fecha válida."""
+    if ticker not in prices:
+        raise ValueError(f"No existe el benchmark {ticker} en los precios.")
+    series = prices[ticker].dropna()
+    if series.empty:
+        raise ValueError(f"El benchmark {ticker} no tiene precios utilizables.")
+    return (series / series.iloc[0]).rename(ticker)
 
 
 def performance(nav: pd.Series) -> dict[str, float]:
