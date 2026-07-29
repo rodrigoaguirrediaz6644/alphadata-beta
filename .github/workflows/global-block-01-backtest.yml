@@ -2,6 +2,17 @@ name: Global Block 01 Backtest
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/global-block-01-backtest.yml"
+      - "config/global_universe_block_01.json"
+      - "scripts/run_global_block_01.py"
+      - "src/global_instrument_backtest.py"
+      - "src/global_momentum_strategy.py"
+      - "tests/test_global_instrument_backtest.py"
+      - "tests/test_global_momentum_strategy.py"
   push:
     branches:
       - agent/global-momentum-v1
