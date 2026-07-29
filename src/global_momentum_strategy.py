@@ -39,6 +39,9 @@ class GlobalMomentumConfig:
     max_weight_per_sector: float = 0.25
     min_adv_base: float = 1_000_000
     target_gross_exposure: float = 1.0
+    weighting_method: str = "inverse_volatility"
+    require_trend: bool = True
+    require_positive_momentum: bool = True
 
     def __post_init__(self) -> None:
         bounds = (
@@ -51,6 +54,8 @@ class GlobalMomentumConfig:
             raise ValueError("Los límites y la exposición deben estar entre 0 y 1.")
         if self.max_positions < 1:
             raise ValueError("max_positions debe ser positivo.")
+        if self.weighting_method not in {"inverse_volatility", "equal"}:
+            raise ValueError("weighting_method debe ser inverse_volatility o equal.")
 
 
 def prepare_panel(panel: pd.DataFrame) -> pd.DataFrame:
@@ -97,10 +102,15 @@ def compute_signals(
         lambda values: values.rolling(config.volatility_days).std() * np.sqrt(252)
     )
     data["score"] = 0.6 * data["momentum_long"] + 0.4 * data["momentum_short"]
+    trend_ok = (price > data["trend"]) if config.require_trend else True
+    momentum_ok = (
+        (data["momentum_long"] > 0) & (data["momentum_short"] > 0)
+        if config.require_positive_momentum
+        else True
+    )
     data["eligible"] = (
-        (price > data["trend"])
-        & (data["momentum_long"] > 0)
-        & (data["momentum_short"] > 0)
+        trend_ok
+        & momentum_ok
         & (data["volatility"] > 0)
         & (data["adv_base"] >= config.min_adv_base)
     )
@@ -114,7 +124,11 @@ def _constrained_weights(
     selected = candidates.nlargest(config.max_positions, "score").copy()
     if selected.empty:
         return {}
-    selected["raw"] = 1.0 / selected["volatility"]
+    selected["raw"] = (
+        1.0 / selected["volatility"]
+        if config.weighting_method == "inverse_volatility"
+        else 1.0
+    )
     selected["raw"] /= selected["raw"].sum()
 
     weights: dict[str, float] = {}
