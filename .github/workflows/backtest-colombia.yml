@@ -1,11 +1,15 @@
-name: Backtest base Colombia
+name: Backtest Colombia
 
 on:
   pull_request:
     paths:
       - "config/colombia_baseline_v1.json"
+      - "config/colombia_signals_v1.json"
       - "src/backtest_colombia.py"
+      - "src/colombia_signal_strategy.py"
+      - "src/run_colombia_signal_backtest.py"
       - "tests/test_backtest_colombia.py"
+      - "tests/test_colombia_signal_strategy.py"
       - ".github/workflows/backtest-colombia.yml"
   workflow_dispatch:
 
@@ -22,13 +26,11 @@ jobs:
           python-version: "3.11"
           cache: pip
       - run: pip install -r requirements.txt
-      - run: PYTHONPATH=. pytest -q tests/test_backtest_colombia.py
-      - name: Ejecutar backtest con datos reales
-        if: github.event_name == 'workflow_dispatch'
-        run: PYTHONPATH=. python src/backtest_colombia.py --output-dir colombia-results
-      - name: Guardar resultados
-        if: github.event_name == 'workflow_dispatch'
+      - run: PYTHONPATH=. pytest -q tests/test_backtest_colombia.py tests/test_colombia_signal_strategy.py
+      - name: Ejecutar señales con datos reales
+        run: PYTHONPATH=. python src/run_colombia_signal_backtest.py --output-dir colombia-signal-results
+      - name: Guardar resultados de señales
         uses: actions/upload-artifact@v4
         with:
-          name: colombia-baseline-results
-          path: colombia-results/
+          name: colombia-signal-results
+          path: colombia-signal-results/
