@@ -1,0 +1,17 @@
+{
+  "strategy_code": "GLOBAL_MOMENTUM_V1",
+  "status": "diagnostic",
+  "base_currency": "USD",
+  "rebalance_frequency": "M",
+  "momentum_long_days": 252,
+  "momentum_short_days": 126,
+  "volatility_days": 63,
+  "trend_days": 200,
+  "max_positions": 30,
+  "max_weight_per_asset": 0.04,
+  "max_weight_per_country": 0.12,
+  "max_weight_per_sector": 0.25,
+  "min_adv_base": 1000000,
+  "target_gross_exposure": 1.0,
+  "historical_membership_required": true
+}
