@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0.0",
+  "strategy_id": "colombia-signals-v1",
+  "status": "experimental",
+  "execution": "signal_at_close_t_applies_to_return_t_plus_1",
+  "rules": {
+    "rsi_period": 14,
+    "rsi_entry_min": 45.0,
+    "rsi_entry_max": 80.0,
+    "rsi_exit": 38.0,
+    "fast_ma": 50,
+    "slow_ma": 200,
+    "breakout_days": 20,
+    "relative_strength_days": 126,
+    "atr_period": 14,
+    "atr_stop_multiple": 3.0,
+    "index_ma": 200,
+    "vix_max": 32.0,
+    "vix_panic": 40.0,
+    "max_positions": 5,
+    "cost_rate": 0.001785
+  }
+}
