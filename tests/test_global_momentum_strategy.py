@@ -79,3 +79,43 @@ def test_requires_complete_historical_membership():
     )
     with pytest.raises(ValueError, match="sin estado histórico"):
         validate_universe_history(panel, incomplete)
+
+
+def test_equal_weighting_assigns_same_weight_to_eligible_assets():
+    config = GlobalMomentumConfig(
+        min_adv_base=1,
+        max_positions=3,
+        max_weight_per_asset=1.0,
+        max_weight_per_country=1.0,
+        max_weight_per_sector=1.0,
+        weighting_method="equal",
+    )
+    weights = generate_target_weights(make_panel(tickers=3), config)
+    final = weights[
+        weights["date"].eq(weights["date"].max()) & weights["ticker"].ne("CASH")
+    ]
+    assert final["weight"].nunique() == 1
+
+
+def test_filters_can_be_disabled_for_always_invested_control():
+    panel = make_panel(tickers=3)
+    panel.loc[panel["ticker"].eq("T00"), "price_local"] = np.linspace(
+        200, 50, panel["ticker"].eq("T00").sum()
+    )
+    config = GlobalMomentumConfig(
+        min_adv_base=1,
+        max_positions=3,
+        max_weight_per_asset=1.0,
+        max_weight_per_country=1.0,
+        max_weight_per_sector=1.0,
+        weighting_method="equal",
+        require_trend=False,
+        require_positive_momentum=False,
+    )
+    weights = generate_target_weights(panel, config)
+    final = weights[weights["date"].eq(weights["date"].max())]
+    assert set(final.loc[final["ticker"].ne("CASH"), "ticker"]) == {
+        "T00",
+        "T01",
+        "T02",
+    }
