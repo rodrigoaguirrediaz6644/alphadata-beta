@@ -1,4 +1,4 @@
-name: Global Block 01 Backtest
+name: Global Blocks 01-02 Backtest
 
 on:
   workflow_dispatch:
@@ -8,6 +8,8 @@ on:
     paths:
       - ".github/workflows/global-block-01-backtest.yml"
       - "config/global_universe_block_01.json"
+      - "config/global_universe_block_02.json"
+      - "config/global_universe_blocks_01_02.json"
       - "scripts/run_global_block_01.py"
       - "src/global_instrument_backtest.py"
       - "src/global_momentum_strategy.py"
@@ -19,6 +21,8 @@ on:
     paths:
       - ".github/workflows/global-block-01-backtest.yml"
       - "config/global_universe_block_01.json"
+      - "config/global_universe_block_02.json"
+      - "config/global_universe_blocks_01_02.json"
       - "scripts/run_global_block_01.py"
       - "src/global_instrument_backtest.py"
       - "src/global_momentum_strategy.py"
@@ -47,12 +51,19 @@ jobs:
         run: PYTHONPATH=. python -m pytest -q tests/test_global_instrument_backtest.py tests/test_global_momentum_strategy.py
 
       - name: Run real backtest
-        run: PYTHONPATH=. python scripts/run_global_block_01.py
+        run: |
+          PYTHONPATH=. python scripts/run_global_block_01.py
+          PYTHONPATH=. python scripts/run_global_block_01.py \
+            --block config/global_universe_block_02.json \
+            --output artifacts/global_block_02
+          PYTHONPATH=. python scripts/run_global_block_01.py \
+            --block config/global_universe_blocks_01_02.json \
+            --output artifacts/global_blocks_01_02
 
       - name: Upload reproducible results
         uses: actions/upload-artifact@v4
         with:
-          name: global-block-01-results
-          path: artifacts/global_block_01/
+          name: global-blocks-01-02-results
+          path: artifacts/
           if-no-files-found: error
           retention-days: 90

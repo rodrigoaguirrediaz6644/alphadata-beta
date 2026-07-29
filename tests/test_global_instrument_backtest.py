@@ -14,6 +14,8 @@ from src.global_momentum_strategy import GlobalMomentumConfig
 
 ROOT = Path(__file__).resolve().parents[1]
 BLOCK = ROOT / "config" / "global_universe_block_01.json"
+BLOCK_02 = ROOT / "config" / "global_universe_block_02.json"
+BLOCKS_01_02 = ROOT / "config" / "global_universe_blocks_01_02.json"
 
 
 def test_block_01_is_small_unique_and_benchmark_is_separate():
@@ -23,6 +25,30 @@ def test_block_01_is_small_unique_and_benchmark_is_separate():
     assert block["benchmark"] == "ACWI"
     assert "ACWI" not in tickers
     assert block["status"] == "diagnostic"
+
+
+def test_block_02_is_small_unique_and_has_emerging_markets():
+    block = load_block(BLOCK_02)
+    tickers = [item["ticker"] for item in block["instruments"]]
+    assert len(tickers) == len(set(tickers)) == 10
+    assert block["benchmark"] == "ACWI"
+    assert "ACWI" not in tickers
+    assert {"Brazil", "Chile", "India", "Taiwan", "South Africa"}.issubset(
+        {item["country"] for item in block["instruments"]}
+    )
+
+
+def test_combined_block_is_exact_union_without_duplicates():
+    developed = load_block(BLOCK)
+    emerging = load_block(BLOCK_02)
+    combined = load_block(BLOCKS_01_02)
+    expected = {
+        item["ticker"]
+        for item in developed["instruments"] + emerging["instruments"]
+    }
+    actual = {item["ticker"] for item in combined["instruments"]}
+    assert actual == expected
+    assert len(actual) == 20
 
 
 def test_backtest_applies_signal_after_decision_and_charges_costs():

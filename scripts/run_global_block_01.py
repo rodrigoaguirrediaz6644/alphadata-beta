@@ -1,8 +1,9 @@
-"""Ejecuta y conserva el backtest reproducible del Bloque Global 01."""
+"""Ejecuta y conserva un backtest reproducible de un bloque global."""
 
 from __future__ import annotations
 
 import json
+import argparse
 from pathlib import Path
 
 import pandas as pd
@@ -17,8 +18,8 @@ from src.global_instrument_backtest import (
 
 
 ROOT = Path(__file__).resolve().parents[1]
-BLOCK_PATH = ROOT / "config" / "global_universe_block_01.json"
-OUTPUT_DIR = ROOT / "artifacts" / "global_block_01"
+DEFAULT_BLOCK_PATH = ROOT / "config" / "global_universe_block_01.json"
+DEFAULT_OUTPUT_DIR = ROOT / "artifacts" / "global_block_01"
 
 
 def download_prices(block: dict) -> pd.DataFrame:
@@ -54,8 +55,8 @@ def annual_returns(nav: pd.DataFrame) -> pd.DataFrame:
     return result
 
 
-def main() -> None:
-    block = load_block(BLOCK_PATH)
+def run(block_path: Path, output_dir: Path) -> dict:
+    block = load_block(block_path)
     prices = download_prices(block)
     strategy_nav, weights = backtest_from_prices(prices, block)
     reference_nav = benchmark_nav(prices, block["benchmark"])
@@ -79,16 +80,25 @@ def main() -> None:
         "max_exposure": float(strategy_exposure.max()),
     }
 
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    prices.to_csv(OUTPUT_DIR / "adjusted_prices.csv", index_label="date")
-    combined.to_csv(OUTPUT_DIR / "nav.csv", index_label="date")
-    weights.to_csv(OUTPUT_DIR / "weights.csv", index_label="date")
-    annual_returns(combined).to_csv(OUTPUT_DIR / "annual_returns.csv")
-    (OUTPUT_DIR / "summary.json").write_text(
+    output_dir.mkdir(parents=True, exist_ok=True)
+    prices.to_csv(output_dir / "adjusted_prices.csv", index_label="date")
+    combined.to_csv(output_dir / "nav.csv", index_label="date")
+    weights.to_csv(output_dir / "weights.csv", index_label="date")
+    annual_returns(combined).to_csv(output_dir / "annual_returns.csv")
+    (output_dir / "summary.json").write_text(
         json.dumps(summary, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",
     )
     print(json.dumps(summary, indent=2, ensure_ascii=False))
+    return summary
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--block", type=Path, default=DEFAULT_BLOCK_PATH)
+    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT_DIR)
+    args = parser.parse_args()
+    run(args.block, args.output)
 
 
 if __name__ == "__main__":
