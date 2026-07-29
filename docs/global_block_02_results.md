@@ -23,3 +23,36 @@ Bloques 01 y 02 quedan como controles diagnósticos. El siguiente experimento
 debe aislar si la debilidad está en el ranking transversal, en el filtro de
 tendencia o en la asignación inversa a volatilidad, usando validación temporal
 y sin escoger parámetros por el resultado total.
+
+## Diagnóstico de componentes
+
+Corrida reproducible `30442040180`, con datos hasta el 28 de julio de 2026.
+Cada variante cambia un solo componente sobre el universo combinado de 20 ETF.
+
+| Variante | CAGR | Retorno acumulado | Drawdown máximo | Calmar | Exposición media |
+|---|---:|---:|---:|---:|---:|
+| Original | 2,51% | 50,78% | -28,66% | 0,088 | 70,93% |
+| Igual ponderación | 2,46% | 49,64% | -31,08% | 0,079 | 70,93% |
+| Sólo momentum | 3,22% | 69,14% | -37,93% | 0,085 | 73,54% |
+| Sólo tendencia | 3,89% | 88,03% | -27,58% | 0,141 | 83,12% |
+| Siempre invertida e igual peso | 6,96% | 204,61% | -42,66% | 0,163 | 98,03% |
+| ACWI | 10,20% | 399,09% | -33,53% | 0,304 | 100,00% |
+
+La ponderación inversa a volatilidad no explica el rezago: igual ponderación
+reduce levemente la rentabilidad y empeora el drawdown. El efectivo explica
+parte de la diferencia, pero la cartera siempre invertida todavía queda muy
+por debajo de ACWI y asume un drawdown mayor.
+
+El filtro de tendencia aislado domina a los demás controles filtrados, pero
+tampoco genera una estrategia competitiva. En 2011-2015 todas las variantes
+perdieron dinero mientras ACWI obtuvo 5,43% anualizado; la debilidad, por tanto,
+no surge solamente de un episodio reciente.
+
+## Decisión posterior al diagnóstico
+
+No se promoverá ninguna variante de ETF-país ni se ajustarán más parámetros
+sobre el período completo. Estos ETF quedan como benchmark operativo y control
+de infraestructura. La siguiente incorporación será un bloque pequeño de
+acciones estadounidenses con universo histórico fechado, liquidez observada y
+selección transversal efectiva, de modo que `max_positions` sea menor que el
+número de candidatas.
