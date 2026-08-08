@@ -60,7 +60,8 @@ def test_sigma6_tolerates_three_session_calendar_mismatch():
         "adjusted_close": np.linspace(40, 60, len(dates)),
     })
     portfolio, audit, _ = sigma6(
-        _sigma_valid(), pd.concat([local, foreign]), dates[-1], {"sigma_entries": {}}
+        _sigma_valid().assign(available_at_parsed=pd.Timestamp("2024-01-02")),
+        pd.concat([local, foreign]), dates[-1], {"sigma_entries": {}}
     )
     assert set(portfolio.ticker) == {"BCI"}
     assert pd.notna(audit.set_index("ticker").loc["BCI", "momentum_12_1"])
