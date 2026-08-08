@@ -1,9 +1,6 @@
 name: Ejecutar AlphaData
 
 on:
-  push:
-    branches: [main]
-    paths: [.github/workflows/update-prices.yml]
   workflow_dispatch:
   schedule:
     - cron: "30 20 * * 5"
