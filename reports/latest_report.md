@@ -4,7 +4,7 @@
 
 ## Resumen
 
-- Sigma-6: 0 posiciones; caja 100.0%.
+- Sigma-6: 5 posiciones; caja 50.0%.
 - Delta-12: 8 posiciones; caja 0.0%.
 - Estado de datos: Con observaciones.
 
