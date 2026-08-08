@@ -25,7 +25,7 @@ PYTHONPATH=. python alphadata.py run --offline
 - `reports/latest_report.html` y `reports/latest_report.md`
 - `data/portfolio_sigma6.csv` y `data/portfolio_delta12.csv`
 - `data/movements_*.csv` y `data/audit_*.csv`
-- `data/strategy_nav.csv` y `data/strategy_state.json`
+- `data/strategy_state.json`: posiciones vigentes y fechas de ingreso definidas por cada estrategia.
 - `data/recommendations_history.csv`, errores y cobertura
 
 ## Fuentes automáticas

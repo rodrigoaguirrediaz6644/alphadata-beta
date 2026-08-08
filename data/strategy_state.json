@@ -115,13 +115,7 @@
       "open_return": -0.001781819452277733
     }
   ],
-  "nav": {
-    "Sigma-6": 101.68382502975152,
-    "Delta-12": 98.27260928718401,
-    "IPSA TR": 212.5567414816112
-  },
   "delta_last_period": "2026-07",
-  "valuation_date": "2026-08-07",
   "ingestion": {
     "uploaded_files": 0,
     "history_rows": 1108
