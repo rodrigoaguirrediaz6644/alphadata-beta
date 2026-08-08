@@ -19,6 +19,11 @@ SIGNALS = {
 RECOMMENDATION_COLUMNS = ["published_at", "available_at", "broker", "ticker", "recommendation", "target_price_min", "target_price_max", "currency", "source_url", "notes"]
 
 
+class Sigma6DataQualityError(RuntimeError):
+    """Impide convertir indicadores ausentes en órdenes económicas."""
+
+
+
 def _key(value: str) -> str:
     value = unicodedata.normalize("NFKD", str(value)).encode("ascii", "ignore").decode().lower().strip()
     return re.sub(r"[^a-z0-9]", "", value)
@@ -73,12 +78,29 @@ def sigma6(valid: pd.DataFrame, prices: pd.DataFrame, as_of: pd.Timestamp, previ
         cutoff=as_of-pd.Timedelta(days=365)
         active=valid[(valid.available_at_parsed<=as_of)&(valid.available_at_parsed>=cutoff)].sort_values(["available_at_parsed","row_number"]).drop_duplicates(["ticker","broker_normalized"],keep="last")
     close=prices.loc[prices.date<=as_of].pivot(index="date",columns="alphadata_ticker",values="adjusted_close").sort_index()
+    # Los calendarios bursátiles no coinciden. Una fila global puede existir por un
+    # ADR aunque Chile no haya transado; completar sólo hasta tres ruedas evita
+    # que ese desfase transforme posiciones válidas en ventas.
+    close=close.ffill(limit=3)
     momentum=(close.shift(21).iloc[-1]/close.shift(252).iloc[-1]-1) if len(close)>=252 else pd.Series(dtype=float)
     audit=[]
     for ticker,g in active.groupby("ticker"):
         signal=int(g.iloc[-1].signal); mom=float(momentum.get(ticker,np.nan))
         audit.append({"ticker":ticker,"credicorp_signal":signal,"momentum_12_1":mom,"history_rows":int(close[ticker].notna().sum()) if ticker in close else 0,"latest_signal_at":g.available_at_parsed.max(),"eligible":bool(signal==1 and pd.notna(mom) and mom>0)})
     scores=pd.DataFrame(audit)
+    positive=scores.loc[scores.credicorp_signal==1] if len(scores) else scores
+    missing_positive=set(positive.loc[positive.momentum_12_1.isna(),"ticker"]) if len(positive) else set()
+    held=set(previous.get("sigma_entries",{}))
+    missing_held=missing_positive & held
+    if missing_held:
+        raise Sigma6DataQualityError(
+            "Sigma-6 abortada: faltan indicadores para posiciones vigentes con señal positiva: "
+            + ", ".join(sorted(missing_held))
+        )
+    if len(positive) and positive.momentum_12_1.isna().all():
+        raise Sigma6DataQualityError(
+            "Sigma-6 abortada: faltan todos los indicadores de momentum para las señales positivas"
+        )
     candidates=scores[scores.eligible].set_index("ticker") if len(scores) else pd.DataFrame()
     entries=previous.get("sigma_entries",{}); eligible={}
     if len(candidates):
