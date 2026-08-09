@@ -39,13 +39,16 @@ def _metrics(values: pd.Series, dates: pd.Series) -> dict[str, float | None]:
     keep = values.notna()
     values, dates = values[keep], pd.to_datetime(dates[keep])
     if len(values) < 2 or values.iloc[0] <= 0:
-        return {"return": None, "cagr": None, "vol": None, "mdd": None, "positive_months": None}
+        return {"return": None, "return_12m": None, "cagr": None, "vol": None, "mdd": None, "positive_months": None}
     returns = values.pct_change().dropna()
     years = max((dates.iloc[-1] - dates.iloc[0]).days / 365.25, 1 / 365.25)
     monthly = pd.Series(values.to_numpy(), index=dates).resample("ME").last().pct_change().dropna()
     drawdown = values / values.cummax() - 1
+    cutoff_12m = dates.iloc[-1] - pd.DateOffset(years=1)
+    base_12m = values.loc[dates <= cutoff_12m]
     return {
         "return": values.iloc[-1] / values.iloc[0] - 1,
+        "return_12m": values.iloc[-1] / base_12m.iloc[-1] - 1 if len(base_12m) and base_12m.iloc[-1] > 0 else None,
         "cagr": (values.iloc[-1] / values.iloc[0]) ** (1 / years) - 1 if years >= .25 else None,
         "vol": returns.std() * np.sqrt(252) if len(returns) > 2 else None,
         "mdd": drawdown.min(),
@@ -103,7 +106,7 @@ def _historical_block() -> str:
     fig.savefig(output, bbox_inches="tight", facecolor="white")
     plt.close(fig)
     metric_rows = []
-    for label, key in [("Rentabilidad acumulada", "return"), ("CAGR", "cagr"), ("Volatilidad anual", "vol"), ("Máximo retroceso", "mdd")]:
+    for label, key in [("Rentabilidad acumulada", "return"), ("Rentabilidad últimos 12 meses", "return_12m"), ("CAGR", "cagr"), ("Volatilidad anual", "vol"), ("Máximo retroceso", "mdd")]:
         metric_rows.append("<tr><td>" + label + "</td>" + "".join(f"<td>{pct(metrics[n][key], 2)}</td>" for n in names) + "</tr>")
     sigma_adv = metrics["Sigma-6"]["return"] - metrics["IPSA TR"]["return"]
     delta_adv = metrics["Delta-12"]["return"] - metrics["IPSA TR"]["return"]
@@ -111,7 +114,7 @@ def _historical_block() -> str:
     return f'''<div class="callouts"><strong>Sigma-6: {pct(sigma_adv)} más que IPSA</strong><strong>Delta-12: {pct(delta_adv)} más que IPSA</strong></div>
     <div class="legend">{legends}</div><div class="chart"><img src="cid:historical_performance" alt="Fluctuaciones de Sigma-6, Delta-12 e IPSA TR durante los últimos 5 años o historial disponible" style="display:block;width:100%;max-width:900px;height:auto"></div>
     <table><thead><tr><th>Métrica</th>{''.join('<th>'+n+'</th>' for n in names)}</tr></thead><tbody>{''.join(metric_rows)}</tbody></table>
-    <p class="muted">Periodo: {data.date.min():%d-%m-%Y} al {data.date.max():%d-%m-%Y}. Costo aplicado sobre rotación: 0,1785%.</p>'''
+    <p class="muted">Periodo: {data.date.min():%d-%m-%Y} al {data.date.max():%d-%m-%Y}. La rentabilidad de 12 meses termina en esta última fecha disponible. Costo aplicado sobre rotación: 0,1785%.</p>'''
 
 
 def _table(df: pd.DataFrame, columns: list[str]) -> str:

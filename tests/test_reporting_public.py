@@ -7,7 +7,16 @@ from src.reporting_public import _metrics, _open_portfolio_return, build_public_
 def test_metrics_do_not_invent_history_with_one_observation():
     result = _metrics(pd.Series([100.0]), pd.Series(["2026-07-16"]))
     assert result["return"] is None
+    assert result["return_12m"] is None
     assert result["mdd"] is None
+
+
+def test_metrics_calculates_trailing_twelve_month_return_to_latest_date():
+    result = _metrics(
+        pd.Series([100.0, 120.0, 150.0]),
+        pd.Series(["2025-07-15", "2026-01-15", "2026-07-15"]),
+    )
+    assert result["return_12m"] == pytest.approx(.50)
 
 
 def test_open_portfolio_return_uses_position_weights_and_leaves_cash_at_zero():
