@@ -1,0 +1,177 @@
+from __future__ import annotations
+
+import json
+from dataclasses import dataclass
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+
+@dataclass(frozen=True)
+class Rules:
+    rsi_period: int = 14
+    rsi_entry_min: float = 45.0
+    rsi_entry_max: float = 80.0
+    rsi_exit: float = 38.0
+    fast_ma: int = 50
+    slow_ma: int = 200
+    breakout_days: int = 20
+    relative_strength_days: int = 126
+    stop_vol_period: int = 63
+    stop_vol_multiple: float = 3.0
+    index_ma: int = 200
+    vix_max: float = 25.0
+    vix_panic: float = 40.0
+    max_positions: int = 5
+    max_position_weight: float = 0.25
+    cost_rate: float = 0.001785
+
+
+def rsi(price: pd.Series, period: int = 14) -> pd.Series:
+    change = price.diff()
+    gain = change.clip(lower=0).ewm(alpha=1 / period, adjust=False, min_periods=period).mean()
+    loss = (-change.clip(upper=0)).ewm(alpha=1 / period, adjust=False, min_periods=period).mean()
+    rs = gain / loss.replace(0, np.nan)
+    out = 100 - 100 / (1 + rs)
+    return out.where(loss.ne(0), 100.0)
+
+
+def _indicators(prices, benchmark, vix, rules):
+    returns = prices.pct_change(fill_method=None)
+    fast = prices.rolling(rules.fast_ma).mean()
+    slow = prices.rolling(rules.slow_ma).mean()
+    rsi_frame = prices.apply(rsi, period=rules.rsi_period)
+    breakout = prices.shift(1).rolling(rules.breakout_days).max()
+    asset_mom = prices / prices.shift(rules.relative_strength_days) - 1
+    bench_mom = benchmark / benchmark.shift(rules.relative_strength_days) - 1
+    strength = asset_mom.sub(bench_mom, axis=0)
+    daily_vol = returns.rolling(rules.stop_vol_period).std()
+    bench_ma = benchmark.rolling(rules.index_ma).mean()
+    aligned_vix = vix.reindex(prices.index).ffill()
+    return {
+        "fast": fast, "slow": slow, "rsi": rsi_frame, "breakout": breakout,
+        "strength": strength, "daily_vol": daily_vol,
+        "market_ok": benchmark.gt(bench_ma) & aligned_vix.lt(rules.vix_max),
+        "panic": aligned_vix.ge(rules.vix_panic),
+    }
+
+
+def _period_end(index: pd.DatetimeIndex, position: int, frequency: str) -> bool:
+    if position + 1 == len(index):
+        return True
+    current, following = index[position], index[position + 1]
+    if frequency == "month":
+        return (current.year, current.month) != (following.year, following.month)
+    return current.to_period("W-FRI") != following.to_period("W-FRI")
+
+
+def backtest_signals(prices, benchmark, vix, rules=Rules()):
+    """Long-only: monthly entries, weekly exits, signals at close apply to t+1."""
+    prices = prices.sort_index()
+    benchmark = benchmark.reindex(prices.index).ffill()
+    ind = _indicators(prices, benchmark, vix, rules)
+    returns = prices.pct_change(fill_method=None).fillna(0.0)
+    weights = pd.Series(0.0, index=prices.columns)
+    nav = 1.0
+    nav_rows, weight_rows, trades = [], [], []
+    peaks = pd.Series(np.nan, index=prices.columns)
+
+    for position, date in enumerate(prices.index):
+        day_return = float((weights * returns.loc[date]).sum())
+        nav *= 1.0 + day_return
+        # Cash is implicit. Never renormalize risky assets to 100%.
+        weights = weights * (1.0 + returns.loc[date]) / (1.0 + day_return)
+        held = weights.gt(0)
+        peaks.loc[held] = pd.concat(
+            [peaks.loc[held], prices.loc[date, held]], axis=1
+        ).max(axis=1)
+
+        month_end = _period_end(prices.index, position, "month")
+        week_end = _period_end(prices.index, position, "week")
+        panic = bool(ind["panic"].loc[date])
+        if not month_end and not week_end and not panic:
+            nav_rows.append((date, nav))
+            weight_rows.append(weights.rename(date))
+            continue
+
+        trailing_floor = peaks * (
+            1 - rules.stop_vol_multiple * ind["daily_vol"].loc[date]
+        )
+        exit_signal = (
+            prices.loc[date].lt(ind["slow"].loc[date])
+            | ind["rsi"].loc[date].lt(rules.rsi_exit)
+            | prices.loc[date].lt(trailing_floor)
+            | panic
+        ) & held
+        # Enforce the concentration ceiling at every weekly control point.
+        target = weights.clip(upper=rules.max_position_weight)
+        target.loc[exit_signal] = 0.0
+
+        if month_end and not panic:
+            eligible = (
+                prices.loc[date].gt(ind["fast"].loc[date])
+                & ind["fast"].loc[date].gt(ind["slow"].loc[date])
+                & prices.loc[date].ge(ind["breakout"].loc[date])
+                & ind["rsi"].loc[date].between(rules.rsi_entry_min, rules.rsi_entry_max)
+                & ind["strength"].loc[date].gt(0)
+                & bool(ind["market_ok"].loc[date])
+            )
+            score = (
+                ind["strength"].loc[date].rank(pct=True)
+                + ind["rsi"].loc[date].sub(50).clip(lower=0).rank(pct=True)
+                - ind["daily_vol"].loc[date].rank(pct=True)
+            )
+            survivors = set(target.index[target.gt(0)])
+            selected = set(
+                score.where(eligible).nlargest(rules.max_positions).dropna().index
+            )
+            ranked = score.reindex(list(survivors | selected)).sort_values(
+                ascending=False
+            ).head(rules.max_positions)
+            target[:] = 0.0
+            target.loc[ranked.index] = rules.max_position_weight
+
+        delta = target - weights
+        turnover = float(delta.abs().sum())
+        if turnover:
+            nav *= 1 - turnover * rules.cost_rate
+            for ticker, amount in delta[delta.ne(0)].items():
+                trades.append({
+                    "date": date, "ticker": ticker,
+                    "action": "BUY" if amount > 0 else "SELL",
+                    "weight_change": float(amount),
+                    "price": float(prices.loc[date, ticker]),
+                })
+        exited = weights.gt(0) & target.eq(0)
+        entered = weights.eq(0) & target.gt(0)
+        peaks.loc[exited] = np.nan
+        peaks.loc[entered] = prices.loc[date, entered]
+        weights = target
+        nav_rows.append((date, nav))
+        weight_rows.append(weights.rename(date))
+
+    return (
+        pd.Series(dict(nav_rows), name="COLOMBIA_SIGNALS"),
+        pd.DataFrame(weight_rows),
+        pd.DataFrame(trades),
+    )
+
+
+def performance(nav):
+    nav = nav.dropna()
+    daily = nav.pct_change().dropna()
+    years = (nav.index[-1] - nav.index[0]).days / 365.25
+    drawdown = nav / nav.cummax() - 1
+    cagr = nav.iloc[-1] ** (1 / years) - 1
+    return {
+        "total_return": float(nav.iloc[-1] - 1),
+        "cagr": float(cagr),
+        "max_drawdown": float(drawdown.min()),
+        "volatility": float(daily.std() * np.sqrt(252)),
+        "calmar": float(cagr / abs(drawdown.min())) if drawdown.min() < 0 else np.nan,
+    }
+
+
+def load_rules(path: Path) -> Rules:
+    return Rules(**json.loads(path.read_text(encoding="utf-8"))["rules"])
