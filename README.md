@@ -30,7 +30,7 @@ PYTHONPATH=. python alphadata.py run --offline
 
 ## Fuentes automáticas
 
-Los precios se descargan mediante Yahoo Finance usando el catálogo `config/tickers.csv`. El benchmark configurado es `IPSA_TR` con símbolo proveedor `^IPSA`. Cada corrida conserva la fuente y la cobertura; si la descarga falla, sólo se usa la caché existente y se emite una advertencia.
+Los precios se descargan mediante Yahoo Finance usando el catálogo `config/tickers.csv`. El benchmark configurado es `IPSA_TR` con símbolo proveedor `^IPSA`. Cada corrida conserva la fuente y la cobertura. Si Yahoo entrega un lote parcial, los símbolos ausentes se reintentan individualmente y, si continúan ausentes, se conserva su última serie validada con la marca `CACHE_VALIDADA` en `data/coverage_report.csv`. Una falla total también conserva la caché existente y emite una advertencia.
 
 ## Costos
 
