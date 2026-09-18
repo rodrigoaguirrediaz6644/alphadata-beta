@@ -1,6 +1,6 @@
 # AlphaData — informe de estrategias
 
-**Fecha de corte:** 11-09-2026
+**Fecha de corte:** 18-09-2026
 
 ## Resumen
 
@@ -18,6 +18,6 @@ El informe HTML contiene las comparaciones, gráficos, carteras y movimientos. L
 
 - Fondo vigente: **Fondo A**.
 - Última señal: Fondo A (5/5), fecha 2026-08-31.
-- Datos Cuprum actualizados al 2026-09-09.
+- Datos Cuprum actualizados al 2026-09-16.
 - Backtest y tablas: `data/horizonte_backtest_summary.csv`, `data/horizonte_annual.csv`, `data/horizonte_trades.csv` y `data/horizonte_signals.csv`.
 <!-- HORIZONTE_END -->
