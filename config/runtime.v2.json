@@ -6,8 +6,11 @@
   ],
   "benchmark": {
     "alphadata_ticker": "IPSA_TR",
-    "provider_ticker": "^IPSA",
-    "name": "S&P IPSA Total Return"
+    "provider_ticker": "CFMITNIPSA.SN",
+    "name": "IPSA retorno total (proxy ETF CFMITNIPSA)",
+    "method": "adjusted_close_total_return_proxy",
+    "transition_from": "^IPSA",
+    "transition_reason": "Yahoo dejó de actualizar ^IPSA tras el cambio de administrador del índice a MSCI en septiembre de 2026"
   },
   "transaction_cost": {
     "provider": "Trii/Racional",

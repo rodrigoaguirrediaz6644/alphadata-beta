@@ -126,7 +126,7 @@ def report(as_of,sigma,delta,smove,dmove,s_audit,d_audit,coverage,errors,state,n
 | --- | ---: |
 | Sigma-6 | {navrow['Sigma-6']:.2f} |
 | Delta-12 | {navrow['Delta-12']:.2f} |
-| IPSA Total Return | {navrow['IPSA TR']:.2f} |
+| IPSA TR proxy ETF | {navrow['IPSA TR']:.2f} |
 
 ## Sigma-6
 
@@ -166,7 +166,7 @@ Resultados de carteras modelo para evaluación interna. No constituyen asesoría
     html=f"""<!doctype html><html lang='es'><head><meta charset='utf-8'><style>
     body{{font:16px Arial;max-width:1000px;margin:36px auto;color:#17324d;line-height:1.45}}table{{border-collapse:collapse;width:100%;margin:12px 0 24px}}th,td{{border:1px solid #ccd6df;padding:8px;text-align:left}}th{{background:#147d78;color:white}}h1,h2{{color:#12304a}}.note{{background:#fff4cc;padding:14px}}
     </style></head><body><h1>Informe automático AlphaData</h1><p><strong>Fecha de corte:</strong> {as_of:%d-%m-%Y}<br><strong>Metodología:</strong> Sigma-6 v2.0.0 y Delta-12 v2.0.0</p>
-    <h2>Resumen</h2><p>{escape(intro)}</p><table><tr><th>Serie</th><th>Índice acumulado</th></tr><tr><td>Sigma-6</td><td>{navrow['Sigma-6']:.2f}</td></tr><tr><td>Delta-12</td><td>{navrow['Delta-12']:.2f}</td></tr><tr><td>IPSA Total Return</td><td>{navrow['IPSA TR']:.2f}</td></tr></table>
+    <h2>Resumen</h2><p>{escape(intro)}</p><table><tr><th>Serie</th><th>Índice acumulado</th></tr><tr><td>Sigma-6</td><td>{navrow['Sigma-6']:.2f}</td></tr><tr><td>Delta-12</td><td>{navrow['Delta-12']:.2f}</td></tr><tr><td>IPSA TR proxy ETF</td><td>{navrow['IPSA TR']:.2f}</td></tr></table>
     <h2>Sigma-6</h2>{html_table(sigma,['ticker','target_weight'])}<p><strong>Caja:</strong> {pct(sigma_cash)}</p><h3>Movimientos</h3>{html_table(smove,['ticker','action','previous_weight','target_weight','change'])}
     <h2>Delta-12</h2>{html_table(delta,['ticker','target_weight'])}<p><strong>Caja:</strong> {pct(delta_cash)}. Se modifica sólo una vez por mes.</p><h3>Movimientos</h3>{html_table(dmove,['ticker','action','previous_weight','target_weight','change'])}
     <h2>Calidad de datos</h2><ul><li>Filas rechazadas: {len(errors)}</li><li>Instrumentos con cobertura suficiente: {int((coverage.status=='OK').sum())}/{len(coverage)}</li><li>Último precio: {as_of:%d-%m-%Y}</li></ul>

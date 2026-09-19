@@ -11,6 +11,7 @@ CONFIG_PATH = ROOT / "config" / "tickers.csv"
 DATA_DIR = ROOT / "data"
 START_DATE = os.getenv("ALPHADATA_PRICE_START", "2015-01-01")
 MIN_HISTORY_ROWS = 252
+MAX_BENCHMARK_LAG_BUSINESS_DAYS = 3
 PRICE_COLUMNS = ["date", "alphadata_ticker", "yahoo_ticker", "open", "high", "low", "close", "adjusted_close", "volume"]
 
 
@@ -85,6 +86,21 @@ def merge_with_cache(fresh: pd.DataFrame, cached: pd.DataFrame) -> pd.DataFrame:
 
     Las filas recién descargadas prevalecen para una misma fecha e instrumento.
     """
+    # Si cambia el símbolo proveedor de un instrumento, no se pueden mezclar
+    # niveles de ambas series. Esto ocurre con IPSA_TR al sustituir el extinto
+    # ^IPSA por el ETF proxy: conservar fechas antiguas del símbolo anterior
+    # introduciría saltos de escala y rentabilidades ficticias.
+    if not fresh.empty and not cached.empty:
+        cached = cached.copy()
+        for alphadata_ticker, group in fresh.groupby("alphadata_ticker"):
+            fresh_sources = set(group["yahoo_ticker"].dropna().astype(str))
+            cached_sources = set(
+                cached.loc[
+                    cached["alphadata_ticker"] == alphadata_ticker, "yahoo_ticker"
+                ].dropna().astype(str)
+            )
+            if fresh_sources and cached_sources and fresh_sources != cached_sources:
+                cached = cached.loc[cached["alphadata_ticker"] != alphadata_ticker]
     frames = [frame for frame in (cached, fresh) if not frame.empty]
     if not frames:
         return pd.DataFrame(columns=PRICE_COLUMNS)
@@ -106,9 +122,15 @@ def build_coverage(
     fresh_tickers: set[str] | None = None,
 ) -> pd.DataFrame:
     checked_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    dated_prices = prices.copy()
+    dated_prices["date"] = pd.to_datetime(dated_prices["date"], errors="coerce")
+    market_dates = dated_prices.loc[
+        dated_prices["alphadata_ticker"] != "IPSA_TR", "date"
+    ].dropna()
+    reference_date = market_dates.max() if len(market_dates) else dated_prices["date"].max()
     rows = []
     for item in universe.itertuples(index=False):
-        subset = prices.loc[prices["alphadata_ticker"] == item.alphadata_ticker]
+        subset = dated_prices.loc[dated_prices["alphadata_ticker"] == item.alphadata_ticker]
         required_rows = min_rows if item.tipo == "accion_local" else 20
         data_source = (
             "DESCARGA_ACTUAL"
@@ -117,12 +139,34 @@ def build_coverage(
             if len(subset)
             else "SIN_DATOS"
         )
+        last_date = subset["date"].max() if len(subset) else pd.NaT
+        lag_business_days = (
+            max(0, len(pd.bdate_range(last_date.normalize(), reference_date.normalize())) - 1)
+            if pd.notna(last_date) and pd.notna(reference_date)
+            else None
+        )
+        enough_history = len(subset) >= required_rows
+        benchmark_stale = (
+            item.tipo == "benchmark"
+            and lag_business_days is not None
+            and lag_business_days > MAX_BENCHMARK_LAG_BUSINESS_DAYS
+        )
+        status = (
+            "SIN_DATOS"
+            if not len(subset)
+            else "INSUFICIENTE"
+            if not enough_history
+            else "DESACTUALIZADO"
+            if benchmark_stale
+            else "OK"
+        )
         rows.append({
             "alphadata_ticker": item.alphadata_ticker, "yahoo_ticker": item.yahoo_ticker, "nombre": item.nombre,
             "tipo": item.tipo, "rows": int(len(subset)),
             "first_date": subset["date"].min().date().isoformat() if len(subset) else "",
-            "last_date": subset["date"].max().date().isoformat() if len(subset) else "",
-            "status": "OK" if len(subset) >= required_rows else "INSUFICIENTE" if len(subset) else "SIN_DATOS",
+            "last_date": last_date.date().isoformat() if pd.notna(last_date) else "",
+            "lag_business_days": lag_business_days if lag_business_days is not None else "",
+            "status": status,
             "data_source": data_source,
             "checked_at_utc": checked_at,
         })
@@ -188,7 +232,13 @@ def main() -> None:
     if cached_symbols: print("ADVERTENCIA: se usó caché validada para: " + ", ".join(cached_symbols))
     benchmark_ok = coverage.loc[(coverage.alphadata_ticker == "IPSA_TR") & (coverage.status == "OK")]
     if daily.empty or len(local_ok) < 20: raise SystemExit("Menos de 20 acciones locales tienen historia suficiente; se cancela el cálculo para evitar una cartera incompleta")
-    if benchmark_ok.empty: raise SystemExit("El benchmark IPSA_TR no tiene cobertura suficiente")
+    if benchmark_ok.empty:
+        benchmark = coverage.loc[coverage.alphadata_ticker == "IPSA_TR"].iloc[0]
+        raise SystemExit(
+            "El benchmark IPSA_TR no está vigente: "
+            f"estado={benchmark.status}, última_fecha={benchmark.last_date}, "
+            f"rezago_hábil={benchmark.lag_business_days}"
+        )
 
 
 if __name__ == "__main__":

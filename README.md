@@ -30,7 +30,7 @@ PYTHONPATH=. python alphadata.py run --offline
 
 ## Fuentes automáticas
 
-Los precios se descargan mediante Yahoo Finance usando el catálogo `config/tickers.csv`. El benchmark configurado es `IPSA_TR` con símbolo proveedor `^IPSA`. Cada corrida conserva la fuente y la cobertura. Si Yahoo entrega un lote parcial, los símbolos ausentes se reintentan individualmente y, si continúan ausentes, se conserva su última serie validada con la marca `CACHE_VALIDADA` en `data/coverage_report.csv`. Una falla total también conserva la caché existente y emite una advertencia.
+Los precios se descargan mediante Yahoo Finance usando el catálogo `config/tickers.csv`. El benchmark `IPSA_TR` usa `CFMITNIPSA.SN`: el cierre ajustado del ETF vinculado al IPSA se emplea como proxy invertible de retorno total desde que Yahoo dejó congelado `^IPSA` tras el cambio de administrador del índice a MSCI. No se presenta como el nivel oficial del índice. Cada corrida conserva la fuente y la cobertura. Si Yahoo entrega un lote parcial, los símbolos ausentes se reintentan individualmente y, si continúan ausentes, se conserva su última serie validada con la marca `CACHE_VALIDADA` en `data/coverage_report.csv`. El benchmark solo se acepta si tiene historia suficiente y no supera tres días hábiles de rezago respecto del mercado local; de lo contrario la corrida se detiene.
 
 ## Costos
 

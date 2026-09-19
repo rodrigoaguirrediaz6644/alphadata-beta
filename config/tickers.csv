@@ -43,4 +43,4 @@ INGEVEC,INGEVEC.SN,Ingevec,accion_sigma,CLP,activo
 MULTIFOODS,MULTIFOODS.SN,Multiexport Foods,accion_sigma,CLP,activo
 SMSAAM,SMSAAM.SN,SAAM,accion_sigma,CLP,activo
 SONDA,SONDA.SN,Sonda,accion_sigma,CLP,activo
-IPSA_TR,^IPSA,S&P IPSA Total Return,benchmark,indice,activo
+IPSA_TR,CFMITNIPSA.SN,IPSA retorno total (proxy ETF CFMITNIPSA),benchmark,indice,activo

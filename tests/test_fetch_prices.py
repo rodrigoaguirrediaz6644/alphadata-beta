@@ -102,8 +102,8 @@ def test_coverage_records_validated_cache_without_rejecting_history() -> None:
         [
             {
                 "alphadata_ticker": "IPSA_TR",
-                "yahoo_ticker": "^IPSA",
-                "nombre": "S&P IPSA",
+                "yahoo_ticker": "CFMITNIPSA.SN",
+                "nombre": "IPSA proxy ETF",
                 "tipo": "benchmark",
             }
         ]
@@ -119,3 +119,71 @@ def test_coverage_records_validated_cache_without_rejecting_history() -> None:
 
     assert coverage.loc[0, "status"] == "OK"
     assert coverage.loc[0, "data_source"] == "CACHE_VALIDADA"
+
+
+def test_coverage_rejects_stale_benchmark_even_with_long_history() -> None:
+    universe = pd.DataFrame(
+        [
+            {
+                "alphadata_ticker": "ABC",
+                "yahoo_ticker": "ABC.SN",
+                "nombre": "Acción",
+                "tipo": "accion_local",
+            },
+            {
+                "alphadata_ticker": "IPSA_TR",
+                "yahoo_ticker": "CFMITNIPSA.SN",
+                "nombre": "IPSA proxy ETF",
+                "tipo": "benchmark",
+            },
+        ]
+    )
+    prices = pd.DataFrame(
+        [
+            *[
+                {"date": pd.Timestamp("2026-09-18"), "alphadata_ticker": "ABC", "close": 10.0}
+            ],
+            *[
+                {
+                    "date": pd.Timestamp("2026-07-17") - pd.offsets.BDay(i),
+                    "alphadata_ticker": "IPSA_TR",
+                    "close": 100.0,
+                }
+                for i in range(20)
+            ],
+        ]
+    )
+
+    coverage = build_coverage(prices, universe, min_rows=1)
+    benchmark = coverage.set_index("alphadata_ticker").loc["IPSA_TR"]
+
+    assert benchmark["status"] == "DESACTUALIZADO"
+    assert benchmark["lag_business_days"] > 3
+
+
+def test_provider_change_replaces_old_scale_instead_of_splicing_series() -> None:
+    cached = pd.DataFrame(
+        [
+            {
+                "date": pd.Timestamp("2026-07-17"),
+                "alphadata_ticker": "IPSA_TR",
+                "yahoo_ticker": "^IPSA",
+                "open": 10800.0,
+                "high": 10900.0,
+                "low": 10700.0,
+                "close": 10887.72,
+                "adjusted_close": 10887.72,
+                "volume": 0.0,
+            }
+        ],
+        columns=PRICE_COLUMNS,
+    )
+    fresh = cached.copy()
+    fresh["yahoo_ticker"] = "CFMITNIPSA.SN"
+    fresh["close"] = 5000.0
+    fresh["adjusted_close"] = 5000.0
+
+    merged = merge_with_cache(fresh, cached)
+
+    assert set(merged["yahoo_ticker"]) == {"CFMITNIPSA.SN"}
+    assert merged.iloc[0]["adjusted_close"] == 5000.0

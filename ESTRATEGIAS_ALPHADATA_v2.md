@@ -118,7 +118,12 @@ Consenso-6 es el nuevo nombre de la antigua Sigma-6 versión 1.0.0. Utilizaba la
 
 Cada corrida debe guardar fecha y hora de corte, versión, archivos recibidos, errores, exclusiones, indicadores, señales, cartera anterior, cartera nueva, entradas, salidas, permanencias, pesos, caja, rotación, costos y benchmark. Ningún cálculo puede utilizar información conocida después de la fecha de señal.
 
-El benchmark oficial es **S&P IPSA Index (CLP) Total Return**, código `SPCLXIPSAT`.
+La referencia conceptual es el IPSA con dividendos. Desde septiembre de 2026,
+la serie operativa `IPSA_TR` utiliza el cierre ajustado de `CFMITNIPSA.SN`
+como **proxy invertible de retorno total**. No se presenta como el nivel oficial
+del índice: Yahoo dejó congelado `^IPSA` el 17 de julio de 2026 y el IPSA pasó
+de S&P a MSCI el 1 de septiembre. El cambio de proveedor no reescribe el NAV
+histórico; las variaciones nuevas se encadenan desde el valor acumulado vigente.
 
 ## Pendientes antes de comercializar
 
