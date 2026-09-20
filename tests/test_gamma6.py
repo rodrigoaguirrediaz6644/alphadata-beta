@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.strategy_engine import combined_equal_weight, gamma6, to_clp
+from src.strategy_engine import combined_equal_weight, gamma6, sanear_fx, to_clp
 
 
 def _universe() -> pd.DataFrame:
@@ -92,3 +92,17 @@ def test_combined_portfolio_waits_for_a_strategy_without_history():
     combined = combined_equal_weight(frame, ["A", "B", "C"])
     assert combined.notna().all()
     assert len(combined) == len(frame)
+
+
+def test_to_clp_no_se_deja_envenenar_por_un_tipo_de_cambio_imposible():
+    """El 22-12-2016 el proveedor entregó 5 pesos por dólar con apertura de 671.
+    Un dato así hundía un 99% la valorización en pesos de Gamma-6."""
+    prices, universe = _prices(), _universe()
+    fechas = sorted(prices.date.unique())
+    fx = pd.DataFrame({"date": fechas, "alphadata_ticker": "USDCLP", "adjusted_close": 950.0})
+    fx.loc[fx.index[100], "adjusted_close"] = 5.0
+    convertido = to_clp(prices, universe, fx)
+    serie = convertido.loc[convertido.alphadata_ticker.eq("AAA")].sort_values("date")["adjusted_close"]
+    assert (serie / serie.cummax() - 1).min() > -0.5   # sin saneo, acá había un -99%
+    limpio, descartados = sanear_fx(fx.set_index("date")["adjusted_close"])
+    assert list(descartados) == [5.0] and limpio.iloc[100] == 950.0

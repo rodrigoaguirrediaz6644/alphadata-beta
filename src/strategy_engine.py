@@ -166,15 +166,36 @@ def gamma6(prices: pd.DataFrame, universe: pd.DataFrame, as_of: pd.Timestamp) ->
     return portfolio.sort_values("target_weight",ascending=False),audit.reset_index().sort_values(["eligible","score"],ascending=[False,False])
 
 
+def sanear_fx(rate: pd.Series, tolerancia: float = .25, ventana: int = 11) -> tuple[pd.Series, pd.Series]:
+    """Descarta datos imposibles del tipo de cambio y devuelve (serie limpia, descartados).
+
+    El proveedor publica de vez en cuando un dato roto: el 22-12-2016 entregó un
+    cierre de 5 pesos por dólar con una apertura de 671. Multiplicado por un
+    precio en dólares, un dato así hunde la serie en pesos un 99% y la recupera
+    al día siguiente. Se compara cada valor con la mediana móvil centrada y lo
+    que se aparta más de `tolerancia` se descarta, arrastrando el último valor
+    bueno. El umbral es holgado: la mayor variación diaria real del dólar en la
+    serie disponible es de 12%.
+    """
+    limpio=pd.to_numeric(rate,errors="coerce")
+    referencia=limpio.rolling(ventana,center=True,min_periods=3).median()
+    malos=((limpio/referencia-1).abs()>tolerancia)|(limpio<=0)
+    return limpio.mask(malos).ffill().bfill(), limpio[malos]
+
+
 def to_clp(prices: pd.DataFrame, universe: pd.DataFrame, fx: pd.DataFrame) -> pd.DataFrame:
     """Convierte a pesos los precios de los instrumentos en dólares.
 
     `fx` son las filas del tipo de cambio (alphadata_ticker == "USDCLP"). Se
     arrastra el último valor conocido para los días en que Nueva York opera y
-    el mercado cambiario local no publicó nuevo dato.
+    el mercado cambiario local no publicó nuevo dato, y se descartan los datos
+    imposibles antes de multiplicar.
     """
     rate=fx.set_index("date")["adjusted_close"].sort_index()
     if rate.empty: return prices.copy()
+    rate,descartados=sanear_fx(rate)
+    if len(descartados):
+        print("ADVERTENCIA: se descartaron %d datos imposibles del tipo de cambio: %s" % (len(descartados), ", ".join(f"{d:%d-%m-%Y}={v:.2f}" for d,v in descartados.items())))
     usd=set(universe.loc[universe.moneda=="USD","alphadata_ticker"])
     out=prices.copy(); mask=out.alphadata_ticker.isin(usd)
     factor=rate.reindex(pd.DatetimeIndex(sorted(set(out.loc[mask,"date"])|set(rate.index)))).ffill()

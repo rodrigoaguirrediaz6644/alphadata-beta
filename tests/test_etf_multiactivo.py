@@ -93,3 +93,32 @@ def test_selector_rotacion_exige_historia_y_respeta_el_filtro_de_tendencia():
     assert pesos.sum() == pytest.approx(1.0) and elegibles >= 1
     pesos_corto, _ = selector_rotacion(2)(panel.iloc[:100], panel.index[99])
     assert pesos_corto.empty
+
+
+def test_sanear_fx_descarta_el_dato_roto_y_conserva_los_reales():
+    from research.etf_multiactivo.analisis import sanear_fx
+
+    fechas = pd.bdate_range("2016-12-01", periods=30)
+    rate = pd.Series(670.0, index=fechas)
+    rate.iloc[15] = 5.0          # el dato roto real del 22-12-2016
+    limpio, descartados = sanear_fx(rate)
+    assert list(descartados) == [5.0]
+    assert limpio.iloc[15] == 670.0
+    assert (limpio == 670.0).all()
+    # una devaluación real y sostenida del 12% no se toca
+    real = pd.Series(list(np.linspace(800, 896, 15)) + list(np.linspace(896, 900, 15)), index=fechas)
+    _, sin_descartar = sanear_fx(real)
+    assert sin_descartar.empty
+
+
+def test_a_pesos_ignora_el_dato_roto_del_tipo_de_cambio():
+    from research.etf_multiactivo.analisis import a_pesos
+
+    fechas = pd.bdate_range("2016-12-01", periods=30)
+    panel = pd.DataFrame({"TLT": 100.0}, index=fechas)
+    fx = pd.Series(670.0, index=fechas)
+    fx.iloc[15] = 5.0
+    convertido = a_pesos(panel, fx, ["TLT"])
+    assert (convertido["TLT"] == 67000.0).all()
+    caida = (convertido["TLT"] / convertido["TLT"].cummax() - 1).min()
+    assert caida == 0.0   # sin el saneo, acá aparecía un -99%
