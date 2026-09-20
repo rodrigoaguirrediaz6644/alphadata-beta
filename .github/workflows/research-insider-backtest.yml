@@ -1,0 +1,71 @@
+name: Backtest exploratorio Beta-Insider
+
+# Investigación paralela, NO forma parte de la metodología oficial
+# (Sigma-6 / Delta-12). No toca data/, reports/ ni strategy_state.json.
+# Se dispara solo al tocar este archivo o algo dentro de research/,
+# y también se puede lanzar manualmente. Los resultados quedan
+# committeados en research/insider_backtest/results/ para poder
+# leerlos después sin tener que recalcular nada.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "research/**"
+      - "config/universe_us_insider.csv"
+      - "tests/test_insider_backtest_math.py"
+      - ".github/workflows/research-insider-backtest.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: research-insider-backtest
+  cancel-in-progress: false
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v6
+
+      - name: Preparar Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Instalar dependencias
+        run: python -m pip install -r requirements.txt
+
+      - name: Validar funciones puras del backtest (sin red)
+        run: PYTHONPATH=. python -m pytest -q tests/test_insider_backtest_math.py
+
+      - name: Cachear ZIPs trimestrales de la SEC ya descargados
+        uses: actions/cache@v4
+        with:
+          path: research/insider_backtest/.sec_cache
+          key: sec-insider-zips-${{ hashFiles('research/insider_backtest/fetch_and_backtest.py') }}
+          restore-keys: |
+            sec-insider-zips-
+
+      - name: Correr backtest (descarga SEC + Yahoo Finance y calcula)
+        run: PYTHONPATH=. python -m research.insider_backtest.fetch_and_backtest
+
+      - name: Conservar resultados como artefacto
+        uses: actions/upload-artifact@v5
+        with:
+          name: beta-insider-backtest-${{ github.run_number }}
+          path: research/insider_backtest/results/
+          retention-days: 90
+
+      - name: Guardar resultados en el repo
+        run: |
+          git config user.name "alphadata-research-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add research/insider_backtest/results
+          git diff --cached --quiet || git commit -m "research: actualizar backtest exploratorio Beta-Insider"
+          git push

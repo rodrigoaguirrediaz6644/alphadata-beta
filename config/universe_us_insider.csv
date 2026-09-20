@@ -1,0 +1,32 @@
+alphadata_ticker,yahoo_ticker,trii_cdv_ticker,nombre,moneda,tipo,estado
+ABT,ABT,ABTCL,Abbott Laboratories,USD,accion_us,activo
+GOOGL,GOOGL,GOOGLCL,Alphabet Inc. Class A,USD,accion_us,activo
+GOOG,GOOG,GOOGCL,Alphabet Inc. Class C,USD,accion_us,activo
+AMZN,AMZN,AMZNCL,Amazon.com Inc.,USD,accion_us,activo
+AXP,AXP,AXPCL,American Express Co.,USD,accion_us,activo
+AAPL,AAPL,AAPLCL,Apple Inc.,USD,accion_us,activo
+CVX,CVX,CVXCL,Chevron Corp.,USD,accion_us,activo
+EBAY,EBAY,EBAYCL,eBay Inc.,USD,accion_us,activo
+XOM,XOM,XOMCL,Exxon Mobil Corp.,USD,accion_us,activo
+FCX,FCX,FCXCL,Freeport-McMoRan Inc.,USD,accion_us,activo
+HON,HON,HONCL,Honeywell International Inc.,USD,accion_us,activo
+INTC,INTC,INTCCL,Intel Corp.,USD,accion_us,activo
+JNJ,JNJ,JNJCL,Johnson & Johnson,USD,accion_us,activo
+MCD,MCD,MCDCL,McDonald's Corp.,USD,accion_us,activo
+MRK,MRK,MRKCL,Merck & Co. Inc.,USD,accion_us,activo
+MSFT,MSFT,MSFTCL,Microsoft Corp.,USD,accion_us,activo
+MS,MS,MSCL,Morgan Stanley,USD,accion_us,activo
+NKE,NKE,NKECL,Nike Inc.,USD,accion_us,activo
+NVDA,NVDA,NVDACL,NVIDIA Corp.,USD,accion_us,activo
+PFE,PFE,PFECL,Pfizer Inc.,USD,accion_us,activo
+SBUX,SBUX,SBUXCL,Starbucks Corp.,USD,accion_us,activo
+TGT,TGT,TGTCL,Target Corp.,USD,accion_us,activo
+BAC,BAC,BACL,Bank of America Corp.,USD,accion_us,activo
+KO,KO,KOCL,Coca-Cola Co.,USD,accion_us,activo
+DIS,DIS,DISCL,Walt Disney Co.,USD,accion_us,activo
+UPS,UPS,UPSCL,United Parcel Service Inc.,USD,accion_us,activo
+X,X,XCL,United States Steel Corp.,USD,accion_us,activo
+UNH,UNH,UNHCL,UnitedHealth Group Inc.,USD,accion_us,activo
+V,V,VCL,Visa Inc.,USD,accion_us,activo
+WMT,WMT,WALMARTCL,Walmart Inc.,USD,accion_us,activo
+WFC,WFC,WFCCL,Wells Fargo & Co.,USD,accion_us,activo
