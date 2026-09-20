@@ -57,13 +57,19 @@ def leer(ruta: Path) -> pd.Series:
     return serie[~serie.index.duplicated(keep="last")]
 
 
-def main(carpeta: str) -> int:
+def main(carpeta: str, desde: str | None = None) -> int:
     precios = pd.read_csv(ROOT / "data" / "market_prices_daily.csv", parse_dates=["date"])
     precios = precios.loc[precios.date <= CORTE]
     archivos = sorted(Path(carpeta).glob("*.csv"))
     if not archivos:
         print(f"No hay CSV en {carpeta}")
         return 1
+    series = {archivo: leer(archivo) for archivo in archivos}
+    # Ventana común: el candidato más corto manda. Sin esto, un archivo con más
+    # historia acumula más ajustes por dividendo y parece peor que los demás.
+    inicio = pd.Timestamp(desde) if desde else max(s.index.min() for s in series.values() if len(s))
+    print(f"Ventana de comparación: {inicio.date()} .. {CORTE.date()}")
+    print()
     filas, aprobados = [], 0
     for archivo in archivos:
         ticker = ticker_de(archivo)
@@ -71,7 +77,7 @@ def main(carpeta: str) -> int:
         if referencia.empty:
             print(f"{archivo.name}: sin referencia guardada para {ticker}")
             continue
-        r = comparar(leer(archivo), referencia)
+        r = comparar(series[archivo], referencia, desde=inicio, hasta=CORTE)
         ok = aprueba(r)
         aprobados += ok
         filas.append({"ticker": ticker, "dias": r["dias"], "razon_mediana": r["razon_mediana"],
@@ -91,4 +97,5 @@ def main(carpeta: str) -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main(sys.argv[1] if len(sys.argv) > 1 else "."))
+    raise SystemExit(main(sys.argv[1] if len(sys.argv) > 1 else ".",
+                         sys.argv[2] if len(sys.argv) > 2 else None))

@@ -51,10 +51,23 @@ def _bloques(razon: pd.Series, tolerancia: float) -> list[dict]:
     return bloques
 
 
-def comparar(candidato: pd.Series, referencia: pd.Series, tolerancia: float = TOLERANCIA) -> dict:
-    """Compara un candidato contra el cierre guardado en el tramo común."""
+def comparar(candidato: pd.Series, referencia: pd.Series, tolerancia: float = TOLERANCIA,
+             desde: pd.Timestamp | None = None, hasta: pd.Timestamp | None = None) -> dict:
+    """Compara un candidato contra el cierre guardado en el tramo común.
+
+    `desde` y `hasta` acotan la ventana, y acotarla no es un detalle: una serie
+    ajustada por dividendos difiere del cierre crudo en escalones que se
+    acumulan hacia atrás, así que mientras más larga la historia, más se aleja
+    la razón mediana de 1. SALFACORP mide 0,958 sobre 2021-2026 y 1,000000
+    desde 2025, siendo el mismo archivo. Comparar candidatos sin fijar una
+    ventana común los ordena por cuánta historia traen, no por calidad.
+    """
     candidato = pd.to_numeric(candidato, errors="coerce").dropna()
     referencia = pd.to_numeric(referencia, errors="coerce").dropna()
+    if desde is not None:
+        candidato, referencia = candidato.loc[candidato.index >= desde], referencia.loc[referencia.index >= desde]
+    if hasta is not None:
+        candidato, referencia = candidato.loc[candidato.index <= hasta], referencia.loc[referencia.index <= hasta]
     comun = candidato.index.intersection(referencia.index)
     vacio = {"dias": 0, "razon_mediana": None, "exactos": None, "desvio_p95": None, "desvio_max": None, "bloques": []}
     if len(comun) == 0:

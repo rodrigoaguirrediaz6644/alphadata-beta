@@ -6,6 +6,9 @@ import os
 
 import pandas as pd
 
+from src.guards import MAX_RUEDAS_SIN_VARIACION, adr_contra_local, ruedas_sin_variacion
+from src.price_store import agregar, cambios_de_ajuste
+
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = ROOT / "config" / "tickers.csv"
 DATA_DIR = ROOT / "data"
@@ -134,6 +137,10 @@ def build_coverage(
     if market_dates.empty:
         market_dates = dated_prices.loc[dated_prices["alphadata_ticker"] != "IPSA_TR", "date"].dropna()
     reference_date = market_dates.max() if len(market_dates) else dated_prices["date"].max()
+    # Un dato que no cambia puede ser un dato muerto: contar filas y medir el
+    # rezago de la fecha no basta. Entre julio y septiembre de 2026 esta tabla
+    # decía OK con lag 0 para papeles congelados hacía dos meses.
+    sin_variacion = ruedas_sin_variacion(dated_prices)
     rows = []
     for item in universe.itertuples(index=False):
         subset = dated_prices.loc[dated_prices["alphadata_ticker"] == item.alphadata_ticker]
@@ -152,6 +159,8 @@ def build_coverage(
             else None
         )
         enough_history = len(subset) >= required_rows
+        ruedas_quieto = int(sin_variacion.get(item.alphadata_ticker, 0))
+        detenido = ruedas_quieto > MAX_RUEDAS_SIN_VARIACION
         benchmark_stale = (
             item.tipo == "benchmark"
             and lag_business_days is not None
@@ -162,6 +171,8 @@ def build_coverage(
             if not len(subset)
             else "INSUFICIENTE"
             if not enough_history
+            else "DETENIDO"
+            if detenido
             else "DESACTUALIZADO"
             if benchmark_stale
             else "OK"
@@ -172,6 +183,7 @@ def build_coverage(
             "first_date": subset["date"].min().date().isoformat() if len(subset) else "",
             "last_date": last_date.date().isoformat() if pd.notna(last_date) else "",
             "lag_business_days": lag_business_days if lag_business_days is not None else "",
+            "ruedas_sin_variacion": ruedas_quieto,
             "status": status,
             "data_source": data_source,
             "checked_at_utc": checked_at,
@@ -223,10 +235,19 @@ def main() -> None:
 
     cached_path = DATA_DIR / "market_prices_daily.csv"
     cached = pd.read_csv(cached_path, parse_dates=["date"]) if cached_path.exists() else pd.DataFrame(columns=PRICE_COLUMNS)
-    daily = merge_with_cache(fresh, cached)
+    # Sólo agregar: una fila ya grabada es definitiva. Las diferencias en datos
+    # pasados se informan y no se aplican; el cierre ajustado sí se recalcula.
+    rastro = cambios_de_ajuste(cached, fresh)
+    daily, revisiones = agregar(cached, fresh)
     weekly = daily_to_weekly(daily)
     coverage = build_coverage(daily, universe, fresh_tickers=fresh_tickers)
     DATA_DIR.mkdir(parents=True, exist_ok=True)
+    revisiones.to_csv(DATA_DIR / "revisiones_precios.csv", index=False, date_format="%Y-%m-%d")
+    rastro.to_csv(DATA_DIR / "acciones_corporativas_detectadas.csv", index=False, date_format="%Y-%m-%d")
+    if len(revisiones):
+        afectados = ", ".join(sorted(set(revisiones.alphadata_ticker)))
+        print(f"ADVERTENCIA: el proveedor entregó {len(revisiones)} datos pasados distintos de los guardados "
+              f"({afectados}). No se aplicaron; revisar data/revisiones_precios.csv")
     daily.to_csv(DATA_DIR / "market_prices_daily.csv", index=False, date_format="%Y-%m-%d")
     weekly.to_csv(DATA_DIR / "prices_weekly.csv", index=False, date_format="%Y-%m-%d")
     coverage.to_csv(DATA_DIR / "coverage_report.csv", index=False)
@@ -237,6 +258,15 @@ def main() -> None:
     cached_symbols = coverage.loc[coverage["data_source"] == "CACHE_VALIDADA", "alphadata_ticker"].tolist()
     if cached_symbols: print("ADVERTENCIA: se usó caché validada para: " + ", ".join(cached_symbols))
     benchmark_ok = coverage.loc[(coverage.alphadata_ticker == "IPSA_TR") & (coverage.status == "OK")]
+    detenidos = coverage.loc[coverage["status"] == "DETENIDO", "alphadata_ticker"].tolist()
+    if detenidos: print(f"ADVERTENCIA: {len(detenidos)} instrumentos sin variación de precio: " + ", ".join(detenidos))
+    # El ADR cotiza en Nueva York y no depende del feed chileno. Si se mueve
+    # mientras su acción local no, el mercado local no está quieto: está
+    # detenido. Esta guardia habría delatado el incidente el 18-07-2026.
+    alarma_adr = adr_contra_local(daily)
+    if len(alarma_adr):
+        detalle = "; ".join(f"{r.adr} se movió {r.movimiento_adr:.1%} y {r.local} no se movió nada" for r in alarma_adr.itertuples())
+        raise SystemExit(f"Mercado local detenido según el contraste con los ADR ({detalle}). No se valoriza nada con precios que no se están publicando.")
     if daily.empty or len(local_ok) < 20: raise SystemExit("Menos de 20 acciones locales tienen historia suficiente; se cancela el cálculo para evitar una cartera incompleta")
     if benchmark_ok.empty:
         benchmark = coverage.loc[coverage.alphadata_ticker == "IPSA_TR"].iloc[0]

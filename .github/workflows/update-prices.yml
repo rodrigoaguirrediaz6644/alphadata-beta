@@ -95,6 +95,8 @@ jobs:
             data/recommendations_errors.csv
             data/recommendations_history.csv
             data/coverage_report.csv
+            data/revisiones_precios.csv
+            data/acciones_corporativas_detectadas.csv
           retention-days: 90
 
       - name: Guardar carteras, historial e informe

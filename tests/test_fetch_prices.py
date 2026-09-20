@@ -147,7 +147,11 @@ def test_coverage_rejects_stale_benchmark_even_with_long_history() -> None:
                 {
                     "date": pd.Timestamp("2026-07-17") - pd.offsets.BDay(i),
                     "alphadata_ticker": "IPSA_TR",
-                    "close": 100.0,
+                    # El precio varía a propósito: esta prueba es sobre el
+                    # rezago de la fecha. Con la serie plana también se
+                    # cumpliría DETENIDO y no quedaría claro cuál de las dos
+                    # condiciones se está verificando.
+                    "close": 100.0 + i,
                 }
                 for i in range(20)
             ],
