@@ -1,0 +1,20 @@
+{
+  "instrumentos_con_datos": 56,
+  "faltantes": [],
+  "rotaciones": {
+    "Top 5 con filtro de tendencia": {
+      "return": 0.0,
+      "cagr": 0.0,
+      "vol": 0.0,
+      "mdd": 0.0,
+      "sharpe": null
+    },
+    "Top 5 sin filtro": {
+      "return": 2.6916173896255047,
+      "cagr": 0.12975991641761397,
+      "vol": 40.14135887477953,
+      "mdd": -0.9929631859681559,
+      "sharpe": 0.0032325740845594794
+    }
+  }
+}
