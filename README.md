@@ -1,6 +1,6 @@
 # AlphaData Automation 2.0
 
-Automatiza las estrategias oficiales Sigma-6, Delta-12 y Gamma-6, y publica además el resultado del conjunto (un tercio en cada una). La única entrada manual es un CSV con nuevas recomendaciones de Credicorp Capital.
+Automatiza las estrategias oficiales Sigma-6, Delta-12, Gamma-6 y Oro, y publica además el resultado del conjunto (un cuarto en cada una). La única entrada manual es un CSV con nuevas recomendaciones de Credicorp Capital.
 
 ## Flujo automático
 

@@ -1,9 +1,10 @@
 {
-  "methodology_version": "2.2.0",
+  "methodology_version": "2.3.0",
   "enabled_strategies": [
     "SIGMA6",
     "DELTA12",
-    "GAMMA6"
+    "GAMMA6",
+    "ORO"
   ],
   "benchmark": {
     "alphadata_ticker": "IPSA_TR",
@@ -22,7 +23,8 @@
   "strategy_modules": {
     "SIGMA6": "src.strategy_engine:sigma6",
     "DELTA12": "src.strategy_engine:delta12",
-    "GAMMA6": "src.strategy_engine:gamma6"
+    "GAMMA6": "src.strategy_engine:gamma6",
+    "ORO": "src.strategy_engine:oro"
   },
   "future_strategy_contract": {
     "required_outputs": [
@@ -47,7 +49,8 @@
     "components": [
       "SIGMA6",
       "DELTA12",
-      "GAMMA6"
+      "GAMMA6",
+      "ORO"
     ]
   }
 }

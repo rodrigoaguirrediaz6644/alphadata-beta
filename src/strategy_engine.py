@@ -183,6 +183,42 @@ def sanear_fx(rate: pd.Series, tolerancia: float = .25, ventana: int = 11) -> tu
     return limpio.mask(malos).ffill().bfill(), limpio[malos]
 
 
+ORO_TICKER="IAU"  # iShares Gold Trust; en Chile se transa como CDV IAUCL
+
+
+def oro(prices: pd.DataFrame, universe: pd.DataFrame, as_of: pd.Timestamp) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Oro: posición fija, sin señal.
+
+    No es una estrategia en el sentido de las otras tres: no predice nada ni
+    rankea. Existe porque el oro fue el único activo del universo disponible que
+    terminó positivo en las seis grandes caídas desde 2008, y porque un cuarto
+    de la cartera en oro sube el Sharpe del conjunto y reduce casi a la mitad su
+    peor retroceso. Se probó además filtrarlo por tendencia (SMA200, la misma
+    regla de Gamma-6) y empeora el resultado en veinte años: el aporte viene de
+    su correlación, no de acertarle a su dirección.
+
+    Cumple el mismo contrato que las demás: devuelve (portfolio, audit).
+    """
+    disponible=set(universe.loc[universe.tipo=="etf_us","alphadata_ticker"])
+    if ORO_TICKER not in disponible:
+        return pd.DataFrame(columns=["ticker","target_weight"]),pd.DataFrame(columns=["ticker","reason"])
+    serie=prices.loc[(prices.alphadata_ticker==ORO_TICKER)&(prices.date<=as_of),["date","adjusted_close"]].dropna()
+    suficiente=len(serie)>=60
+    audit=pd.DataFrame([{"ticker":ORO_TICKER,"history_rows":len(serie),"adjusted_close":float(serie.adjusted_close.iloc[-1]) if len(serie) else np.nan,
+                         "eligible":bool(suficiente),"reason":"elegible" if suficiente else "historia insuficiente"}])
+    portfolio=pd.DataFrame([{"ticker":ORO_TICKER,"target_weight":1.0}]) if suficiente else pd.DataFrame(columns=["ticker","target_weight"])
+    return portfolio,audit
+
+
+def oro_historical_nav(prices: pd.DataFrame, universe: pd.DataFrame, fx: pd.DataFrame, start: pd.Timestamp, end: pd.Timestamp, cost_rate: float = .001) -> pd.DataFrame:
+    """Reconstruye la serie del oro en pesos: comprar una vez y mantener."""
+    clp=to_clp(prices,universe,fx)
+    serie=clp.loc[(clp.alphadata_ticker==ORO_TICKER)&clp.date.between(start,end),["date","adjusted_close"]].dropna().sort_values("date")
+    if len(serie)<2: return pd.DataFrame(columns=["date","Oro"])
+    nav=serie.adjusted_close/serie.adjusted_close.iloc[0]*100*(1-cost_rate)
+    return pd.DataFrame({"date":serie.date.values,"Oro":nav.values})
+
+
 def to_clp(prices: pd.DataFrame, universe: pd.DataFrame, fx: pd.DataFrame) -> pd.DataFrame:
     """Convierte a pesos los precios de los instrumentos en dólares.
 

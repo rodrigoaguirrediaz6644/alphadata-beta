@@ -15,8 +15,22 @@ def test_only_credicorp_is_accepted_for_sigma6():
     assert normalize_signal("Sobreponderar") == 1
 
 
-def test_registry_has_the_three_official_strategies():
-    assert set(load_registry()) == {"SIGMA6", "DELTA12", "GAMMA6"}
+def test_registry_has_the_four_official_components():
+    assert set(load_registry()) == {"SIGMA6", "DELTA12", "GAMMA6", "ORO"}
+
+
+def test_methodology_document_matches_the_runtime_configuration():
+    # La documentación oficial y la configuración que corre el pipeline se
+    # escriben en archivos distintos: sin esta prueba se separan en silencio.
+    root = Path(__file__).resolve().parents[1]
+    runtime = json.loads((root / "config" / "runtime.v2.json").read_text())
+    oficial = json.loads((root / "strategies.v2.json").read_text())
+    esperadas = set(runtime["enabled_strategies"])
+    assert set(oficial["official_strategies"]) == esperadas
+    assert set(oficial["combined_portfolio"]["components"]) == esperadas
+    assert set(runtime["combined_portfolio"]["components"]) == esperadas
+    assert {s["strategy_code"] for s in oficial["strategies"]} == esperadas
+    assert oficial["methodology_version"] == runtime["methodology_version"]
 
 
 def test_runtime_uses_trii_effective_rate():

@@ -9,14 +9,15 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 
 CONJUNTO = "Conjunto AlphaData"
-STRATEGIES = ["Sigma-6", "Delta-12", "Gamma-6"]
+STRATEGIES = ["Sigma-6", "Delta-12", "Gamma-6", "Oro"]
 BENCHMARK = "IPSA TR"
 SERIES = [CONJUNTO, *STRATEGIES, BENCHMARK]
-COLORS = {CONJUNTO: "#101828", "Sigma-6": "#1570ef", "Delta-12": "#0e9384", "Gamma-6": "#dc6803", BENCHMARK: "#98a2b3"}
+COLORS = {CONJUNTO: "#101828", "Sigma-6": "#1570ef", "Delta-12": "#0e9384", "Gamma-6": "#dc6803", "Oro": "#ca8504", BENCHMARK: "#98a2b3"}
 QUE_INVIERTE = {
     "Sigma-6": "Acciones chilenas",
     "Delta-12": "Acciones chilenas",
     "Gamma-6": "Acciones de EE.UU. (en pesos)",
+    "Oro": "Oro, como seguro del conjunto",
     BENCHMARK: "La bolsa chilena completa",
 }
 HISTORICAL = ROOT / "data" / "historical_model_nav.csv"
@@ -155,18 +156,25 @@ def build_public_report(
     history: pd.DataFrame,
     gamma: pd.DataFrame | None = None,
     gamma_moves: pd.DataFrame | None = None,
+    oro: pd.DataFrame | None = None,
+    oro_moves: pd.DataFrame | None = None,
 ) -> tuple[str, str]:
-    gamma = gamma if gamma is not None else pd.DataFrame(columns=["ticker", "target_weight"])
-    gamma_moves = gamma_moves if gamma_moves is not None else pd.DataFrame(columns=["ticker", "action", "target_weight"])
+    vacio_cartera = pd.DataFrame(columns=["ticker", "target_weight"])
+    vacio_movs = pd.DataFrame(columns=["ticker", "action", "target_weight"])
+    gamma = gamma if gamma is not None else vacio_cartera
+    gamma_moves = gamma_moves if gamma_moves is not None else vacio_movs
+    oro = oro if oro is not None else vacio_cartera
+    oro_moves = oro_moves if oro_moves is not None else vacio_movs
     history = history.copy()
     history["date"] = pd.to_datetime(history["date"])
     metrics = _series_metrics(history)
-    portfolios = {"Sigma-6": sigma, "Delta-12": delta, "Gamma-6": gamma}
-    moves = {"Sigma-6": sigma_moves, "Delta-12": delta_moves, "Gamma-6": gamma_moves}
+    portfolios = {"Sigma-6": sigma, "Delta-12": delta, "Gamma-6": gamma, "Oro": oro}
+    moves = {"Sigma-6": sigma_moves, "Delta-12": delta_moves, "Gamma-6": gamma_moves, "Oro": oro_moves}
 
     orders = [row for name in STRATEGIES for row in _orders(moves[name], name)]
     orders_block = (
         f'<table><thead><tr><th>Qué hacer</th><th>Acción</th><th>Estrategia</th><th>Cuánto</th></tr></thead><tbody>{"".join(orders)}</tbody></table>'
+        f'<p class="muted">El porcentaje es dentro de su propia pieza, y cada pieza es un cuarto del total. Un 100% en la pieza de oro equivale a un 25% de todo.</p>'
         if orders else '<p class="calm">No hay nada que comprar ni vender esta semana. Las carteras siguen igual.</p>'
     )
 
@@ -178,7 +186,7 @@ def build_public_report(
     summary_rows = []
     for name in ([CONJUNTO, *STRATEGIES, BENCHMARK] if benchmark_usable else [CONJUNTO, *STRATEGIES]):
         m = metrics[name]
-        invierte = "Un tercio en cada estrategia" if name == CONJUNTO else QUE_INVIERTE[name]
+        invierte = "Partes iguales en las cuatro piezas" if name == CONJUNTO else QUE_INVIERTE[name]
         cuantas = "—" if name in {CONJUNTO, BENCHMARK} else str(len(portfolios[name]))
         strong = ' class="row-strong"' if name == CONJUNTO else ""
         summary_rows.append(f'<tr{strong}><td>{name}</td><td>{invierte}</td><td>{_signed(m["return"])}</td><td>{_signed(m["last_year"])}</td><td>{pct(m["mdd"])}</td><td>{cuantas}</td></tr>')
@@ -194,7 +202,7 @@ def build_public_report(
 
     positions_blocks = "".join(
         f'<h3>{name} · {QUE_INVIERTE[name]}</h3>{_positions(portfolios[name])}'
-        for name in STRATEGIES
+        for name in STRATEGIES if name in portfolios
     )
 
     html = f'''<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>
@@ -221,7 +229,7 @@ def build_public_report(
     <header class="head"><div class="brand">AlphaData</div><div class="sub">Informe semanal · {as_of:%d-%m-%Y}</div></header>
 
     <section><h2>Cómo va tu dinero</h2>
-    <p class="lead">Poniendo la misma cantidad en cada una de las tres estrategias, desde que empezó el seguimiento llevas:</p>
+    <p class="lead">Poniendo la misma cantidad en cada una de las cuatro piezas, desde que empezó el seguimiento llevas:</p>
     <div class="hero {'up' if (conjunto['return'] or 0) >= 0 else 'down'}">{headline}</div>
     <p class="lead">{'Eso es ' + _signed(versus) + ' comparado con haber invertido en la bolsa chilena completa.' if versus is not None else 'La comparación con la bolsa chilena aparecerá cuando su serie esté completa.'}</p>
     </section>
@@ -240,7 +248,7 @@ def build_public_report(
 
     <section><h2>Qué tienes comprado hoy</h2>
     {positions_blocks}
-    <p class="muted">Todos los precios están en pesos. Las acciones de Gamma-6 se compran en Chile como CDV, así que su resultado ya incluye el efecto del tipo de cambio.</p>
+    <p class="muted">Todos los precios están en pesos. Gamma-6 y el oro se compran en Chile como CDV, así que su resultado ya incluye el efecto del tipo de cambio. El oro no se compra ni se vende por señales: es una posición fija que está para amortiguar las caídas del resto.</p>
     </section>
 
     <section><h2>Estado de los datos</h2>{problems_block}</section>
@@ -253,7 +261,7 @@ def build_public_report(
         "",
         f"**Fecha:** {as_of:%d-%m-%Y}",
         "",
-        f"**Conjunto (un tercio en cada estrategia): {headline} desde el inicio.**",
+        f"**Conjunto (partes iguales en las cuatro piezas): {headline} desde el inicio.**",
         "",
         "## Qué hacer esta semana",
         "",

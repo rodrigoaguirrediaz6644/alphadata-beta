@@ -1,10 +1,10 @@
 # Estrategias oficiales de AlphaData
 
-Versión de metodología: **2.2.0**  
-Vigencia: **20 de septiembre de 2026**  
+Versión de metodología: **2.3.0**  
+Vigencia: **25 de septiembre de 2026**  
 Estado: **paper trading; no publicadas como recomendación de inversión**
 
-La configuración operativa oficial es `strategies.v2.json`. Esta versión no modifica retroactivamente la metodología 1.0.0: la antigua Sigma-6 pasa a llamarse **Consenso-6** y queda como estrategia histórica no oficial. Las estrategias oficiales desde esta versión son **Sigma-6**, **Delta-12** y **Gamma-6** (incorporada en la metodología 2.2.0).
+La configuración operativa oficial es `strategies.v2.json`. Esta versión no modifica retroactivamente la metodología 1.0.0: la antigua Sigma-6 pasa a llamarse **Consenso-6** y queda como estrategia histórica no oficial. Las estrategias oficiales desde esta versión son **Sigma-6**, **Delta-12**, **Gamma-6** (incorporada en la metodología 2.2.0) y **Oro** (incorporada en la metodología 2.3.0).
 
 ## 1. Sigma-6
 
@@ -157,11 +157,33 @@ Los indicadores se calculan sobre el precio en dólares: el tipo de cambio es un
 
 Gamma-6 proviene del estudio comparativo documentado en `research/momentum_us/`, donde se contrastaron veinte reglas alternativas en dos submuestras y excluyendo la acción de mayor crecimiento del periodo. Su resultado previo a la puesta en marcha es una reconstrucción retrospectiva. La validación prospectiva se evalúa contra la cartera igual ponderada del mismo universo.
 
-## 4. Conjunto AlphaData
+## 4. Oro
 
-El informe publica además el resultado de repartir el capital en partes iguales entre las tres estrategias oficiales, reequilibrando al cierre de cada mes. Mientras una estrategia no tenga historial disponible, el conjunto reparte entre las que sí lo tienen en esa fecha.
+Oro es la única pieza del conjunto que no selecciona nada. Es una posición permanente en el ETF **IAU** (iShares Gold Trust), accesible en Chile como CDV, y su función no es rendir más que las otras: es sostener la cartera cuando las otras caen.
 
-## 5. Consenso-6 (histórica, no oficial)
+### Universo
+
+Un solo instrumento, IAU, registrado en `config/tickers.csv` con tipo `etf_us`. El tipo importa: Gamma-6 filtra por `accion_us`, de modo que el oro no compite nunca por un lugar en esa cartera. Se exige al menos 60 sesiones de historia válida antes de abrir.
+
+### Regla
+
+No hay indicadores, ranking ni filtro de tendencia. La posición se mantiene al 100% de la pieza, lo que equivale a un 25% del conjunto con las cuatro estrategias vigentes. Se revisa mensualmente junto con las demás, pero la revisión sólo puede cerrarla si los datos dejan de ser confiables: no se vende por precio ni por tendencia.
+
+Esa decisión está medida, no supuesta. Filtrar el oro por su propia tendencia destruye valor: en veinte años el retorno anual cae de 14,8% a 9,5% y la peor caída empeora en vez de mejorar. El oro protege precisamente en los momentos en que un filtro de tendencia ya lo habría vendido.
+
+### Por qué está en la cartera
+
+En el estudio de `research/etf_multiactivo/` el oro fue el único instrumento del universo analizado que terminó positivo en las seis grandes caídas desde 2008 (+52,2%, +23,6%, +18,7%, +12,4%, +4,3% y +1,1% en pesos). Probado como 25% contra el resto de la cartera, el Sharpe sube de 2,28 a 2,60 y la peor caída se reduce a la mitad, de -10,6% a -5,5%. La contrapartida es real y esperada: el conjunto reconstruido rinde algo menos con oro (334,0 contra 348,3 en base 100 desde julio de 2021) a cambio de caer bastante menos.
+
+### Moneda, costos y fecha de apertura
+
+La valorización es en pesos, convertida con el tipo de cambio diario `USDCLP` saneado por `sanear_fx`, de modo que el resultado publicado incluye el efecto cambiario que enfrenta un inversionista local. El costo es 0,1% por lado, pagado esencialmente una sola vez al abrir, porque la rotación esperada es nula. La fecha de apertura registrada es la fecha en que la posición entra en seguimiento oficial, nunca la primera fecha disponible del instrumento: fechar la compra en el nacimiento del ETF inventaría una rentabilidad que nadie obtuvo.
+
+## 5. Conjunto AlphaData
+
+El informe publica además el resultado de repartir el capital en partes iguales entre las cuatro estrategias oficiales —25% cada una—, reequilibrando al cierre de cada mes. Mientras una estrategia no tenga historial disponible, el conjunto reparte entre las que sí lo tienen en esa fecha.
+
+## 6. Consenso-6 (histórica, no oficial)
 
 Consenso-6 es el nuevo nombre de la antigua Sigma-6 versión 1.0.0. Utilizaba la suma de señales vigentes de Credicorp, BICE, Itaú, BTG Pactual, MBI y LarrainVial Estudios. Desde la versión 2.0.0 queda registrada como **estrategia histórica no oficial**. Su configuración permanece íntegra en `strategies.v1.json` y su historial no debe reescribirse.
 

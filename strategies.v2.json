@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0.0",
-  "methodology_version": "2.2.0",
-  "effective_from": "2026-09-20",
+  "methodology_version": "2.3.0",
+  "effective_from": "2026-09-25",
   "platform": "AlphaData",
   "timezone": "America/Santiago",
   "base_currency": "CLP",
@@ -9,7 +9,8 @@
   "official_strategies": [
     "SIGMA6",
     "DELTA12",
-    "GAMMA6"
+    "GAMMA6",
+    "ORO"
   ],
   "strategies": [
     {
@@ -404,6 +405,104 @@
         "period": "2014-06 a 2026-09 (diseño); la serie del informe parte en 2021-07",
         "note": "Los resultados previos a la puesta en marcha son una reconstrucción y no una ejecución efectiva."
       }
+    },
+    {
+      "id": "alphadata-oro",
+      "commercial_name": "Oro",
+      "strategy_code": "ORO",
+      "version": "1.0.0",
+      "status": "official_paper_trading",
+      "description": "Posición permanente en oro físico a través del ETF IAU (accesible en Chile como CDV IAUCL). No es una estrategia de selección: es el seguro del conjunto, la única clase de activo que subió en las seis grandes caídas desde 2008.",
+      "rationale": {
+        "purpose": "descorrelación y protección ante caídas de las otras tres piezas",
+        "evidence": "Entre 2008 y 2026 el oro en pesos fue positivo en las seis ventanas de crisis analizadas (+52,2%, +23,6%, +18,7%, +12,4%, +4,3% y +1,1%). Es el único instrumento del universo estudiado con ese comportamiento.",
+        "why_static": "Filtrar el oro por tendencia destruye valor: en veinte años el retorno anual cae de 14,8% a 9,5% y la peor caída empeora. La posición se mantiene siempre.",
+        "tested_allocation": "En la prueba 75/25 contra el resto de la cartera el Sharpe sube de 2,28 a 2,60 y la peor caída se reduce de -10,6% a -5,5%."
+      },
+      "universe": {
+        "market": "Estados Unidos",
+        "instrument_type": "exchange_traded_fund",
+        "allowed_instruments": "IAU (iShares Gold Trust), registrado en config/tickers.csv con tipo etf_us",
+        "minimum_price_history_trading_days": 60,
+        "local_access": "CDV IAUCL en pesos; el precio del CDV replica el ETF subyacente",
+        "note": "El tipo etf_us mantiene a IAU fuera del universo de Gamma-6, que sólo considera tipo accion_us."
+      },
+      "data": {
+        "prices_required_fields": [
+          "date",
+          "ticker",
+          "adjusted_close"
+        ],
+        "prices": "adjusted_close_usd_for_validation; conversion_to_clp_for_valuation",
+        "fx": {
+          "instrument": "USDCLP",
+          "provider_ticker": "USDCLP=X",
+          "use": "valorización y resultados en pesos",
+          "sanitization": "sanear_fx descarta valores que se apartan más de 25% de la mediana móvil centrada, o que son cero o negativos"
+        },
+        "corporate_action_adjustment_required": true,
+        "future_information_allowed": false,
+        "maximum_forward_fill_trading_days": 3,
+        "stale_or_invalid_price_action": "exclude_and_report"
+      },
+      "indicators": {
+        "none": {
+          "formula": "no aplica",
+          "note": "La estrategia no usa indicadores: la posición es estática por diseño."
+        }
+      },
+      "entry": {
+        "ranking": "no aplica",
+        "maximum_selected_positions": 1,
+        "eligibility": [
+          "history_rows >= 60",
+          "complete_and_nonstale_required_data"
+        ],
+        "signal_time": "last_trading_day_of_month_after_market_close",
+        "execution": "first_trading_day_of_next_month",
+        "entry_date_rule": "La fecha de apertura es la fecha en que la posición entra en seguimiento oficial, nunca la primera fecha disponible del instrumento."
+      },
+      "sizing": {
+        "method": "single_position",
+        "raw_weight_formula": "1.0",
+        "maximum_weight_per_instrument": 1.0,
+        "maximum_positions": 1,
+        "weight_within_combined_portfolio": 0.25,
+        "unallocated_capital": "cash",
+        "leverage_allowed": false,
+        "short_sales_allowed": false
+      },
+      "exit": {
+        "evaluation_frequency": "monthly",
+        "triggers": [
+          "invalid_or_stale_data"
+        ],
+        "priority": "any_trigger",
+        "execution": "first_trading_day_of_next_month",
+        "trend_exit": false,
+        "intramonth_stop_loss": false,
+        "discretionary_news_exit": false,
+        "note": "La posición no se vende por precio ni por tendencia. Sólo sale si el dato deja de ser confiable."
+      },
+      "cost_model": {
+        "provider": "Trii",
+        "instrument": "ETF de EE.UU. (CDV)",
+        "effective_rate_per_side": 0.001,
+        "application": "0.5 * (rotación de posiciones + variación de caja) * tasa",
+        "note": "La rotación esperada es prácticamente nula: el costo se paga una vez al abrir."
+      },
+      "calculation_schedule": {
+        "frequency": "monthly",
+        "signal_time": "last_trading_day_after_market_close",
+        "publication_time": "after_validation_before_next_market_open",
+        "execution_time": "first_trading_day_of_next_month",
+        "no_change_report_required": true
+      },
+      "historical_reference": {
+        "method": "aplicación retrospectiva de la misma regla (posición permanente)",
+        "period": "la serie del informe parte en 2021-07",
+        "note": "Los resultados previos a la puesta en marcha son una reconstrucción y no una ejecución efectiva."
+      }
     }
   ],
   "legacy_strategies": [
@@ -482,10 +581,11 @@
     "components": [
       "SIGMA6",
       "DELTA12",
-      "GAMMA6"
+      "GAMMA6",
+      "ORO"
     ],
     "weights": "equal_per_strategy",
     "rebalance_frequency": "monthly",
-    "note": "Antes de que una estrategia tenga historial, el conjunto reparte entre las disponibles en cada fecha."
+    "note": "Antes de que una estrategia tenga historial, el conjunto reparte entre las disponibles en cada fecha. Con las cuatro piezas vigentes, cada una pesa 25%."
   }
 }

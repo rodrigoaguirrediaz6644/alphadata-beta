@@ -45,7 +45,7 @@ jobs:
         run: python -m pip install -r requirements.txt
 
       - name: Validar funciones puras (sin red)
-        run: PYTHONPATH=. python -m pytest -q tests/test_momentum_us.py
+        run: PYTHONPATH=. python -m pytest -q
 
       - name: Correr backtest (descarga Yahoo Finance y calcula)
         run: PYTHONPATH=. python -m research.momentum_us.backtest

@@ -75,3 +75,4 @@ V,V,Visa Inc. (CDV VCL),accion_us,USD,activo
 WMT,WMT,Walmart Inc. (CDV WALMARTCL),accion_us,USD,activo
 WFC,WFC,Wells Fargo & Co. (CDV WFCCL),accion_us,USD,activo
 USDCLP,USDCLP=X,Tipo de cambio dólar/peso,fx,CLP,activo
+IAU,IAU,iShares Gold Trust (CDV IAUCL),etf_us,USD,activo

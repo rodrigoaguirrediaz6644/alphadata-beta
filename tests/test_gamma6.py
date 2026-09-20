@@ -106,3 +106,28 @@ def test_to_clp_no_se_deja_envenenar_por_un_tipo_de_cambio_imposible():
     assert (serie / serie.cummax() - 1).min() > -0.5   # sin saneo, acá había un -99%
     limpio, descartados = sanear_fx(fx.set_index("date")["adjusted_close"])
     assert list(descartados) == [5.0] and limpio.iloc[100] == 950.0
+
+
+def test_oro_es_una_posicion_fija_y_no_contamina_el_universo_de_gamma6():
+    """El oro no rankea ni predice: si hay historia, es 100% de su propia pieza.
+    Y va con un `tipo` propio para no colarse en el universo de Gamma-6."""
+    from src.strategy_engine import ORO_TICKER, oro
+
+    prices, universe = _prices(), _universe()
+    universe = pd.concat([universe, pd.DataFrame([{"alphadata_ticker": ORO_TICKER, "yahoo_ticker": ORO_TICKER, "nombre": "Oro", "tipo": "etf_us", "moneda": "USD", "estado": "activo"}])], ignore_index=True)
+    fechas = sorted(prices.date.unique())
+    serie = pd.DataFrame({"date": fechas, "alphadata_ticker": ORO_TICKER, "adjusted_close": np.linspace(100, 150, len(fechas))})
+    for columna in ["open", "high", "low", "close"]:
+        serie[columna] = serie["adjusted_close"]
+    serie["volume"] = 0.0
+    con_oro = pd.concat([prices, serie], ignore_index=True)
+
+    cartera, auditoria = oro(con_oro, universe, con_oro.date.max())
+    assert cartera.ticker.tolist() == [ORO_TICKER] and cartera.target_weight.tolist() == [1.0]
+    assert bool(auditoria.eligible.iloc[0])
+
+    seleccion, _ = gamma6(con_oro, universe, con_oro.date.max())
+    assert ORO_TICKER not in set(seleccion.ticker)   # no entra al universo de acciones
+
+    corta, auditoria_corta = oro(con_oro[con_oro.date <= fechas[30]], universe, fechas[30])
+    assert corta.empty and auditoria_corta.reason.iloc[0] == "historia insuficiente"

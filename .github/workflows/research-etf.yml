@@ -40,7 +40,7 @@ jobs:
         run: python -m pip install -r requirements.txt
 
       - name: Validar funciones puras (sin red)
-        run: PYTHONPATH=. python -m pytest -q tests/test_etf_multiactivo.py
+        run: PYTHONPATH=. python -m pytest -q
 
       - name: Analizar candidatos (descarga Yahoo Finance y calcula)
         run: PYTHONPATH=. python -m research.etf_multiactivo.analisis
