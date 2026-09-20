@@ -1,11 +1,11 @@
 {
-  "methodology_version": "2.1.0",
+  "methodology_version": "2.2.0",
   "sigma_entries": {
+    "CENCOMALLS": "2026-06-29",
+    "LTM": "2026-06-29",
     "BCI": "2026-06-29",
     "VAPORES": "2026-09-11",
-    "PARAUCO": "2026-06-29",
-    "LTM": "2026-06-29",
-    "CENCOMALLS": "2026-06-29"
+    "PARAUCO": "2026-06-29"
   },
   "sigma_portfolio": [
     {
@@ -95,8 +95,8 @@
       "target_weight": 0.125,
       "opened_at": "2026-07-01",
       "entry_price": 179.50999450683594,
-      "current_price": 188.5,
-      "open_return": 0.04820975316825704
+      "current_price": 198.0,
+      "open_return": 0.10103730041015857
     },
     {
       "ticker": "BSANTANDER",
@@ -118,6 +118,7 @@
   "nav": {
     "Sigma-6": 111.20858332763282,
     "Delta-12": 130.21456663884587,
+    "Gamma-6": 99.9,
     "IPSA TR": 212.5567414816112
   },
   "delta_last_period": "2026-08",
@@ -126,7 +127,7 @@
     "uploaded_files": 0,
     "history_rows": 1108
   },
-  "last_run_utc": "2026-09-18T20:33:00.177463+00:00",
+  "last_run_utc": "2026-09-20T18:43:24.650968+00:00",
   "delta_entries": {
     "PARAUCO": "2026-04-01",
     "ILC": "2026-07-01",
@@ -138,5 +139,65 @@
     "ENELCHILE": "2026-09-01"
   },
   "entry_dates_version": 3,
-  "delta_rule_version": "2.1.0"
+  "delta_rule_version": "2.1.0",
+  "gamma_entries": {
+    "TGT": "2026-09-01",
+    "INTC": "2026-09-01",
+    "MRK": "2026-09-01",
+    "BAC": "2026-09-01",
+    "JNJ": "2026-09-01",
+    "ABT": "2026-09-01"
+  },
+  "gamma_last_period": "2026-08",
+  "gamma_rule_version": "1.0.0",
+  "gamma_portfolio": [
+    {
+      "ticker": "TGT",
+      "target_weight": 0.16666666666666666,
+      "opened_at": "2026-09-01",
+      "entry_price": 152947.41729736328,
+      "current_price": 151704.2123413086,
+      "open_return": -0.0091191969134371
+    },
+    {
+      "ticker": "INTC",
+      "target_weight": 0.16666666666666666,
+      "opened_at": "2026-09-01",
+      "entry_price": 83100.65284671634,
+      "current_price": 104147.39853668213,
+      "open_return": 0.25201609875934716
+    },
+    {
+      "ticker": "MRK",
+      "target_weight": 0.16666666666666666,
+      "opened_at": "2026-09-01",
+      "entry_price": 139152.35986072943,
+      "current_price": 140848.3253173828,
+      "open_return": 0.011176654427638155
+    },
+    {
+      "ticker": "BAC",
+      "target_weight": 0.16666666666666666,
+      "opened_at": "2026-09-01",
+      "entry_price": 57606.6113289129,
+      "current_price": 55363.06956100464,
+      "open_return": -0.03990600170146896
+    },
+    {
+      "ticker": "JNJ",
+      "target_weight": 0.16666666666666666,
+      "opened_at": "2026-09-01",
+      "entry_price": 253299.60592536628,
+      "current_price": 258920.40063476562,
+      "open_return": 0.021169132699256688
+    },
+    {
+      "ticker": "ABT",
+      "target_weight": 0.16666666666666666,
+      "opened_at": "2026-09-01",
+      "entry_price": 101743.89137635194,
+      "current_price": 98402.99058532715,
+      "open_return": -0.03380257458605107
+    }
+  ]
 }

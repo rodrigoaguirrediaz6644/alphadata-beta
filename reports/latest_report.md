@@ -1,16 +1,30 @@
-# AlphaData — informe de estrategias
+# AlphaData — informe semanal
 
-**Fecha de corte:** 18-09-2026
+**Fecha:** 18-09-2026
 
-## Resumen
+**Conjunto (un tercio en cada estrategia): +20,8% desde el inicio.**
 
-- Sigma-6: 5 posiciones; caja 50.0%.
-- Delta-12: 8 posiciones; caja 0.0%.
-- Estado de datos: Con observaciones.
+## Qué hacer esta semana
 
-El informe HTML contiene las comparaciones, gráficos, carteras y movimientos. La metodología y sus parámetros son información reservada.
+- Comprar VAPORES (Sigma-6) — 10,0%
+- Comprar ENELCHILE (Delta-12) — 12,5%
+- Vender SQM-B (Delta-12) — toda la posición
+- Comprar ABT (Gamma-6) — 16,7%
+- Comprar BAC (Gamma-6) — 16,7%
+- Comprar INTC (Gamma-6) — 16,7%
+- Comprar JNJ (Gamma-6) — 16,7%
+- Comprar MRK (Gamma-6) — 16,7%
+- Comprar TGT (Gamma-6) — 16,7%
 
-> Los resultados históricos fueron calculados mediante la aplicación retrospectiva del modelo y pueden diferir de una ejecución efectiva.
+## Cada estrategia
+
+- Conjunto AlphaData: +20,8% desde el inicio; peor caída -1,4%.
+- Sigma-6: +11,3% desde el inicio; peor caída -0,6%.
+- Delta-12: +30,4% desde el inicio; peor caída -2,6%.
+- Gamma-6: — desde el inicio; peor caída —.
+- IPSA TR: +112,6% desde el inicio; peor caída 0,0%.
+
+El informe HTML incluye el gráfico y las carteras. La metodología y sus parámetros son información reservada.
 
 
 <!-- HORIZONTE_START -->
