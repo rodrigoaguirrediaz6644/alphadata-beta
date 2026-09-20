@@ -1,7 +1,9 @@
 # Candidatos de ETF para una cuarta estrategia
 
-Generado automáticamente. Universo: 56 instrumentos; con datos utilizables: 56.
+Generado automáticamente. Universo: 56 instrumentos; con datos utilizables: 55.
 Todo está medido **en pesos**: los precios en dólares se convierten con el tipo de cambio diario, porque la correlación que importa es la que enfrenta un inversionista local.
+
+**Sin datos en Yahoo (1):** IBB. Para los ETF locales esto sólo significa que el símbolo supuesto no existe; hay que buscar el correcto o descartarlos.
 
 ## Los que más diversifican
 
@@ -59,7 +61,7 @@ Retorno en pesos durante cada episodio. Las primeras filas, en negrita, son las 
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | **ECH** | — | -23.3% | -6.6% | -5.2% | -35.0% | 14.7% |
 | **IVV** | -45.1% | -6.0% | -7.6% | -14.8% | -28.4% | -17.8% |
-| TLT | 53.5% | 55.1% | 16.0% | 10.9% | 23.7% | -23.1% |
+| TLT | 53.4% | 55.1% | 16.0% | 10.9% | 23.7% | -23.1% |
 | IAU | 52.2% | 23.6% | 18.7% | 12.4% | 4.3% | 1.1% |
 | LQD | 14.4% | 19.5% | 5.8% | 4.3% | -5.0% | -14.1% |
 | EMB | — | 14.2% | 3.7% | 3.2% | -14.9% | -17.9% |
@@ -85,7 +87,7 @@ Retorno en pesos durante cada episodio. Las primeras filas, en negrita, son las 
 | local_por_confirmar | 8 | +0.35 | 6.9% |
 | pais | 17 | +0.37 | 9.2% |
 | region | 5 | +0.36 | 10.4% |
-| sector_us | 14 | +0.34 | 11.5% |
+| sector_us | 13 | +0.33 | 11.5% |
 | tematico | 1 | +0.36 | -0.4% |
 
 ## Qué daría una rotación sobre este universo
@@ -94,8 +96,8 @@ Referencia, no propuesta: la misma señal de Gamma-6 (momentum compuesto 3/6/12)
 
 | Variante | Retorno anual | Volatilidad | Peor caída | Sharpe | Posiciones |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Top 5 con filtro de tendencia | 11.1% | 24.2% | -26.4% | +0.46 | 5.0 |
-| Top 5 sin filtro | 11.3% | 24.3% | -25.8% | +0.47 | 5.0 |
+| Top 5 con filtro de tendencia | 11.8% | 24.2% | -26.1% | +0.49 | 5.0 |
+| Top 5 sin filtro | 11.9% | 24.2% | -25.8% | +0.49 | 5.0 |
 
 ## Cómo leer esto
 
