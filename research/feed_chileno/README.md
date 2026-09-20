@@ -63,15 +63,15 @@ tramo común. Se corre así:
 
 ### Lo que mide la referencia de investing.com
 
-Once archivos, del 02-01-2025 al 17-09-2026 (SALFACORP trae desde 2021).
-Comparados contra el cierre **crudo** guardado, en 384 días comunes:
+Once archivos. Diez van del 02-01-2025 al 17-09-2026; SALFACORP trae desde 2021.
+Comparados contra el cierre **crudo** guardado, en la ventana común
+02-01-2025 .. 17-07-2026, 384 días:
 
 | | razón mediana | días exactos | desvío p95 |
 |---|---|---|---|
-| CHILE, BCI, ENELCHILE, ECL, ILC, LTM, PARAUCO, MALLPLAZA, BSANTANDER, SQM-B | 1,000000 | 90,1% – 97,7% | 0,00% – 1,14% |
-| SALFACORP | 0,957988 | 38,3% | 18,24% |
+| los once | 1,000000 | 90,1% – 97,7% | 0,00% – 1,14% |
 
-Dos precisiones sobre esto, porque cambian el criterio de aceptación:
+Aprueban 11 de 11. Dos precisiones, porque cambian el criterio de aceptación:
 
 **La coincidencia no es exacta todos los días.** La razón *mediana* es
 1,000000, y eso es lo que confirma que se trata del mismo instrumento con la
@@ -79,10 +79,26 @@ misma convención de cierre. Pero entre un 2% y un 10% de los días difiere, cas
 siempre por menos de 1%. Exigir 1,000000 en cada día dejaría fuera a la propia
 referencia.
 
-**SALFACORP no calza.** Su archivo viene ajustado por dividendos mientras el
-guardado es crudo: la razón mediana se va a 0,958. No sirve para rellenar sin
-deshacer antes ese ajuste.
+**La ventana hay que fijarla.** Una serie ajustada por dividendos se separa del
+cierre crudo en escalones que se acumulan hacia atrás: mientras más historia,
+más se aleja la razón mediana de 1. SALFACORP medido sobre 2021-2026 da
+0,957988 y parece no servir; acotado al 01-2025 como los otros diez da
+1,000000 con 96,61% de días exactos. Es el mismo archivo. Sin ventana común,
+los candidatos quedan ordenados por cuánta historia traen y no por calidad.
 
 Los umbrales por defecto —mediana en 1, 90% de días exactos, percentil 95 del
 desvío bajo 1,2%— salen de medir esta referencia, no de teoría. Revisar cuando
 haya un candidato real.
+
+## Lo que queda pendiente
+
+- Derivar el cierre ajustado desde el crudo más una tabla de acciones
+  corporativas. Hoy el almacén conserva el crudo intacto y deja rastro del
+  factor cuando el ajustado cambia, pero sigue tomando el ajustado del
+  proveedor en vez de calcularlo.
+- Suprimir la fila de NAV por estrategia cuando una de sus posiciones está
+  detenida. Hoy la corrida aborta antes, en `fetch_prices`, así que no llega a
+  escribirse ninguna fila; falta el caso de una detención que afecte sólo a una
+  estrategia.
+- La guardia de contraste está escrita y probada, pero no tiene una segunda
+  fuente que contrastar hasta que haya proveedor.
