@@ -67,3 +67,19 @@ def test_latest_meaningful_movements_are_kept(tmp_path):
     routine = pd.DataFrame([{"ticker": "BCI", "action": "MANTIENE", "previous_weight": .125, "target_weight": .125, "change": 0.0}])
     result = movements_for_report(routine, path)
     assert result.iloc[0].action == "SALE"
+
+
+def test_la_corrida_semanal_sigue_suspendida():
+    """La publicación está detenida mientras el feed chileno no sea confiable.
+
+    Entre el 17-07 y el 18-09 de 2026 el proveedor entregó historial congelado
+    con una sola fila viva, y cada corrida volvió a contabilizar el mismo
+    movimiento: el conjunto publicó +20,8% donde lo real era ~+1%. El
+    calendario queda apagado hasta que existan dos fuentes validadas y las tres
+    guardias. Esta prueba se borra en la Fase 4, cuando se reactive a propósito
+    y no por descuido.
+    """
+    workflow = Path(__file__).resolve().parents[1] / ".github" / "workflows" / "update-prices.yml"
+    activas = [l for l in workflow.read_text(encoding="utf-8").splitlines() if l.strip().startswith(("schedule:", "- cron:"))]
+    assert not activas, f"la corrida semanal volvió a quedar programada: {activas}"
+    assert "workflow_dispatch:" in workflow.read_text(encoding="utf-8")

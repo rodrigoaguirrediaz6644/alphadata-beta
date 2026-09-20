@@ -1,9 +1,28 @@
 name: Ejecutar AlphaData
 
+# CORRIDA SEMANAL SUSPENDIDA — 20-09-2026
+#
+# El feed de precios chilenos (tickers .SN de Yahoo) dejó de actualizar el
+# historial el 17-07-2026: 34 de 40 acciones repiten el mismo cierre desde esa
+# fecha y cada descarga trae una sola fila viva, la última, que revierte al
+# valor congelado en la descarga siguiente. Como la valorización mide desde la
+# fecha anterior —ya revertida— hasta esa punta viva, cada corrida volvió a
+# contabilizar íntegro el mismo movimiento: Delta-12 publicó +30,2% donde el
+# movimiento real único es ~+3,0%, y el conjunto publicó +20,8% contra ~+1%.
+# Las carteras tampoco son confiables: el momentum, la SMA200, el RSI y el
+# filtro de liquidez se calcularon ocho semanas sobre precios repetidos.
+#
+# Mientras el calendario siga apagado, el sistema no publica nada. Una corrida
+# más sólo agrega otra fila falsa y otro correo.
+#
+# CONDICIÓN PARA REACTIVAR el bloque `schedule` de más abajo: dos fuentes de
+# precios validadas contra los datos buenos anteriores al 15-07-2026, y las
+# tres guardias operando (serie sin variación, contraste entre fuentes, y ADR
+# contra acción local). La primera corrida después de eso se lanza a mano.
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "30 20 * * 5"
+  # schedule:
+  #   - cron: "30 20 * * 5"
 
 permissions:
   contents: write
