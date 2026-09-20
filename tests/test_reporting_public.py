@@ -1,6 +1,7 @@
 import pandas as pd
+import pytest
 
-from src.reporting_public import _metrics, build_public_report
+from src.reporting_public import BENCHMARK, _metrics, build_public_report, chart_frame
 
 
 def test_metrics_do_not_invent_history_with_one_observation():
@@ -76,9 +77,56 @@ def test_report_refuses_to_compare_against_a_broken_benchmark():
         {"date": "2026-09-18", "Sigma-6": 110, "Delta-12": 110, "Gamma-6": 110, "IPSA TR": 212, "Conjunto AlphaData": 110},
     ])
     assert not is_continuous(broken["IPSA TR"])
-    _, html = _report(history=broken)
+    markdown, html = _report(history=broken)
     assert "comparado con haber invertido" not in html
     assert "La serie del IPSA tiene un salto" in html
     assert "IPSA TR" not in html  # tampoco aparece en la tabla mientras esté rota
-    _, healthy = _report()
+    # El markdown es la parte en texto plano del correo y queda commiteado en el
+    # repositorio: publicaba el salto de 100 a 212 como si fuera rentabilidad.
+    assert "IPSA TR" not in markdown
+    assert "La comparación con la bolsa chilena no está disponible" in markdown
+    healthy_markdown, healthy = _report()
     assert "comparado con haber invertido" in healthy
+    assert "IPSA TR" in healthy_markdown
+
+
+def _historial(tmp_path):
+    ruta = tmp_path / "historical_model_nav.csv"
+    pd.DataFrame([
+        {"date": "2021-07-08", "Sigma-6": 100.0, "Delta-12": 100.0, "IPSA Total Return": 100.0, "Conjunto AlphaData": 100.0},
+        {"date": "2026-07-15", "Sigma-6": 300.0, "Delta-12": 400.0, "IPSA Total Return": 260.0, "Conjunto AlphaData": 350.0},
+    ]).to_csv(ruta, index=False)
+    return ruta
+
+
+def _vivo():
+    return pd.DataFrame([
+        {"date": "2026-07-16", "Sigma-6": 100.0, "Delta-12": 100.0, "IPSA TR": 100.0, "Conjunto AlphaData": 100.0},
+        {"date": "2026-09-18", "Sigma-6": 110.0, "Delta-12": 105.0, "IPSA TR": 102.0, "Conjunto AlphaData": 112.0},
+    ])
+
+
+def test_el_grafico_llega_hasta_la_fecha_de_la_corrida(tmp_path):
+    # La reconstrucción histórica no crece: si el gráfico sólo la mira, se
+    # queda donde terminó y se atrasa una semana por cada corrida.
+    historial = _historial(tmp_path)
+    data = chart_frame(_vivo(), historical_path=historial)
+    assert data["date"].max() == pd.Timestamp("2026-09-18")
+
+
+def test_el_grafico_encadena_la_serie_viva_en_vez_de_reiniciarla(tmp_path):
+    historial = _historial(tmp_path)
+    antes = historial.read_text(encoding="utf-8")
+    data = chart_frame(_vivo(), historical_path=historial).set_index("date")
+    assert data.loc[pd.Timestamp("2026-07-15"), "Sigma-6"] == pytest.approx(300.0)
+    assert data.loc[pd.Timestamp("2026-07-16"), "Sigma-6"] == pytest.approx(300.0)  # sin desplome a 100
+    assert data.loc[pd.Timestamp("2026-09-18"), "Sigma-6"] == pytest.approx(330.0)  # 300 x 110/100
+    assert data.loc[pd.Timestamp("2026-09-18"), "Conjunto AlphaData"] == pytest.approx(392.0)
+    assert historial.read_text(encoding="utf-8") == antes  # el historial publicado no se reescribe
+
+
+def test_el_grafico_deja_fuera_el_benchmark_roto(tmp_path):
+    historial = _historial(tmp_path)
+    data = chart_frame(_vivo(), historical_path=historial, benchmark_usable=False)
+    assert BENCHMARK not in data
+    assert BENCHMARK in chart_frame(_vivo(), historical_path=historial)

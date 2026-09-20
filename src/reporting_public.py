@@ -76,12 +76,40 @@ def _series_metrics(frame: pd.DataFrame) -> dict[str, dict]:
     return {name: _metrics(frame[name], frame["date"]) if name in frame else _metrics(pd.Series(dtype=float), pd.Series(dtype=float)) for name in SERIES}
 
 
-def _chart(frame: pd.DataFrame) -> str:
+def chart_frame(history: pd.DataFrame, historical_path: Path = HISTORICAL, benchmark_usable: bool = True) -> pd.DataFrame:
+    """Encadena la reconstrucción histórica con el seguimiento vivo.
+
+    La reconstrucción termina el día anterior a la puesta en marcha y el
+    seguimiento vivo arranca ese día siguiente en base 100. Dibujar sólo la
+    primera deja el gráfico congelado donde terminó la reconstrucción, que se
+    atrasa una semana por cada corrida; pegar la segunda sin escalar inventa un
+    desplome hasta 100. Cada serie viva se multiplica por el último valor
+    histórico, que es el mismo enganche que `combined_equal_weight` hace entre
+    un mes y el siguiente.
+
+    Se trabaja en memoria: `historical_model_nav.csv` es historial oficial ya
+    publicado y no se reescribe desde aquí.
+    """
+    names = [name for name in SERIES if name != BENCHMARK or benchmark_usable]
+    live = history.copy()
+    live["date"] = pd.to_datetime(live["date"], errors="coerce")
+    live = live.dropna(subset=["date"]).sort_values("date").set_index("date")
+    live = live[[name for name in names if name in live]].apply(pd.to_numeric, errors="coerce")
+    if not Path(historical_path).exists() or live.empty:
+        return live.rename_axis("date").reset_index()
+    past = pd.read_csv(historical_path, parse_dates=["date"]).rename(columns={"IPSA Total Return": BENCHMARK}).sort_values("date").set_index("date")
+    past = past[[name for name in names if name in past]].apply(pd.to_numeric, errors="coerce")
+    past = past.loc[past.index < live.index.min()]
+    for name in live.columns:
+        base = past[name].dropna() if name in past else pd.Series(dtype=float)
+        if len(base):
+            live[name] = live[name] * base.iloc[-1] / 100
+    return pd.concat([past, live]).sort_index().rename_axis("date").reset_index()
+
+
+def _chart(frame: pd.DataFrame, benchmark_usable: bool = True) -> str:
     """Dibuja la evolución de los últimos 5 años y devuelve el bloque HTML."""
-    if HISTORICAL.exists():
-        data = pd.read_csv(HISTORICAL, parse_dates=["date"]).rename(columns={"IPSA Total Return": BENCHMARK}).sort_values("date")
-    else:
-        data = frame.copy()
+    data = chart_frame(frame, benchmark_usable=benchmark_usable)
     names = [name for name in SERIES if name in data and pd.to_numeric(data[name], errors="coerce").notna().sum() > 1]
     if len(data) < 2 or not names:
         return '<p class="muted">El gráfico aparecerá cuando haya al menos dos fechas de seguimiento.</p>'
@@ -183,8 +211,13 @@ def build_public_report(
     benchmark_usable = BENCHMARK in history and is_continuous(history[BENCHMARK])
     versus = conjunto["return"] - metrics[BENCHMARK]["return"] if benchmark_usable and conjunto["return"] is not None and metrics[BENCHMARK]["return"] is not None else None
 
+    # Una sola lista para la tabla y para el texto plano: cuando estaban
+    # separadas, el markdown siguió publicando el IPSA roto que el HTML ya
+    # ocultaba.
+    resumen = [CONJUNTO, *STRATEGIES, BENCHMARK] if benchmark_usable else [CONJUNTO, *STRATEGIES]
+
     summary_rows = []
-    for name in ([CONJUNTO, *STRATEGIES, BENCHMARK] if benchmark_usable else [CONJUNTO, *STRATEGIES]):
+    for name in resumen:
         m = metrics[name]
         invierte = "Partes iguales en las cuatro piezas" if name == CONJUNTO else QUE_INVIERTE[name]
         cuantas = "—" if name in {CONJUNTO, BENCHMARK} else str(len(portfolios[name]))
@@ -244,7 +277,7 @@ def build_public_report(
     <p class="muted"><strong>Peor caída:</strong> lo máximo que llegó a bajar desde su punto más alto antes de recuperarse. Mientras más chica, más tranquilo el camino.</p>
     </section>
 
-    <section><h2>Evolución</h2>{_chart(history)}</section>
+    <section><h2>Evolución</h2>{_chart(history, benchmark_usable)}</section>
 
     <section><h2>Qué tienes comprado hoy</h2>
     {positions_blocks}
@@ -279,7 +312,9 @@ def build_public_report(
     else:
         lines.append("- Sin cambios: las carteras siguen igual.")
     lines += ["", "## Cada estrategia", ""]
-    for name in [CONJUNTO, *STRATEGIES, BENCHMARK]:
+    for name in resumen:
         lines.append(f"- {name}: {_signed(metrics[name]['return'])} desde el inicio; peor caída {pct(metrics[name]['mdd'])}.")
+    if not benchmark_usable:
+        lines.append("- La comparación con la bolsa chilena no está disponible: la serie del IPSA tiene un salto y quedó fuera hasta corregirla.")
     lines += ["", "El informe HTML incluye el gráfico y las carteras. La metodología y sus parámetros son información reservada.", ""]
     return "\n".join(lines), html
