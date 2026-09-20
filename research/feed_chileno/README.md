@@ -26,13 +26,29 @@ exige resolver una prueba de trabajo en JavaScript. Falla incluso el control
 `aapl.us`, así que no se llegó a evaluar la cobertura chilena. Sortear
 detección de bots no es una opción, y tampoco funcionaría en un job desatendido.
 
-### 3. Twelve Data — PENDIENTE, bloqueado en la creación de cuenta
+### 3. Twelve Data — DESCARTADO, XSGO es de pago
 
-El endpoint de referencia `api.twelvedata.com/stocks?country=Chile` responde
-**sin clave** y lista 1.533 instrumentos en XSGO, incluidos ILC, BCI y SQM-B.
-La cobertura existe. Pero el plan gratuito se anuncia como "Real-time US
-equities and ETFs" más forex y cripto, así que XSGO probablemente sea de pago.
-Para confirmarlo hace falta una clave, y para eso una cuenta.
+El catálogo existe: `api.twelvedata.com/stocks?country=Chile` responde **sin
+clave** y lista 1.533 instrumentos en XSGO, con los símbolos `ILC`, `BCI`,
+`CHILE` y `SQM.B` —con punto, no con guion— entre ellos.
+
+Probado con una clave del plan gratuito (Basic), la respuesta para cada uno de
+esos símbolos, tanto en `/time_series` como en `/eod`, es:
+
+> This symbol is available starting with the Pro or Venture plan.
+
+El control funciona: AAPL en NASDAQ devuelve la serie diaria sin problema, y
+los ADR `LTM` y `SQM` en NYSE también. **La limitación es del plan, no del
+símbolo ni del formato.** El plan Pro cuesta USD 229 al mes, fuera del
+alcance acordado de no pagar por datos.
+
+Queda una utilidad lateral: el plan gratuito sí cubre los instrumentos
+estadounidenses del universo, así que sirve como segunda fuente para la
+guardia de contraste del lado de Gamma-6 y del oro. No resuelve lo chileno.
+
+Una nota operativa para quien lo retome: el plan gratuito corta a 8 créditos
+por minuto. Consultar cuarenta instrumentos exige espaciar las llamadas aunque
+se pague.
 
 ### 4. Alpha Vantage — PENDIENTE, bloqueado en la creación de cuenta
 
