@@ -1,11 +1,11 @@
 {
-  "methodology_version": "2.2.0",
+  "methodology_version": "2.3.0",
   "sigma_entries": {
-    "CENCOMALLS": "2026-06-29",
+    "PARAUCO": "2026-06-29",
     "LTM": "2026-06-29",
+    "CENCOMALLS": "2026-06-29",
     "BCI": "2026-06-29",
-    "VAPORES": "2026-09-11",
-    "PARAUCO": "2026-06-29"
+    "VAPORES": "2026-09-11"
   },
   "sigma_portfolio": [
     {
@@ -70,9 +70,9 @@
       "ticker": "MALLPLAZA",
       "target_weight": 0.125,
       "opened_at": "2026-01-02",
-      "entry_price": 3142.603515625,
+      "entry_price": 3142.603759765625,
       "current_price": 3950.0,
-      "open_return": 0.25468001087605496
+      "open_return": 0.2546799134032631
     },
     {
       "ticker": "BCI",
@@ -119,6 +119,7 @@
     "Sigma-6": 111.20858332763282,
     "Delta-12": 130.21456663884587,
     "Gamma-6": 99.9,
+    "Oro": 99.9,
     "IPSA TR": 212.5567414816112
   },
   "delta_last_period": "2026-08",
@@ -127,7 +128,7 @@
     "uploaded_files": 0,
     "history_rows": 1108
   },
-  "last_run_utc": "2026-09-20T18:43:24.650968+00:00",
+  "last_run_utc": "2026-09-20T20:59:03.224430+00:00",
   "delta_entries": {
     "PARAUCO": "2026-04-01",
     "ILC": "2026-07-01",
@@ -198,6 +199,19 @@
       "entry_price": 101743.89137635194,
       "current_price": 98402.99058532715,
       "open_return": -0.03380257458605107
+    }
+  ],
+  "oro_entries": {
+    "IAU": "2026-09-18"
+  },
+  "oro_portfolio": [
+    {
+      "ticker": "IAU",
+      "target_weight": 1.0,
+      "opened_at": "2026-09-18",
+      "entry_price": 78858.57321929932,
+      "current_price": 78858.57321929932,
+      "open_return": -0.0009990009990008542
     }
   ]
 }

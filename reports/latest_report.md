@@ -2,7 +2,7 @@
 
 **Fecha:** 18-09-2026
 
-**Conjunto (un tercio en cada estrategia): +20,8% desde el inicio.**
+**Conjunto (partes iguales en las cuatro piezas): +20,8% desde el inicio.**
 
 ## Qué hacer esta semana
 
@@ -15,6 +15,7 @@
 - Comprar JNJ (Gamma-6) — 16,7%
 - Comprar MRK (Gamma-6) — 16,7%
 - Comprar TGT (Gamma-6) — 16,7%
+- Comprar IAU (Oro) — 100,0%
 
 ## Cada estrategia
 
@@ -22,7 +23,8 @@
 - Sigma-6: +11,3% desde el inicio; peor caída -0,6%.
 - Delta-12: +30,4% desde el inicio; peor caída -2,6%.
 - Gamma-6: — desde el inicio; peor caída —.
-- IPSA TR: +112,6% desde el inicio; peor caída 0,0%.
+- Oro: — desde el inicio; peor caída —.
+- La comparación con la bolsa chilena no está disponible: la serie del IPSA tiene un salto y quedó fuera hasta corregirla.
 
 El informe HTML incluye el gráfico y las carteras. La metodología y sus parámetros son información reservada.
 
