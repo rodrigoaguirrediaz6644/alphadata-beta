@@ -1,14 +1,15 @@
 {
   "schema_version": "2.0.0",
-  "methodology_version": "2.1.0",
-  "effective_from": "2026-07-27",
+  "methodology_version": "2.2.0",
+  "effective_from": "2026-09-20",
   "platform": "AlphaData",
   "timezone": "America/Santiago",
   "base_currency": "CLP",
   "status": "paper_trading",
   "official_strategies": [
     "SIGMA6",
-    "DELTA12"
+    "DELTA12",
+    "GAMMA6"
   ],
   "strategies": [
     {
@@ -290,6 +291,119 @@
         ],
         "note": "Resultado retrospectivo de la metodología 2.1.0 con RSI(14) <= 65; puede contener sesgo de supervivencia y requiere validación prospectiva."
       }
+    },
+    {
+      "id": "alphadata-gamma6",
+      "commercial_name": "Gamma-6",
+      "strategy_code": "GAMMA6",
+      "version": "1.0.0",
+      "status": "official_paper_trading",
+      "description": "Cartera mensual de momentum compuesto (3, 6-1 y 12-1 meses) sobre acciones de EE.UU. accesibles como CDV, con filtro de tendencia por acción.",
+      "universe": {
+        "market": "Estados Unidos",
+        "instrument_type": "common_equity",
+        "allowed_instruments": "acciones de EE.UU. listadas en config/tickers.csv con tipo accion_us, accesibles en Chile como CDV",
+        "minimum_price_history_trading_days": 252,
+        "survivorship_bias_allowed": false,
+        "local_access": "CDV en pesos; el precio del CDV replica la acción subyacente"
+      },
+      "data": {
+        "prices_required_fields": [
+          "date",
+          "ticker",
+          "adjusted_close"
+        ],
+        "prices": "adjusted_close_usd_for_indicators; conversion_to_clp_for_valuation",
+        "fx": {
+          "instrument": "USDCLP",
+          "provider_ticker": "USDCLP=X",
+          "use": "valorización y resultados en pesos; no interviene en el ranking"
+        },
+        "corporate_action_adjustment_required": true,
+        "future_information_allowed": false,
+        "maximum_forward_fill_trading_days": 3,
+        "stale_or_invalid_price_action": "exclude_and_report"
+      },
+      "indicators": {
+        "retorno_3m": {
+          "formula": "adjusted_close[t] / adjusted_close[t-63] - 1",
+          "lookback_trading_days": 63,
+          "skip_recent_trading_days": 0
+        },
+        "retorno_6_1": {
+          "formula": "adjusted_close[t-21] / adjusted_close[t-126] - 1",
+          "lookback_trading_days": 126,
+          "skip_recent_trading_days": 21
+        },
+        "retorno_12_1": {
+          "formula": "adjusted_close[t-21] / adjusted_close[t-252] - 1",
+          "lookback_trading_days": 252,
+          "skip_recent_trading_days": 21
+        },
+        "score": {
+          "formula": "(2*z(retorno_3m) + z(retorno_6_1) + z(retorno_12_1)) / 4",
+          "standardization": "cross_sectional_zscore_over_eligible_universe",
+          "minimum_observations": 252
+        },
+        "sma200": {
+          "formula": "mean(adjusted_close[t-199:t])",
+          "window_trading_days": 200,
+          "minimum_observations": 200,
+          "required": "adjusted_close[t] > sma200[t]"
+        }
+      },
+      "entry": {
+        "ranking": "score descending; ticker ascending as deterministic tie-break",
+        "maximum_selected_positions": 6,
+        "eligibility": [
+          "adjusted_close > sma200",
+          "history_rows >= 252",
+          "complete_and_nonstale_required_data"
+        ],
+        "signal_time": "last_trading_day_of_month_after_market_close",
+        "execution": "first_trading_day_of_next_month"
+      },
+      "sizing": {
+        "method": "equal_weight",
+        "raw_weight_formula": "1 / selected_count",
+        "maximum_weight_per_instrument": 0.1667,
+        "maximum_positions": 6,
+        "unallocated_capital": "cash",
+        "leverage_allowed": false,
+        "short_sales_allowed": false,
+        "sector_cap": null
+      },
+      "exit": {
+        "evaluation_frequency": "monthly",
+        "triggers": [
+          "not_in_top_6",
+          "adjusted_close <= sma200",
+          "invalid_or_stale_data"
+        ],
+        "priority": "any_trigger",
+        "execution": "first_trading_day_of_next_month",
+        "intramonth_stop_loss": false,
+        "discretionary_news_exit": false
+      },
+      "cost_model": {
+        "provider": "Trii",
+        "instrument": "acciones de EE.UU. (CDV)",
+        "effective_rate_per_side": 0.001,
+        "application": "0.5 * (rotación de posiciones + variación de caja) * tasa",
+        "note": "Trii no cobra comisión explícita en acciones de EE.UU.; aplica un spread de 0,1% por operación."
+      },
+      "calculation_schedule": {
+        "frequency": "monthly",
+        "signal_time": "last_trading_day_after_market_close",
+        "publication_time": "after_validation_before_next_market_open",
+        "execution_time": "first_trading_day_of_next_month",
+        "no_change_report_required": true
+      },
+      "historical_reference": {
+        "method": "aplicación retrospectiva de las mismas reglas",
+        "period": "2014-06 a 2026-09 (diseño); la serie del informe parte en 2021-07",
+        "note": "Los resultados previos a la puesta en marcha son una reconstrucción y no una ejecución efectiva."
+      }
     }
   ],
   "legacy_strategies": [
@@ -361,5 +475,17 @@
       "do_not_reconstruct_original_entry_price": true,
       "performance_reporting_basis": "official_model_portfolio_not_subscriber_personal_return"
     }
+  },
+  "combined_portfolio": {
+    "commercial_name": "Conjunto AlphaData",
+    "description": "Resultado de repartir el capital en partes iguales entre las estrategias oficiales.",
+    "components": [
+      "SIGMA6",
+      "DELTA12",
+      "GAMMA6"
+    ],
+    "weights": "equal_per_strategy",
+    "rebalance_frequency": "monthly",
+    "note": "Antes de que una estrategia tenga historial, el conjunto reparte entre las disponibles en cada fecha."
   }
 }

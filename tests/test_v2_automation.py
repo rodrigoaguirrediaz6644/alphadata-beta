@@ -15,8 +15,8 @@ def test_only_credicorp_is_accepted_for_sigma6():
     assert normalize_signal("Sobreponderar") == 1
 
 
-def test_registry_has_two_official_strategies():
-    assert set(load_registry()) == {"SIGMA6", "DELTA12"}
+def test_registry_has_the_three_official_strategies():
+    assert set(load_registry()) == {"SIGMA6", "DELTA12", "GAMMA6"}
 
 
 def test_runtime_uses_trii_effective_rate():

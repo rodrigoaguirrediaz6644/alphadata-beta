@@ -124,9 +124,15 @@ def build_coverage(
     checked_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
     dated_prices = prices.copy()
     dated_prices["date"] = pd.to_datetime(dated_prices["date"], errors="coerce")
+    # La fecha de referencia es la de la bolsa local: Nueva York y el mercado
+    # cambiario operan en feriados chilenos y desplazarían el rezago de todos
+    # los instrumentos locales sin que exista problema de datos.
+    local_tickers = set(universe.loc[universe.tipo == "accion_local", "alphadata_ticker"])
     market_dates = dated_prices.loc[
-        dated_prices["alphadata_ticker"] != "IPSA_TR", "date"
+        dated_prices["alphadata_ticker"].isin(local_tickers), "date"
     ].dropna()
+    if market_dates.empty:
+        market_dates = dated_prices.loc[dated_prices["alphadata_ticker"] != "IPSA_TR", "date"].dropna()
     reference_date = market_dates.max() if len(market_dates) else dated_prices["date"].max()
     rows = []
     for item in universe.itertuples(index=False):

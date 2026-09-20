@@ -44,3 +44,34 @@ MULTIFOODS,MULTIFOODS.SN,Multiexport Foods,accion_sigma,CLP,activo
 SMSAAM,SMSAAM.SN,SAAM,accion_sigma,CLP,activo
 SONDA,SONDA.SN,Sonda,accion_sigma,CLP,activo
 IPSA_TR,CFMITNIPSA.SN,IPSA retorno total (proxy ETF CFMITNIPSA),benchmark,indice,activo
+ABT,ABT,Abbott Laboratories (CDV ABTCL),accion_us,USD,activo
+GOOGL,GOOGL,Alphabet Inc. Class A (CDV GOOGLCL),accion_us,USD,activo
+GOOG,GOOG,Alphabet Inc. Class C (CDV GOOGCL),accion_us,USD,activo
+AMZN,AMZN,Amazon.com Inc. (CDV AMZNCL),accion_us,USD,activo
+AXP,AXP,American Express Co. (CDV AXPCL),accion_us,USD,activo
+AAPL,AAPL,Apple Inc. (CDV AAPLCL),accion_us,USD,activo
+CVX,CVX,Chevron Corp. (CDV CVXCL),accion_us,USD,activo
+EBAY,EBAY,eBay Inc. (CDV EBAYCL),accion_us,USD,activo
+XOM,XOM,Exxon Mobil Corp. (CDV XOMCL),accion_us,USD,activo
+FCX,FCX,Freeport-McMoRan Inc. (CDV FCXCL),accion_us,USD,activo
+HON,HON,Honeywell International Inc. (CDV HONCL),accion_us,USD,activo
+INTC,INTC,Intel Corp. (CDV INTCCL),accion_us,USD,activo
+JNJ,JNJ,Johnson & Johnson (CDV JNJCL),accion_us,USD,activo
+MCD,MCD,McDonald's Corp. (CDV MCDCL),accion_us,USD,activo
+MRK,MRK,Merck & Co. Inc. (CDV MRKCL),accion_us,USD,activo
+MSFT,MSFT,Microsoft Corp. (CDV MSFTCL),accion_us,USD,activo
+MS,MS,Morgan Stanley (CDV MSCL),accion_us,USD,activo
+NKE,NKE,Nike Inc. (CDV NKECL),accion_us,USD,activo
+NVDA,NVDA,NVIDIA Corp. (CDV NVDACL),accion_us,USD,activo
+PFE,PFE,Pfizer Inc. (CDV PFECL),accion_us,USD,activo
+SBUX,SBUX,Starbucks Corp. (CDV SBUXCL),accion_us,USD,activo
+TGT,TGT,Target Corp. (CDV TGTCL),accion_us,USD,activo
+BAC,BAC,Bank of America Corp. (CDV BACL),accion_us,USD,activo
+KO,KO,Coca-Cola Co. (CDV KOCL),accion_us,USD,activo
+DIS,DIS,Walt Disney Co. (CDV DISCL),accion_us,USD,activo
+UPS,UPS,United Parcel Service Inc. (CDV UPSCL),accion_us,USD,activo
+UNH,UNH,UnitedHealth Group Inc. (CDV UNHCL),accion_us,USD,activo
+V,V,Visa Inc. (CDV VCL),accion_us,USD,activo
+WMT,WMT,Walmart Inc. (CDV WALMARTCL),accion_us,USD,activo
+WFC,WFC,Wells Fargo & Co. (CDV WFCCL),accion_us,USD,activo
+USDCLP,USDCLP=X,Tipo de cambio dólar/peso,fx,CLP,activo

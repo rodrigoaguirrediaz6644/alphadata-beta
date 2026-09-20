@@ -61,8 +61,12 @@ jobs:
             reports/historical_performance.png
             data/portfolio_sigma6.csv
             data/portfolio_delta12.csv
+            data/portfolio_gamma6.csv
             data/movements_sigma6.csv
             data/movements_delta12.csv
+            data/movements_gamma6.csv
+            data/strategy_nav.csv
+            data/historical_model_nav.csv
             data/horizonte_state.json
             data/horizonte_quotes.csv
             data/horizonte_signals.csv

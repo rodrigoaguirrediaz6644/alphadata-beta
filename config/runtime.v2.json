@@ -1,8 +1,9 @@
 {
-  "methodology_version": "2.1.0",
+  "methodology_version": "2.2.0",
   "enabled_strategies": [
     "SIGMA6",
-    "DELTA12"
+    "DELTA12",
+    "GAMMA6"
   ],
   "benchmark": {
     "alphadata_ticker": "IPSA_TR",
@@ -20,7 +21,8 @@
   },
   "strategy_modules": {
     "SIGMA6": "src.strategy_engine:sigma6",
-    "DELTA12": "src.strategy_engine:delta12"
+    "DELTA12": "src.strategy_engine:delta12",
+    "GAMMA6": "src.strategy_engine:gamma6"
   },
   "future_strategy_contract": {
     "required_outputs": [
@@ -32,5 +34,20 @@
       "target_weight"
     ],
     "registration": "add module path to strategy_modules and strategy code to enabled_strategies"
+  },
+  "transaction_cost_us": {
+    "provider": "Trii",
+    "rate": 0.001,
+    "note": "spread aplicado por lado en acciones de EE.UU. (CDV)"
+  },
+  "combined_portfolio": {
+    "name": "Conjunto AlphaData",
+    "weights": "equal_per_strategy",
+    "rebalance": "monthly",
+    "components": [
+      "SIGMA6",
+      "DELTA12",
+      "GAMMA6"
+    ]
   }
 }

@@ -12,15 +12,19 @@ from src.fetch_prices import load_universe
 from src.ingest_recommendations import ingest
 from src.strategy_registry import validate_registry
 from src.reporting_public import build_public_report
-from src.strategy_engine import RECOMMENDATION_COLUMNS, delta12, delta12_historical_nav, movements, reconstruct_entry_dates, sigma6, validate_recommendations
+from src.strategy_engine import RECOMMENDATION_COLUMNS, combined_equal_weight, delta12, delta12_historical_nav, gamma6, gamma6_historical_nav, movements, reconstruct_entry_dates, sigma6, to_clp, validate_recommendations
 
 ROOT=Path(__file__).resolve().parents[1]; DATA=ROOT/'data'; REPORTS=ROOT/'reports'; STATE=DATA/'strategy_state.json'; NAV=DATA/'strategy_nav.csv'
+US_COST_RATE=.001  # spread de Trii para acciones de EE.UU. (0,1% por lado)
+GAMMA_RULE_VERSION='1.0.0'
+STRATEGY_SERIES=['Sigma-6','Delta-12','Gamma-6']
+CONJUNTO='Conjunto AlphaData'
 
 def load_state()->dict:
     if STATE.exists():
         state=json.loads(STATE.read_text(encoding='utf-8'))
-        if state.get('methodology_version') in {'2.0.0','2.1.0'}: return state
-    return {'methodology_version':'2.1.0','sigma_entries':{},'delta_entries':{},'sigma_portfolio':[],'delta_portfolio':[],'nav':{'Sigma-6':100.,'Delta-12':100.,'IPSA TR':100.}}
+        if state.get('methodology_version') in {'2.0.0','2.1.0','2.2.0'}: return state
+    return {'methodology_version':'2.2.0','sigma_entries':{},'delta_entries':{},'gamma_entries':{},'sigma_portfolio':[],'delta_portfolio':[],'gamma_portfolio':[],'nav':{'Sigma-6':100.,'Delta-12':100.,'Gamma-6':100.,'IPSA TR':100.}}
 
 def portfolio_return(prices:pd.DataFrame,weights:list[dict],start:pd.Timestamp,end:pd.Timestamp)->float:
     if not weights or start>=end:return 0.
@@ -179,10 +183,18 @@ def main()->None:
     ingest_summary=ingest()
     universe=load_universe(); prices=pd.read_csv(DATA/'market_prices_daily.csv',parse_dates=['date'])
     prices.loc[prices.alphadata_ticker=='IPSA','alphadata_ticker']='IPSA_TR'
+    # Gamma-6 opera en Nueva York y el tipo de cambio cotiza incluso en feriados
+    # locales: ambos se separan para que el calendario de Sigma-6 y Delta-12 siga
+    # siendo exactamente el mismo de antes de incorporar el mercado estadounidense.
+    us_tickers=set(universe.loc[universe.tipo=='accion_us','alphadata_ticker'])
+    fx=prices[prices.alphadata_ticker=='USDCLP'].copy()
+    prices_us=prices[prices.alphadata_ticker.isin(us_tickers)].copy()
+    prices_us_clp=to_clp(prices_us,universe,fx)
+    prices=prices[~prices.alphadata_ticker.isin(us_tickers|{'USDCLP'})].copy()
     as_of=prices.loc[prices.alphadata_ticker!='IPSA_TR','date'].max().normalize(); state=load_state()
     input_path=DATA/'recommendations_input.csv'; raw=pd.read_csv(input_path,dtype=str).fillna('') if input_path.exists() else pd.DataFrame(columns=RECOMMENDATION_COLUMNS)
     valid,errors=validate_recommendations(raw,set(universe.alphadata_ticker)); valid.to_csv(DATA/'recommendations_validated_live.csv',index=False,date_format='%Y-%m-%d');errors.to_csv(DATA/'recommendations_errors.csv',index=False,date_format='%Y-%m-%d')
-    old_sigma=state.get('sigma_portfolio',[]); old_delta=state.get('delta_portfolio',[])
+    old_sigma=state.get('sigma_portfolio',[]); old_delta=state.get('delta_portfolio',[]); old_gamma=state.get('gamma_portfolio',[])
     if state.get('entry_dates_version') != 3:
         sigma_entries, delta_entries = reconstruct_entry_dates(valid, prices, universe, as_of)
         state['sigma_entries'] = sigma_entries
@@ -205,19 +217,42 @@ def main()->None:
         state['delta_rule_version']='2.1.0'
     if 'opened_at' not in delta.columns:
         delta['opened_at'] = delta.ticker.map(state.get('delta_entries', {}))
+    gamma_signal_period=(as_of.to_period('M')-1)
+    gamma_period=gamma_signal_period.strftime('%Y-%m')
+    gamma_sessions=prices_us.loc[prices_us.date.dt.to_period('M')==gamma_signal_period,'date']
+    gamma_cutoff=gamma_sessions.max() if len(gamma_sessions) else as_of
+    if state.get('gamma_last_period')==gamma_period and state.get('gamma_rule_version')==GAMMA_RULE_VERSION and old_gamma:
+        gamma=pd.DataFrame(old_gamma); g_audit=pd.DataFrame()
+    else:
+        gamma,g_audit=gamma6(prices_us,universe,gamma_cutoff)
+        previous_gamma_entries=state.get('gamma_entries',{})
+        gamma_execution=prices_us.loc[prices_us.date>gamma_cutoff,'date'].sort_values()
+        gamma_execution_date=(gamma_execution.iloc[0] if len(gamma_execution) else as_of).date().isoformat()
+        state['gamma_entries']={ticker:previous_gamma_entries.get(ticker,gamma_execution_date) for ticker in gamma.ticker}
+        state['gamma_last_period']=gamma_period
+        state['gamma_rule_version']=GAMMA_RULE_VERSION
+    if 'opened_at' not in gamma.columns:
+        gamma['opened_at']=gamma.ticker.map(state.get('gamma_entries',{}))
     sigma=enrich_open_positions(sigma,prices,as_of)
     delta=enrich_open_positions(delta,prices,as_of)
+    gamma=enrich_open_positions(gamma,prices_us_clp,as_of,buy_cost=US_COST_RATE)
     smove=movements_for_report(movements(old_sigma,sigma),DATA/'movements_sigma6.csv')
     dmove=movements_for_report(movements(old_delta,delta),DATA/'movements_delta12.csv')
-    last_date=pd.Timestamp(state.get('valuation_date',as_of.date().isoformat())); nav=state.get('nav',{'Sigma-6':100.,'Delta-12':100.,'IPSA TR':100.})
+    gmove=movements_for_report(movements(old_gamma,gamma),DATA/'movements_gamma6.csv')
+    last_date=pd.Timestamp(state.get('valuation_date',as_of.date().isoformat())); nav=state.get('nav',{'Sigma-6':100.,'Delta-12':100.,'Gamma-6':100.,'IPSA TR':100.})
     if 'IPSA' in nav and 'IPSA TR' not in nav: nav['IPSA TR']=nav.pop('IPSA')
+    nav.setdefault('Gamma-6',100.)
     sigma_r=portfolio_return(prices,old_sigma,last_date,as_of)-turnover_cost(old_sigma,sigma,.001785)
     delta_r=portfolio_return(prices,old_delta,last_date,as_of)-turnover_cost(old_delta,delta,.001785)
+    gamma_r=portfolio_return(prices_us_clp,old_gamma,last_date,as_of)-turnover_cost(old_gamma,gamma,US_COST_RATE)
     ipsa_r=benchmark_return(prices,last_date,as_of)
-    navrow={'date':as_of.date().isoformat(),'Sigma-6':nav['Sigma-6']*(1+sigma_r),'Delta-12':nav['Delta-12']*(1+delta_r),'IPSA TR':nav['IPSA TR']*(1+ipsa_r)}
+    navrow={'date':as_of.date().isoformat(),'Sigma-6':nav['Sigma-6']*(1+sigma_r),'Delta-12':nav['Delta-12']*(1+delta_r),'Gamma-6':nav['Gamma-6']*(1+gamma_r),'IPSA TR':nav['IPSA TR']*(1+ipsa_r)}
     history=pd.read_csv(NAV) if NAV.exists() else pd.DataFrame()
     if len(history): history=history[history.date.astype(str)!=navrow['date']]
-    history=pd.concat([history,pd.DataFrame([navrow])],ignore_index=True);history.to_csv(NAV,index=False)
+    history=pd.concat([history,pd.DataFrame([navrow])],ignore_index=True)
+    combined=combined_equal_weight(history,STRATEGY_SERIES)
+    if len(combined): history[CONJUNTO]=history.date.map({d.date().isoformat():v for d,v in combined.items()})
+    history.to_csv(NAV,index=False)
     coverage=pd.read_csv(DATA/'coverage_report.csv')
     historical_path=DATA/'historical_model_nav.csv'
     if historical_path.exists():
@@ -226,10 +261,19 @@ def main()->None:
         if len(rebuilt):
             values=rebuilt.set_index('date')['Delta-12']
             historical['Delta-12']=historical.date.map(values)
-            historical.to_csv(historical_path,index=False)
-    md,html=build_public_report(as_of,sigma,delta,smove,dmove,coverage,errors,history);(REPORTS/'latest_report.md').write_text(md,encoding='utf-8');(REPORTS/'latest_report.html').write_text(html,encoding='utf-8')
-    sigma.to_csv(DATA/'portfolio_sigma6.csv',index=False);delta.to_csv(DATA/'portfolio_delta12.csv',index=False);s_audit.to_csv(DATA/'audit_sigma6.csv',index=False);d_audit.to_csv(DATA/'audit_delta12.csv',index=False);smove.to_csv(DATA/'movements_sigma6.csv',index=False);dmove.to_csv(DATA/'movements_delta12.csv',index=False)
-    state.update({'methodology_version':'2.1.0','sigma_portfolio':sigma.to_dict('records'),'delta_portfolio':delta.to_dict('records'),'valuation_date':as_of.date().isoformat(),'nav':{k:navrow[k] for k in ['Sigma-6','Delta-12','IPSA TR']},'ingestion':ingest_summary,'last_run_utc':datetime.now(timezone.utc).isoformat()});STATE.write_text(json.dumps(state,ensure_ascii=False,indent=2),encoding='utf-8')
+        gamma_rebuilt=gamma6_historical_nav(prices_us,universe,fx,historical.date.min(),historical.date.max(),US_COST_RATE)
+        if len(gamma_rebuilt):
+            gamma_values=gamma_rebuilt.set_index('date')['Gamma-6']
+            historical['Gamma-6']=historical.date.map(gamma_values).ffill()
+        historical_combined=combined_equal_weight(historical,STRATEGY_SERIES)
+        if len(historical_combined): historical[CONJUNTO]=historical.date.map(historical_combined)
+        historical.to_csv(historical_path,index=False)
+    md,html=build_public_report(as_of,sigma,delta,smove,dmove,coverage,errors,history,gamma=gamma,gamma_moves=gmove);(REPORTS/'latest_report.md').write_text(md,encoding='utf-8');(REPORTS/'latest_report.html').write_text(html,encoding='utf-8')
+    sigma.to_csv(DATA/'portfolio_sigma6.csv',index=False);delta.to_csv(DATA/'portfolio_delta12.csv',index=False);gamma.to_csv(DATA/'portfolio_gamma6.csv',index=False)
+    s_audit.to_csv(DATA/'audit_sigma6.csv',index=False);d_audit.to_csv(DATA/'audit_delta12.csv',index=False)
+    if len(g_audit): g_audit.to_csv(DATA/'audit_gamma6.csv',index=False)
+    smove.to_csv(DATA/'movements_sigma6.csv',index=False);dmove.to_csv(DATA/'movements_delta12.csv',index=False);gmove.to_csv(DATA/'movements_gamma6.csv',index=False)
+    state.update({'methodology_version':'2.2.0','sigma_portfolio':sigma.to_dict('records'),'delta_portfolio':delta.to_dict('records'),'gamma_portfolio':gamma.to_dict('records'),'valuation_date':as_of.date().isoformat(),'nav':{k:navrow[k] for k in ['Sigma-6','Delta-12','Gamma-6','IPSA TR']},'ingestion':ingest_summary,'last_run_utc':datetime.now(timezone.utc).isoformat()});STATE.write_text(json.dumps(state,ensure_ascii=False,indent=2),encoding='utf-8')
     print(intro if (intro:='Informe generado: '+str(REPORTS/'latest_report.md')) else '')
     if len(errors): print(f'ADVERTENCIA: {len(errors)} recomendaciones fueron rechazadas; revisar data/recommendations_errors.csv')
 

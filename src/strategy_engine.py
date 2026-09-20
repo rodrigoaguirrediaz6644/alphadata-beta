@@ -139,6 +139,81 @@ def delta12(prices: pd.DataFrame, universe: pd.DataFrame, as_of: pd.Timestamp) -
 
 
 
+def gamma6(prices: pd.DataFrame, universe: pd.DataFrame, as_of: pd.Timestamp) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Gamma-6: momentum compuesto (3, 6-1 y 12-1 meses, pesos 2/1/1) sobre acciones de EE.UU.
+
+    Contrato de estrategia: devuelve (portfolio[ticker,target_weight], audit).
+    La señal se calcula sobre el precio ajustado en dólares; la conversión a
+    pesos ocurre al valorizar la cartera, no al rankear (el tipo de cambio es
+    un factor común y no altera el orden entre acciones).
+    """
+    us=set(universe.loc[universe.tipo=="accion_us","alphadata_ticker"])
+    p=prices[prices.alphadata_ticker.isin(us)&(prices.date<=as_of)]
+    close=p.pivot(index="date",columns="alphadata_ticker",values="adjusted_close").sort_index().ffill(limit=3)
+    if len(close)<252: return pd.DataFrame(columns=["ticker","target_weight"]),pd.DataFrame(columns=["ticker","reason"])
+    last=close.iloc[-1]; lag=lambda n: close.shift(n).iloc[-1]
+    r3=last/lag(63)-1; r6=lag(21)/lag(126)-1; r12=lag(21)/lag(252)-1
+    sma=close.rolling(200,min_periods=200).mean().iloc[-1]; obs=close.notna().sum()
+    audit=pd.DataFrame({"ticker":close.columns,"adjusted_close":last,"retorno_3m":r3,"retorno_6_1":r6,"retorno_12_1":r12,"sma200":sma,"history_rows":obs}).set_index("ticker")
+    audit["history_ok"]=audit.history_rows>=252; audit["sobre_sma200"]=audit.adjusted_close>audit.sma200
+    base=audit[audit.history_ok].dropna(subset=["retorno_3m","retorno_6_1","retorno_12_1"])
+    z=lambda x: (x-x.mean())/x.std() if len(x)>1 and x.std() else x*0.
+    audit["score"]=(2*z(base.retorno_3m)+z(base.retorno_6_1)+z(base.retorno_12_1))/4 if len(base) else np.nan
+    audit["eligible"]=audit.history_ok&audit.sobre_sma200&audit.score.notna()
+    audit["reason"]=np.select([~audit.history_ok,audit.score.isna(),~audit.sobre_sma200],["historia insuficiente","indicadores incompletos","bajo SMA200"],default="elegible")
+    selected=audit[audit.eligible].nlargest(6,"score"); weights=capped_pro_rata(pd.Series(1.,index=selected.index),1/6+1e-9)
+    portfolio=pd.DataFrame({"ticker":weights.index,"target_weight":weights.values}) if len(weights) else pd.DataFrame(columns=["ticker","target_weight"])
+    return portfolio.sort_values("target_weight",ascending=False),audit.reset_index().sort_values(["eligible","score"],ascending=[False,False])
+
+
+def to_clp(prices: pd.DataFrame, universe: pd.DataFrame, fx: pd.DataFrame) -> pd.DataFrame:
+    """Convierte a pesos los precios de los instrumentos en dólares.
+
+    `fx` son las filas del tipo de cambio (alphadata_ticker == "USDCLP"). Se
+    arrastra el último valor conocido para los días en que Nueva York opera y
+    el mercado cambiario local no publicó nuevo dato.
+    """
+    rate=fx.set_index("date")["adjusted_close"].sort_index()
+    if rate.empty: return prices.copy()
+    usd=set(universe.loc[universe.moneda=="USD","alphadata_ticker"])
+    out=prices.copy(); mask=out.alphadata_ticker.isin(usd)
+    factor=rate.reindex(pd.DatetimeIndex(sorted(set(out.loc[mask,"date"])|set(rate.index)))).ffill()
+    out.loc[mask,["open","high","low","close","adjusted_close"]]=out.loc[mask,["open","high","low","close","adjusted_close"]].mul(out.loc[mask,"date"].map(factor).to_numpy(),axis=0)
+    return out
+
+
+def gamma6_historical_nav(prices: pd.DataFrame, universe: pd.DataFrame, fx: pd.DataFrame, start: pd.Timestamp, end: pd.Timestamp, cost_rate: float = .001) -> pd.DataFrame:
+    """Reconstruye Gamma-6 en pesos usando sólo información disponible en cada revisión mensual."""
+    us=set(universe.loc[universe.tipo=="accion_us","alphadata_ticker"])
+    clp=to_clp(prices,universe,fx)
+    panel=clp.loc[clp.alphadata_ticker.isin(us)&clp.date.between(start-pd.Timedelta(days=700),end)].pivot(index="date",columns="alphadata_ticker",values="adjusted_close").sort_index().ffill(limit=3)
+    sessions=panel.index[panel.index>=pd.Timestamp(start)]
+    if len(sessions)==0: return pd.DataFrame(columns=["date","Gamma-6"])
+    weights: dict[str,float]={}; nav=100.; rows=[]; previous_date=None; current_month=None
+    for session in sessions:
+        if previous_date is None:
+            rows.append({"date":session,"Gamma-6":nav}); previous_date=session; current_month=session.to_period("M"); continue
+        day_return=0.
+        for ticker,weight in weights.items():
+            if ticker in panel and pd.notna(panel.at[previous_date,ticker]) and pd.notna(panel.at[session,ticker]) and panel.at[previous_date,ticker]>0:
+                day_return+=weight*(panel.at[session,ticker]/panel.at[previous_date,ticker]-1)
+        nav*=1+day_return
+        month=session.to_period("M")
+        if month!=current_month:
+            review_dates=panel.index[panel.index<session]
+            if len(review_dates):
+                portfolio,_=gamma6(prices,universe,pd.Timestamp(review_dates[-1]))
+                new_weights=dict(zip(portfolio.ticker,portfolio.target_weight))
+                risky=sum(abs(new_weights.get(t,0)-weights.get(t,0)) for t in set(weights)|set(new_weights))
+                cash=abs((1-sum(new_weights.values()))-(1-sum(weights.values())))
+                nav*=1-.5*(risky+cash)*cost_rate
+                weights=new_weights
+            current_month=month
+        rows.append({"date":session,"Gamma-6":nav})
+        previous_date=session
+    return pd.DataFrame(rows)
+
+
 def delta12_historical_nav(prices: pd.DataFrame, universe: pd.DataFrame, start: pd.Timestamp, end: pd.Timestamp, cost_rate: float = .001785) -> pd.DataFrame:
     """Reconstruct Delta-12 2.1.0 using only information available at each monthly review."""
     local=set(universe.loc[universe.tipo=="accion_local","alphadata_ticker"])
@@ -170,6 +245,31 @@ def delta12_historical_nav(prices: pd.DataFrame, universe: pd.DataFrame, start: 
         rows.append({"date":session,"Delta-12":nav})
         previous_date=session
     return pd.DataFrame(rows)
+
+
+def combined_equal_weight(frame: pd.DataFrame, columns: list[str], date_column: str = "date", freq: str = "M") -> pd.Series:
+    """Serie del conjunto: la misma ponderación en cada estrategia.
+
+    Se reparte el capital en partes iguales entre las estrategias disponibles en
+    cada fecha y se reequilibra al cierre de cada mes; dentro del mes los pesos
+    se dejan correr, igual que ocurriría en una cuenta real. Devuelve un índice
+    base 100 indexado por fecha.
+    """
+    data=frame.copy(); data[date_column]=pd.to_datetime(data[date_column])
+    present=[c for c in columns if c in data]
+    if not present: return pd.Series(dtype=float)
+    values=data.set_index(date_column)[present].apply(pd.to_numeric,errors="coerce").sort_index().ffill()
+    values=values.dropna(how="all")
+    if len(values)<2: return pd.Series(100.,index=values.index) if len(values) else pd.Series(dtype=float)
+    nav=[]; level=100.; previous=None
+    for _,block in values.groupby(values.index.to_period(freq)):
+        if previous is not None: block=pd.concat([previous.to_frame().T,block])
+        growth=block.divide(block.iloc[0])  # el mes arranca reequilibrado: las columnas sin dato quedan NaN y no entran al promedio
+        period=growth.mean(axis=1)*level  # partes iguales entre las estrategias con dato
+        nav.append(period.iloc[1:] if previous is not None else period)
+        level=float(period.iloc[-1]); previous=block.iloc[-1]
+    series=pd.concat(nav).sort_index()
+    return series[~series.index.duplicated(keep="last")]
 
 
 def movements(previous: list[dict[str, Any]], current: pd.DataFrame) -> pd.DataFrame:

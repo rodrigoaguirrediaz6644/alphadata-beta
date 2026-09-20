@@ -1,0 +1,67 @@
+name: Backtest exploratorio Gamma-6 US
+
+# Investigación paralela, NO forma parte de la metodología oficial
+# (Sigma-6 / Delta-12). No toca data/, reports/ ni strategy_state.json.
+# Corre: al tocar research/momentum_us/, research/common/ o el universo US;
+# el primer día de cada mes (seguimiento fuera de muestra y cartera objetivo);
+# y manualmente. Los resultados quedan committeados en
+# research/momentum_us/results/ para leerlos después sin recalcular.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "30 13 1 * *"  # día 1 de cada mes, 13:30 UTC (tras el cierre del último día hábil del mes anterior)
+  push:
+    branches: [main]
+    paths:
+      - "research/momentum_us/**"
+      - "research/common/**"
+      - "config/universe_us.csv"
+      - "tests/test_momentum_us.py"
+      - ".github/workflows/research-momentum-us.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: research-momentum-us
+  cancel-in-progress: false
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v6
+
+      - name: Preparar Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Instalar dependencias
+        run: python -m pip install -r requirements.txt
+
+      - name: Validar funciones puras (sin red)
+        run: PYTHONPATH=. python -m pytest -q tests/test_momentum_us.py
+
+      - name: Correr backtest (descarga Yahoo Finance y calcula)
+        run: PYTHONPATH=. python -m research.momentum_us.backtest
+
+      - name: Conservar resultados como artefacto
+        uses: actions/upload-artifact@v5
+        with:
+          name: gamma6-us-backtest-${{ github.run_number }}
+          path: research/momentum_us/results/
+          retention-days: 90
+
+      - name: Guardar resultados en el repo
+        run: |
+          git config user.name "alphadata-research-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git pull --rebase --autostash origin main
+          git add research/momentum_us/results
+          git diff --cached --quiet || git commit -m "research: actualizar backtest exploratorio Gamma-6 US"
+          git push
