@@ -144,6 +144,20 @@ def _read_tsv_from_zip(archive: zipfile.ZipFile, name_candidates: list[str]) -> 
     )
 
 
+def _normalize_cik(value: object) -> str:
+    """Normaliza un CIK a su forma entera sin ceros a la izquierda.
+
+    Los datasets de la SEC no son consistentes: algunos archivos traen el
+    CIK con ceros a la izquierda (p. ej. "0000320193") y otros sin ellos
+    ("320193"). Sin esta normalización, un `isin()` directo entre ambas
+    formas nunca hace match y el filtro queda vacío en silencio.
+    """
+    try:
+        return str(int(str(value).strip()))
+    except (TypeError, ValueError):
+        return ""
+
+
 def parse_quarter_zip(zip_bytes: bytes, cik_set: set[str]) -> pd.DataFrame:
     """Extrae transacciones no-derivadas de mercado abierto (P/S) para el
     conjunto de CIK dado, desde un ZIP trimestral de la SEC.
@@ -151,11 +165,14 @@ def parse_quarter_zip(zip_bytes: bytes, cik_set: set[str]) -> pd.DataFrame:
     Devuelve columnas: cik, trans_date, trans_code, acquired_disposed, shares,
     price_per_share, value.
     """
+    cik_set = {_normalize_cik(c) for c in cik_set}
     with zipfile.ZipFile(io.BytesIO(zip_bytes)) as archive:
         submissions = _read_tsv_from_zip(archive, ["SUBMISSION.tsv", "SUBMISSION"])
         missing_sub = _REQUIRED_SUBMISSION_COLS.difference(submissions.columns)
         if missing_sub:
             raise RuntimeError(f"SUBMISSION.tsv no tiene las columnas esperadas: {sorted(missing_sub)}")
+        submissions = submissions.copy()
+        submissions["ISSUERCIK"] = submissions["ISSUERCIK"].map(_normalize_cik)
         submissions = submissions[submissions["ISSUERCIK"].isin(cik_set)]
         if submissions.empty:
             return pd.DataFrame(columns=["cik", "trans_date", "trans_code", "acquired_disposed", "shares", "price_per_share", "value"])

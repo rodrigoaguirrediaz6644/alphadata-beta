@@ -114,3 +114,26 @@ def test_parse_quarter_zip_filters_by_cik_and_codes():
     assert len(result) == 1
     assert result.iloc[0]["cik"] == "320193"
     assert result.iloc[0]["value"] == pytest.approx(1000.0)
+
+
+def test_parse_quarter_zip_normalizes_zero_padded_cik():
+    """Reproduce el bug real: SEC entrega ISSUERCIK con ceros a la izquierda
+    (p. ej. "0000320193") mientras que resolve_cik_map produce CIKs sin
+    padding (p. ej. "320193"). Sin normalizar ambos lados, el filtro isin()
+    no hace match nunca y el backtest queda sin transacciones en silencio.
+    """
+    import io
+    import zipfile
+
+    submission_tsv = "ACCESSION_NUMBER\tISSUERCIK\tPERIOD_OF_REPORT\nACC1\t0000320193\t2024-01-05\n"
+    trans_tsv = (
+        "ACCESSION_NUMBER\tTRANS_DATE\tTRANS_CODE\tTRANS_SHARES\tTRANS_PRICEPERSHARE\tTRANS_ACQUIRED_DISP_CD\n"
+        "ACC1\t2024-01-05\tP\t100\t10.0\tA\n"
+    )
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as archive:
+        archive.writestr("SUBMISSION.tsv", submission_tsv)
+        archive.writestr("NONDERIV_TRANS.tsv", trans_tsv)
+    result = parse_quarter_zip(buffer.getvalue(), cik_set={"320193"})
+    assert len(result) == 1
+    assert result.iloc[0]["cik"] == "320193"
