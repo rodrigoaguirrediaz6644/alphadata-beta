@@ -1,0 +1,10 @@
+{
+  "input": 24601,
+  "dup": 176,
+  "inconsistent": 7,
+  "ten_pct_owner": 0,
+  "price_sanity_reference": "close_raw",
+  "price_sanity": 46,
+  "value_cap": 2,
+  "output": 24370
+}
