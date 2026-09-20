@@ -1,0 +1,57 @@
+alphadata_ticker,yahoo_ticker,trii_ticker,nombre,categoria,moneda,estado
+TLT,TLT,TLTCL,iShares 20+ Year Treasury Bond,bono_soberano,USD,activo
+LQD,LQD,LQDCL,iShares iBoxx Investment Grade Corporate Bond,bono_corporativo,USD,activo
+HYG,HYG,HYGCL,iShares iBoxx High Yield Corporate Bond,bono_corporativo,USD,activo
+EMB,EMB,EMBCL,iShares J.P. Morgan USD Emerging Markets Bond,bono_emergente,USD,activo
+IAU,IAU,IAUCL,iShares Gold Trust,commodity,USD,activo
+IBIT,IBIT,IBITCL,iShares Bitcoin Trust,cripto,USD,activo
+IVV,IVV,IVVCL,iShares Core S&P 500,indice_amplio,USD,activo
+IVW,IVW,IVWCL,iShares S&P 500 Growth,estilo,USD,activo
+DGRO,DGRO,DGROCL,iShares Core Dividend Growth,estilo,USD,activo
+HDV,HDV,HDVCL,iShares Core High Dividend,estilo,USD,activo
+ACWI,ACWI,ACWICL,iShares MSCI ACWI (mundo),indice_amplio,USD,activo
+IYW,IYW,IYWCL,iShares U.S. Technology,sector_us,USD,activo
+IYH,IYH,IYHCL,iShares U.S. Healthcare,sector_us,USD,activo
+IYF,IYF,IYFCL,iShares U.S. Financials,sector_us,USD,activo
+IYG,IYG,IYGCL,iShares U.S. Financial Services,sector_us,USD,activo
+IYE,IYE,IYECL,iShares U.S. Energy,sector_us,USD,activo
+IYM,IYM,IYMCL,iShares U.S. Basic Materials,sector_us,USD,activo
+IYK,IYK,IYKCL,iShares U.S. Consumer Staples,sector_us,USD,activo
+IYC,IYC,IYCCL,iShares U.S. Consumer Discretionary,sector_us,USD,activo
+IYJ,IYJ,IYJCL,iShares U.S. Industrials,sector_us,USD,activo
+IDU,IDU,IDUCL,iShares U.S. Utilities,sector_us,USD,activo
+IYR,IYR,IYRCL,iShares U.S. Real Estate,sector_us,USD,activo
+IYZ,IYZ,IYZCL,iShares U.S. Telecommunications,sector_us,USD,activo
+ITB,ITB,ITBCL,iShares U.S. Home Construction,sector_us,USD,activo
+IBB,IBB,IBBCL,iShares Biotechnology,sector_us,USD,activo
+ICLN,ICLN,ICLNCL,iShares Global Clean Energy,tematico,USD,activo
+EEM,EEM,EEMCL,iShares MSCI Emerging Markets,region,USD,activo
+AAXJ,AAXJ,AAXJCL,iShares MSCI All Country Asia ex Japan,region,USD,activo
+EPP,EPP,EPPCL,iShares MSCI Pacific ex-Japan,region,USD,activo
+EZU,EZU,EZUCL,iShares MSCI Eurozone,region,USD,activo
+ILF,ILF,ILFCL,iShares Latin America 40,region,USD,activo
+ECH,ECH,ECHCL,iShares MSCI Chile,pais,USD,activo
+EWZ,EWZ,EWZCL,iShares MSCI Brazil,pais,USD,activo
+EWW,EWW,EWWCL,iShares MSCI Mexico,pais,USD,activo
+EPU,EPU,EPUCL,iShares MSCI Peru,pais,USD,activo
+MCHI,MCHI,MCHICL,iShares MSCI China,pais,USD,activo
+FXI,FXI,FXICL,iShares China Large-Cap,pais,USD,activo
+EWH,EWH,EWHCL,iShares MSCI Hong Kong,pais,USD,activo
+EWJ,EWJ,EWJCL,iShares MSCI Japan,pais,USD,activo
+EWY,EWY,EWYCL,iShares MSCI South Korea,pais,USD,activo
+EWT,EWT,EWTCL,iShares MSCI Taiwan,pais,USD,activo
+INDA,INDA,INDACL,iShares MSCI India,pais,USD,activo
+EWA,EWA,EWACL,iShares MSCI Australia,pais,USD,activo
+EWU,EWU,EWUCL,iShares MSCI United Kingdom,pais,USD,activo
+EWG,EWG,EWGCL,iShares MSCI Germany,pais,USD,activo
+EWQ,EWQ,EWQCL,iShares MSCI France,pais,USD,activo
+EWI,EWI,EWICL,iShares MSCI Italy,pais,USD,activo
+EWP,EWP,EWPCL,iShares MSCI Spain,pais,USD,activo
+CFINASDAQ,CFINASDAQ.SN,CFINASDAQ,ETF local (Nasdaq) — mandato por confirmar,local_por_confirmar,CLP,activo
+CFISPETF,CFISPETF.SN,CFISPETF,ETF local (S&P) — mandato por confirmar,local_por_confirmar,CLP,activo
+CFMITNIPSA,CFMITNIPSA.SN,CFMITNIPSA,ETF local IPSA retorno total (ya se usa como referencia),local_por_confirmar,CLP,activo
+CFIETFIPSA,CFIETFIPSA.SN,CFIETFIPSA,ETF local IPSA — mandato por confirmar,local_por_confirmar,CLP,activo
+CFIETFCD,CFIETFCD.SN,CFIETFCD,ETF local — mandato por confirmar,local_por_confirmar,CLP,activo
+CFIETFLP,CFIETFLP.SN,CFIETFLP,ETF local — mandato por confirmar,local_por_confirmar,CLP,activo
+CFIETFCC,CFIETFCC.SN,CFIETFCC,ETF local — mandato por confirmar,local_por_confirmar,CLP,activo
+CFIETFGE,CFIETFGE.SN,CFIETFGE,ETF local — mandato por confirmar,local_por_confirmar,CLP,activo

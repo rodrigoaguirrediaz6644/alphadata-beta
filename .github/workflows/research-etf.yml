@@ -1,0 +1,74 @@
+name: Candidatos ETF (análisis de correlación)
+
+# Investigación paralela, NO forma parte de la metodología oficial.
+# Sólo LEE data/market_prices_daily.csv (tipo de cambio) y
+# data/historical_model_nav.csv (series de las estrategias); escribe
+# únicamente en research/etf_multiactivo/results/.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "research/etf_multiactivo/**"
+      - "config/universe_etf.csv"
+      - "tests/test_etf_multiactivo.py"
+      - ".github/workflows/research-etf.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: alphadata-escritura-en-main
+  cancel-in-progress: false
+
+jobs:
+  analisis:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v6
+
+      - name: Preparar Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Instalar dependencias
+        run: python -m pip install -r requirements.txt
+
+      - name: Validar funciones puras (sin red)
+        run: PYTHONPATH=. python -m pytest -q tests/test_etf_multiactivo.py
+
+      - name: Analizar candidatos (descarga Yahoo Finance y calcula)
+        run: PYTHONPATH=. python -m research.etf_multiactivo.analisis
+
+      - name: Conservar resultados como artefacto
+        uses: actions/upload-artifact@v5
+        with:
+          name: etf-candidatos-${{ github.run_number }}
+          path: research/etf_multiactivo/results/
+          retention-days: 90
+
+      - name: Guardar resultados en el repo
+        run: |
+          git config user.name "alphadata-research-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add research/etf_multiactivo/results
+          if git diff --cached --quiet; then
+            echo "Sin cambios que guardar."
+            exit 0
+          fi
+          git commit -m "research: actualizar análisis de candidatos ETF"
+          for intento in 1 2 3; do
+            git pull --rebase --autostash origin main || exit 1
+            if git push; then
+              exit 0
+            fi
+            echo "Push rechazado (intento $intento de 3); reintentando..."
+            sleep 10
+          done
+          echo "No fue posible guardar los resultados tras 3 intentos." >&2
+          exit 1
