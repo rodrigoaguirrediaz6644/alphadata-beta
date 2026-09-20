@@ -24,7 +24,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: research-momentum-us
+  group: alphadata-escritura-en-main
   cancel-in-progress: false
 
 jobs:
@@ -61,7 +61,22 @@ jobs:
         run: |
           git config user.name "alphadata-research-bot"
           git config user.email "actions@users.noreply.github.com"
-          git pull --rebase --autostash origin main
           git add research/momentum_us/results
-          git diff --cached --quiet || git commit -m "research: actualizar backtest exploratorio Gamma-6 US"
-          git push
+          if git diff --cached --quiet; then
+            echo "Sin cambios que guardar."
+            exit 0
+          fi
+          git commit -m "research: actualizar backtest exploratorio Gamma-6 US"
+          # Varios workflows escriben en main y pueden terminar a la vez. Se
+          # reintenta rebasando sobre lo que haya llegado antes, en vez de
+          # perder los resultados ya calculados.
+          for intento in 1 2 3; do
+            git pull --rebase --autostash origin main || exit 1
+            if git push; then
+              exit 0
+            fi
+            echo "Push rechazado (intento $intento de 3); reintentando..."
+            sleep 10
+          done
+          echo "No fue posible guardar los resultados tras 3 intentos." >&2
+          exit 1

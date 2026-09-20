@@ -7,21 +7,16 @@ name: Backtest exploratorio Beta-Insider
 # committeados en research/insider_backtest/results/ para poder
 # leerlos después sin tener que recalcular nada.
 
+# Beta-Insider quedó descartada como estrategia (ver el informe de resultados):
+# el backtest se conserva como registro, pero sólo corre cuando se pide a mano.
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - "research/**"
-      - "config/universe_us_insider.csv"
-      - "tests/test_insider_backtest_math.py"
-      - ".github/workflows/research-insider-backtest.yml"
 
 permissions:
   contents: write
 
 concurrency:
-  group: research-insider-backtest
+  group: alphadata-escritura-en-main
   cancel-in-progress: false
 
 jobs:
@@ -67,5 +62,21 @@ jobs:
           git config user.name "alphadata-research-bot"
           git config user.email "actions@users.noreply.github.com"
           git add research/insider_backtest/results
-          git diff --cached --quiet || git commit -m "research: actualizar backtest exploratorio Beta-Insider"
-          git push
+          if git diff --cached --quiet; then
+            echo "Sin cambios que guardar."
+            exit 0
+          fi
+          git commit -m "research: actualizar backtest exploratorio Beta-Insider"
+          # Varios workflows escriben en main y pueden terminar a la vez. Se
+          # reintenta rebasando sobre lo que haya llegado antes, en vez de
+          # perder los resultados ya calculados.
+          for intento in 1 2 3; do
+            git pull --rebase --autostash origin main || exit 1
+            if git push; then
+              exit 0
+            fi
+            echo "Push rechazado (intento $intento de 3); reintentando..."
+            sleep 10
+          done
+          echo "No fue posible guardar los resultados tras 3 intentos." >&2
+          exit 1
