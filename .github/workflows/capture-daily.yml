@@ -1,0 +1,77 @@
+name: Captura diaria del cierre chileno
+
+# Yahoo dejó de actualizar el arreglo histórico de los tickers .SN el
+# 17-07-2026, pero sigue publicando la cotización viva en el bloque `meta` del
+# mismo endpoint. Este job la lee una vez por día de rueda y la agrega al
+# almacén, que nunca reescribe lo ya grabado.
+#
+# Tiene que ser diario y no semanal: la SMA200, el momentum 12-1 y el RSI(14)
+# necesitan serie diaria. Con una captura semanal habría un punto real cada
+# cinco ruedas y los indicadores quedarían calculados sobre una escalera.
+#
+# Horario: 23:00 UTC, que en Santiago son las 20:00 en horario de verano y las
+# 19:00 en invierno. Con holgura sobre cualquier cierre y sobre los medios días
+# —el 17-09-2026, víspera de Fiestas Patrias, la sesión terminó temprano— y
+# dentro del mismo día de bolsa, así que la rueda se fecha bien.
+#
+# Si el job no corre un día, no se pierde nada de ahí en adelante, pero ese
+# cierre sí: el arreglo histórico está congelado y `meta` sólo guarda el último.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 23 * * 1-5"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: alphadata-escritura-en-main
+  cancel-in-progress: false
+
+jobs:
+  capturar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v6
+
+      - name: Preparar Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Instalar dependencias
+        run: python -m pip install -r requirements.txt
+
+      - name: Validar código
+        run: PYTHONPATH=. python -m pytest -q
+
+      - name: Capturar el cierre del día
+        run: PYTHONPATH=. python -m src.fetch_daily_close
+
+      - name: Guardar el cierre capturado
+        run: |
+          git config user.name "alphadata-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/market_prices_daily.csv data/revisiones_precios.csv data/ultima_captura_diaria.json
+          if git diff --cached --quiet; then
+            echo "Sin cierres nuevos que guardar."
+            exit 0
+          fi
+          git commit -m "data: capturar el cierre chileno del día"
+          # Varios workflows escriben en main y pueden terminar a la vez. Se
+          # reintenta rebasando sobre lo que haya llegado antes, en vez de
+          # perder lo ya capturado.
+          for intento in 1 2 3; do
+            git pull --rebase --autostash origin main || exit 1
+            if git push; then
+              exit 0
+            fi
+            echo "Push rechazado (intento $intento de 3); reintentando..."
+            sleep 10
+          done
+          echo "No fue posible guardar la captura tras 3 intentos." >&2
+          exit 1

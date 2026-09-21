@@ -7,8 +7,16 @@ from src.guards import adr_contra_local, contraste_entre_fuentes, ruedas_sin_var
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def _precios_reales() -> pd.DataFrame:
-    return pd.read_csv(ROOT / "data" / "market_prices_daily.csv", parse_dates=["date"])
+def _precios_del_incidente() -> pd.DataFrame:
+    """Datos reales del feed detenido, congelados como fixture.
+
+    Se extrajeron de `data/market_prices_daily.csv` mientras el incidente
+    seguía ahí. Apuntar estas pruebas al archivo vivo las volvía frágiles: en
+    cuanto la captura diaria empezó a traer cierres buenos, los instrumentos
+    dejaron de estar detenidos y la regresión falló sin que nada se hubiera
+    roto. El incidente es un hecho del pasado y como tal se conserva.
+    """
+    return pd.read_csv(ROOT / "tests" / "fixtures" / "incidente_feed_chileno.csv", parse_dates=["date"])
 
 
 def _panel(valores: dict[str, list[float]], inicio="2026-08-03") -> pd.DataFrame:
@@ -36,9 +44,9 @@ def test_una_serie_quieta_pocos_dias_no_se_marca_detenida():
 
 
 def test_el_incidente_de_2026_aparece_como_series_detenidas():
-    # Regresión con datos reales: el feed chileno lleva meses repitiendo el
-    # mismo cierre y coverage_report.csv seguía diciendo OK.
-    detenidas = set(series_detenidas(_precios_reales()))
+    # Regresión con datos reales: entre julio y agosto de 2026 estos papeles
+    # repetían el mismo cierre y coverage_report.csv seguía diciendo OK.
+    detenidas = set(series_detenidas(_precios_del_incidente()))
     assert {"BCI", "PARAUCO", "ILC", "BSANTANDER"} <= detenidas
 
 
@@ -65,14 +73,14 @@ def test_el_adr_delata_el_mercado_local_detenido_apenas_ocurre():
     # congelamiento del 17-07-2026, LTM-ADR se movió en Nueva York mientras
     # LTM no se movió nada en Santiago. Esta guardia lo habría dicho entonces,
     # no dos meses después.
-    quincena = _precios_reales().query("'2026-07-18' <= date <= '2026-07-31'")
+    quincena = _precios_del_incidente().query("'2026-07-18' <= date <= '2026-07-31'")
     alarma = adr_contra_local(quincena, ventana=10)
     assert "LTM" in set(alarma.local)
     assert alarma.loc[alarma.local == "LTM", "movimiento_local"].iloc[0] == 0.0
 
 
 def test_el_adr_delata_los_dos_pares_en_agosto():
-    agosto = _precios_reales().query("'2026-08-01' <= date <= '2026-08-31'")
+    agosto = _precios_del_incidente().query("'2026-08-01' <= date <= '2026-08-31'")
     alarma = adr_contra_local(agosto, ventana=20)
     assert set(alarma.local) == {"LTM", "SQM-B"}
     assert (alarma.movimiento_adr > .10).all()  # los ADR se movieron más de 10%
