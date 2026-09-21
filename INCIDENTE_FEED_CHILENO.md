@@ -57,6 +57,39 @@ de prueba tiene que elegirse por ser representativo, no por estar a mano.
 **Ante la duda, el sistema calla.** Un informe que dice "no sé" es infinitamente
 mejor que uno que dice +20,8%.
 
+## La condición para reactivar, y por qué se debilitó
+
+La condición original era **dos fuentes validadas y las tres guardias
+operando**. Se cambió, y conviene que conste que fue una decisión y no un
+olvido.
+
+Los candidatos a segunda fuente chilena se agotaron: Yahoo por el endpoint
+`chart` devuelve la misma serie congelada; Stooq exige resolver una prueba de
+trabajo de navegador; Twelve Data y Financial Modeling Prep tienen Santiago
+sólo en sus planes de pago, confirmado con clave gratuita en ambos; la Bolsa de
+Santiago está detrás de un captcha de Radware. **Para el mercado chileno puede
+simplemente no existir una segunda fuente gratuita y automatizable**, y en ese
+caso la condición original no se cumpliría nunca y el sistema quedaría detenido
+para siempre por una regla escrita por nosotros.
+
+La condición nueva:
+
+- **Fuente única automática** para los precios chilenos: el bloque `meta` de
+  Yahoo, validado contra once instrumentos con razón 1,000000.
+- **Las tres guardias operando**: serie sin variación con umbral calibrado más
+  la señal transversal, ADR contra acción local, y ruedas faltantes con testigo.
+- **Contraste manual mensual**: bajar unos archivos de investing.com y pasarlos
+  por `research/feed_chileno/validar_candidato.py`. No es automático, pero es la
+  misma verificación y cuesta poco.
+- **Contraste automático sólo del lado estadounidense**, donde Twelve Data
+  gratuito sí cubre.
+
+Es un debilitamiento consciente del diseño original. Se pierde la detección
+automática de una discrepancia entre fuentes en el mercado chileno, y se
+reemplaza por una revisión mensual a mano. Lo que no se pierde es la detección
+de un feed detenido, que es lo que falló en julio: esa la cubren las tres
+guardias, y la transversal habría avisado el primer día.
+
 ## Lo que quedó puesto
 
 - **Almacén de sólo agregar** (`src/price_store.py`): lo grabado es definitivo;
