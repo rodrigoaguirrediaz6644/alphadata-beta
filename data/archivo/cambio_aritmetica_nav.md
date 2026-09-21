@@ -152,8 +152,41 @@ dos, 1,0 después), así que el crudo es genuinamente crudo y el ajuste lo aplic
 nuestra propia tabla. `relleno_sobrescrituras.csv` confirma que BCI sólo se
 reparó desde el 28-03-2025.
 
-Lo que hay que decir igual: **las tres ruedas siguientes —14, 15 y 16 de octubre
-de 2024— repiten el mismo cierre con volumen cero.** Son parte de los tres días
-de octubre de 2024 que `guards.py` ya documenta como mercado entero quieto en el
-dato viejo. El 11-10 sí fue rueda real (volumen 65.317) y el precio se sostiene,
-pero la entrada quedó pegada al borde de un hueco conocido.
+### El precio de entrada de BCI, verificado
+
+Quedó pegado al borde de un hueco conocido: **las tres ruedas siguientes —14, 15
+y 16 de octubre de 2024— repiten el mismo cierre con volumen cero**, y la
+fracción del mercado chileno sin variación esos días es 97,5%, 100% y 100%. Son
+los tres días de octubre de 2024 que `guards.py` ya documenta como mercado
+entero detenido en el dato viejo.
+
+Tres comprobaciones, todas a favor del número:
+
+1. **El 11-10-2024 fue rueda real.** Apertura 27.890, máximo 28.195, mínimo
+   27.601, cierre 28.195, volumen 65.317. La fracción del mercado sin variación
+   ese día fue 12,5%, dentro de la banda normal (mediana 10,3%, nunca sobre
+   25,6% en periodo sano).
+2. **El nivel sobrevive al hueco.** El 17-10, con el mercado normalizado (2,5%
+   sin variación), BCI **abre en 28.200**: +0,02% sobre el cierre del 11-10. Si
+   28.195 hubiera sido un nivel falso o rancio, el mercado no habría reabierto
+   encima de él.
+3. **La serie de 2024 no viene ajustada por dividendos.** Era el riesgo real —el
+   defecto tipo SALFACORP, donde el tramo viejo está ajustado y el nivel sale
+   deflactado—. La reparación del 28-03-2025 corrigió **cinco ruedas
+   consecutivas, todas por exactamente −3,17%**, que es el ajuste del dividendo
+   de marzo de 2025 (caída esperada −3,2754%). Cinco ruedas es el
+   `DESFASE_POR_CONVENCION` que ya está documentado: el proveedor aplica la
+   caída con cinco sesiones de retraso. **Una serie retroajustada no mostraría
+   ninguna caída**; ésta la muestra, tarde. Así que el nivel de 2024 es crudo y
+   no está deflactado por dividendos posteriores.
+
+**Lo que no se pudo verificar:** no existe fuente externa que cubra BCI en 2024.
+El relleno de investing.com abarcó once instrumentos desde 2025, y el 2024 de
+BCI es Yahoo original. El riesgo residual queda acotado: si el nivel estuviera
+corrido por un dividendo, el error sería del orden de 3%, y el +146,4% pasaría
+a ~+143%. No es un orden de magnitud.
+
+Lo que sí quedó sin confirmar, y es otra cosa: **los dos dividendos de BCI
+entraron por convención y nunca se confirmaron por precio** —`caida_observada`
+va vacía en los dos—. Eso no afecta el precio de entrada, que es crudo, pero sí
+entra en la variación publicada.
