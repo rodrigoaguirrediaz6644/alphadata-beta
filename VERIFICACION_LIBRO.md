@@ -179,3 +179,105 @@ de cambio, o sea asume el CDV uno a uno con la acción. Si la razón real no es
 uno a uno, los precios en pesos del lado estadounidense están escalados por ese
 factor. No afecta porcentajes ni NAV, pero sí cuántas unidades se compran con
 $833.333. **Confirmar antes de comprar en real.**
+
+## El tope de tenencia de Sigma-6 genera comisiones
+
+Medido sobre el recorrido calentado 2024-2026: **nueve salidas por tope, y las
+nueve reingresan la semana siguiente.**
+
+| nombre | entra | sale por tope | reingresa |
+|---|---|---|---|
+| ITAUCL | 05-01-2024 | 10-01-2025 | 17-01-2025 |
+| LTM | 05-01-2024 | 10-01-2025 | 17-01-2025 |
+| SALFACORP | 05-01-2024 | 10-01-2025 | 17-01-2025 |
+| MALLPLAZA | 16-08-2024 | 22-08-2025 | 29-08-2025 |
+| BCI | 11-10-2024 | 17-10-2025 | **24-10-2025** |
+| CENCOSUD | 29-11-2024 | 05-12-2025 | 12-12-2025 |
+| ITAUCL | 17-01-2025 | 23-01-2026 | 30-01-2026 |
+| LTM | 17-01-2025 | 23-01-2026 | 30-01-2026 |
+| SALFACORP | 17-01-2025 | 23-01-2026 | 30-01-2026 |
+
+La causa está en el código: al soltarse, el nombre desaparece de
+`sigma_entries`, así que en la revisión siguiente el contador parte de cero y
+vuelve a calificar. El reloj se reinicia, de modo que un nombre que siga
+gustando rota **una vez al año, para siempre**.
+
+Cada rotación son dos operaciones sobre la misma acción, **$3.980 en mínimos**,
+y la cartera queda idéntica. Nueve rotaciones en el tramo medido: $35.820 sobre
+una pieza de $5.000.000. **No se arregla acá; queda reportado.**
+
+### Consecuencia sobre la fila de BCI
+
+La entrada publicada del 24-10-2025 **es uno de esos reingresos**. La tenencia
+económica continua de BCI arranca el 11-10-2024.
+
+| desde | precio | va ganando |
+|---|---|---|
+| 16-01-2026 (arranque sin calentar) | $64.500 | +4,3% |
+| **24-10-2025 (lo que se publica)** | **$46.502** | **+44,7%** |
+| 11-10-2024 (tenencia continua real) | $28.195 | +146,4% |
+
+Y el tope vuelve a tocarse: con entrada el 24-10-2025, BCI llega a los 365 días
+el **24-10-2026** y se suelta en la revisión semanal del **30-10-2026** (371
+días), para ejecutarse el lunes 02-11. Con la fecha vieja no habría ocurrido
+hasta el 22-01-2027. **Corregir la fecha no cambia sólo un número en pantalla:
+cambia cuándo el modelo vende.**
+
+El dividendo se revisó: BCI tiene dos en la tabla, 28-03-2025 y 26-03-2026.
+Entre octubre de 2025 y enero de 2026 no hay ninguno, así que la ventana larga
+captura el mismo dividendo que la corta y el +44,7% **no está corto**.
+
+## La caja de Sigma-6 viene de las recomendaciones
+
+Sigma-6 tiene $2.500.000 quietos, la mitad de su pieza. **No es el momentum y
+no es el feed.** En la revisión del 17-09-2026 hay **cinco** nombres con
+recomendación de compra vigente y **los cinco** pasan el momentum y están en
+cartera. El cuello es la oferta de recomendaciones.
+
+| revisión | con señal positiva vigente | elegibles | caja |
+|---|---|---|---|
+| 05-09-2025 | 13 | 11 | 0% |
+| 26-12-2025 | 13 | 12 | 0% |
+| 20-03-2026 | 10 | 9 | 10% |
+| 15-05-2026 | 6 | 6 | 40% |
+| 07-08-2026 | 6 | 5 | 50% |
+| 04-09-2026 | 5 | 5 | 50% |
+
+El flujo mensual de Credicorp cae de 17-19 filas a 4-8, y las compras de 5-6 al
+mes a 1-4. **La caída empieza en enero de 2026, antes del congelamiento del
+22-07.** El congelamiento no la causó; la vuelve irreversible.
+
+Las ocho recomendaciones rechazadas **no son nuevas ni venían incompletas**:
+son ocho filas de AESANDES entre 2021 y 2022, rechazadas por `ticker fuera del
+catálogo`. Están fuera de la ventana de 365 días. Si hubieran entrado, la
+cartera del 17-09 sería exactamente la misma.
+
+### Lo que viene si no llega nada
+
+Las recomendaciones vigentes expiran a los 365 días. Sin ninguna nueva:
+
+| fecha | nombres que quedan | caja |
+|---|---|---|
+| 24-11-2026 | 4 (expira VAPORES) | 60% |
+| 22-04-2027 | 3 (expira CENCOMALLS) | 70% |
+| 01-07-2027 | 1 (expiran BCI y PARAUCO) | 90% |
+| 09-07-2027 | 0 (expira LTM) | **100%** |
+
+**Sigma-6 se apaga sola en julio de 2027** si el flujo no se restablece. Eso
+convierte el problema de las recomendaciones en el más caro que tiene el
+sistema, por encima del feed.
+
+## Los dos calendarios mensuales son deliberados
+
+Delta-12 corta con el último día hábil chileno y Gamma-6 con el estadounidense.
+En 21 meses de 2025-2026 coinciden en 19; difieren en octubre de 2025 (30 vs
+31) y diciembre de 2025 (30 vs 31), por feriados chilenos. Agosto de 2026 cae
+el 31 en ambos, así que los ocho movimientos publicados llevan la misma fecha.
+
+El `01-09-2026` que aparecía en Gamma-6 **no es una convención vigente**: es el
+sello del único `portfolio_gamma6.csv` anterior al reinicio, que anotaba la
+ejecución —la rueda siguiente— y no la señal. Hoy las dos anotan la señal.
+
+Desglose de los ocho movimientos del 31-08: **cuatro entradas y cuatro
+salidas.** Delta-12 compra ANDINA-B y BCI, vende ILC y LTM. Gamma-6 compra ABT
+y JNJ, vende UNH y AAPL.
