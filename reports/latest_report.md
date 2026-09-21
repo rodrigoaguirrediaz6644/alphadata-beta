@@ -4,17 +4,9 @@
 
 **Conjunto (partes iguales en las cuatro piezas): -0,1% desde el 16-09-2026.**
 
-## Qué cambió en la última revisión
+## Qué cambió desde el informe anterior
 
-- Comprar ANDINA-B (Delta-12) — señal del 31-08-2026
-- Comprar BCI (Delta-12) — señal del 31-08-2026
-- Vender ILC (Delta-12) — señal del 31-08-2026
-- Vender LTM (Delta-12) — señal del 31-08-2026
-- Comprar ABT (Gamma-6) — señal del 31-08-2026
-- Comprar JNJ (Gamma-6) — señal del 31-08-2026
-- Vender AAPL (Gamma-6) — señal del 31-08-2026
-- Vender UNH (Gamma-6) — señal del 31-08-2026
-- Comprar LTM (Sigma-6) — señal del 17-09-2026
+- Vender CENCOMALLS (Sigma-6)
 
 ## Cada estrategia
 

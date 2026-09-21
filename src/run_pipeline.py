@@ -10,7 +10,7 @@ import pandas as pd
 
 from src.fetch_prices import load_universe, operables
 from src.ingest_recommendations import ingest
-from src.libro import abiertas as libro_abiertas, anotar, cargar as cargar_libro, guardar as guardar_libro, movimientos_de, precios_de_entrada
+from src.libro import abiertas as libro_abiertas, anotar, cargar as cargar_libro, cartera_publicada, guardar as guardar_libro, guardar_publicada, movimientos_de, precios_de_entrada
 from src.strategy_registry import validate_registry
 from src.reporting_public import build_public_report
 from src.strategy_engine import TOPE_TENENCIA_SIGMA, ORO_TICKER, RECOMMENDATION_COLUMNS, combined_equal_weight, delta12, delta12_historical_nav, gamma6, gamma6_historical_nav, movements, sigma6_historical_nav, oro, oro_historical_nav, reconstruct_entry_dates, sigma6, to_clp, validate_recommendations
@@ -409,7 +409,15 @@ def main()->None:
     por_pieza=float(capital.get('total_clp',0))/len(STRATEGY_SERIES)
     for cartera in (sigma,delta,gamma,oro_portfolio):
         if len(cartera): cartera['monto_clp']=(cartera.target_weight.astype(float)*por_pieza).round()
-    movimientos_libro=movimientos_de(libro,{'Sigma-6':as_of,'Delta-12':delta_cutoff,'Gamma-6':gamma_cutoff,'Oro':as_of})
+    # Qué cambió desde el informe anterior, no qué hay en la fecha de señal.
+    # Leer el libro en la fecha de señal dejaba invisible cualquier cambio que
+    # el libro situara antes, y eso pasa cada vez que se reconstruye: el primer
+    # informe dijo «Comprar CENCOMALLS» y el siguiente no la tenía y nunca dijo
+    # que la vendiera.
+    PUBLICADA=DATA/'cartera_publicada.json'
+    vigente={n:{t:f.date().isoformat() for t,f in libro_abiertas(libro,n).items()}
+             for n in STRATEGY_SERIES}
+    movimientos_libro=movimientos_de(cartera_publicada(PUBLICADA),vigente)
     smove=movements_for_report(movements(old_sigma,sigma),DATA/'movements_sigma6.csv')
     dmove=movements_for_report(movements(old_delta,delta),DATA/'movements_delta12.csv')
     gmove=movements_for_report(movements(old_gamma,gamma),DATA/'movements_gamma6.csv')
@@ -464,6 +472,7 @@ def main()->None:
                                +'. Ver CENSO_DE_SERIES.md; una serie guardada es la forma del defecto de Sigma-6.')
         historical.to_csv(historical_path,index=False)
     md,html=build_public_report(as_of,sigma,delta,smove,dmove,coverage,errors,history,gamma=gamma,gamma_moves=gmove,oro=oro_portfolio,oro_moves=omove,movimientos=movimientos_libro,capital_por_pieza=por_pieza);(REPORTS/'latest_report.md').write_text(md,encoding='utf-8');(REPORTS/'latest_report.html').write_text(html,encoding='utf-8')
+    guardar_publicada(vigente,as_of,PUBLICADA)
     sigma.to_csv(DATA/'portfolio_sigma6.csv',index=False);delta.to_csv(DATA/'portfolio_delta12.csv',index=False);gamma.to_csv(DATA/'portfolio_gamma6.csv',index=False);oro_portfolio.to_csv(DATA/'portfolio_oro.csv',index=False)
     s_audit.to_csv(DATA/'audit_sigma6.csv',index=False);d_audit.to_csv(DATA/'audit_delta12.csv',index=False)
     if len(g_audit): g_audit.to_csv(DATA/'audit_gamma6.csv',index=False)

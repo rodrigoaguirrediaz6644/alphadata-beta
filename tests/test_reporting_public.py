@@ -93,7 +93,7 @@ def test_report_says_plainly_when_there_is_nothing_to_do():
     todas sus letras.
     """
     markdown, html = _report()
-    assert "Sin movimientos" in html and "Sin movimientos" in markdown
+    assert "Sin cambios desde el informe anterior" in html and "Sin cambios desde el informe anterior" in markdown
     assert "Comprar" not in html
 
 

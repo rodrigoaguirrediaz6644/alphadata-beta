@@ -87,33 +87,44 @@ def test_el_libro_sobrevive_el_viaje_por_disco(tmp_path):
     assert ruta.read_text(encoding="utf-8").count("2026-09-11") == 1
 
 
-def test_los_movimientos_salen_del_libro_y_no_de_comparar_carteras():
-    """El bloque del informe mira la fecha de señal, no la corrida anterior.
+def test_los_movimientos_comparan_contra_la_cartera_del_informe_anterior():
+    """No contra la fecha de señal, que dejaba cambios invisibles.
 
-    Una posición abierta hace ocho meses no es una compra de esta semana. Que
-    lo fuera es lo que puso «Comprar INTC» en la misma página en que la tabla
-    decía «comprada el 30-09-2025».
+    El primer informe dijo «Comprar CENCOMALLS». Al encender la SMA200, el
+    recorrido situó su salida en la revisión del 11-09 y no en la del 17-09,
+    así que el informe siguiente no la tenía y **nunca dijo que la vendiera**.
+    Quien la hubiera comprado se quedaba con una posición que el modelo ya no
+    tiene y sin ninguna instrucción.
     """
     from src.libro import movimientos_de
-    libro = pd.DataFrame([
-        {"estrategia": "Delta-12", "instrumento": "ANDINA-B", "fecha_entrada": pd.Timestamp("2026-08-31"),
-         "precio_entrada": 4530., "fecha_salida": pd.NaT, "origen": "produccion"},
-        {"estrategia": "Delta-12", "instrumento": "ILC", "fecha_entrada": pd.Timestamp("2026-06-30"),
-         "precio_entrada": 11000., "fecha_salida": pd.Timestamp("2026-08-31"), "origen": "produccion"},
-        {"estrategia": "Gamma-6", "instrumento": "INTC", "fecha_entrada": pd.Timestamp("2025-09-30"),
-         "precio_entrada": 32373., "fecha_salida": pd.NaT, "origen": "recorrido"},
-    ])
-    m = movimientos_de(libro, {"Delta-12": pd.Timestamp("2026-08-31"), "Gamma-6": pd.Timestamp("2026-08-31")})
-    assert set(zip(m.instrumento, m.accion)) == {("ANDINA-B", "COMPRAR"), ("ILC", "VENDER")}
-    assert "INTC" not in set(m.instrumento)
+    publicada = {"Sigma-6": {"BCI": "2025-10-24", "CENCOMALLS": "2026-04-02", "LTM": "2026-08-28"}}
+    vigente = {"Sigma-6": {"BCI": "2025-10-24", "LTM": "2026-09-17", "VAPORES": "2026-06-12"}}
+    m = movimientos_de(publicada, vigente)
+    assert set(zip(m.instrumento, m.accion)) == {("CENCOMALLS", "VENDER"), ("VAPORES", "COMPRAR")}
+    # LTM cambió de fecha al reconstruirse el libro, y eso no es una operación.
+    assert "LTM" not in set(m.instrumento)
 
 
-def test_sin_nada_en_la_fecha_de_senal_el_bloque_viene_vacio():
+def test_sin_diferencias_el_bloque_viene_vacio():
     from src.libro import movimientos_de
-    libro = pd.DataFrame([{"estrategia": "Sigma-6", "instrumento": "BCI",
-                           "fecha_entrada": pd.Timestamp("2026-01-16"), "precio_entrada": 64500.,
-                           "fecha_salida": pd.NaT, "origen": "recorrido"}])
-    assert movimientos_de(libro, {"Sigma-6": pd.Timestamp("2026-09-17")}).empty
+    cartera = {"Sigma-6": {"BCI": "2026-01-16"}, "Delta-12": {}}
+    assert movimientos_de(cartera, cartera).empty
+
+
+def test_una_estrategia_nueva_entra_entera_y_una_que_desaparece_sale_entera():
+    from src.libro import movimientos_de
+    m = movimientos_de({"Delta-12": {"ILC": "2026-06-30"}}, {"Gamma-6": {"INTC": "2025-09-30"}})
+    assert set(zip(m.estrategia, m.instrumento, m.accion)) == {
+        ("Delta-12", "ILC", "VENDER"), ("Gamma-6", "INTC", "COMPRAR")}
+
+
+def test_la_cartera_publicada_sobrevive_el_viaje_por_disco(tmp_path):
+    from src.libro import cartera_publicada, guardar_publicada
+    carteras = {"Sigma-6": {"BCI": "2025-10-24"}, "Oro": {"IAU": "2026-01-01"}}
+    ruta = tmp_path / "cartera_publicada.json"
+    assert cartera_publicada(ruta) == {}   # sin archivo, no inventa nada
+    guardar_publicada(carteras, pd.Timestamp("2026-09-17"), ruta)
+    assert cartera_publicada(ruta) == carteras
 
 
 def test_el_precio_de_entrada_lo_manda_el_libro_no_la_serie():
@@ -155,28 +166,28 @@ def test_alterar_un_precio_pasado_no_mueve_ninguna_fila_del_libro():
 
 
 def test_los_dos_bloques_del_informe_no_pueden_contradecirse():
-    """El invariante entre movimientos y cartera, que el reinicio rompió.
+    """El invariante, en sus dos direcciones.
 
-    Toda COMPRAR del bloque de movimientos tiene que estar en la cartera con
-    esa misma fecha, y ninguna posición más vieja puede aparecer como
-    movimiento. Sin esto el informe publicó veinte «Comprar» para posiciones
-    que llevaban meses abiertas, entre ellas INTC desde el 30-09-2025.
+    Hacia adelante: toda COMPRAR tiene que estar en la cartera vigente.
+    Hacia atrás —la que faltaba—: **toda posición que estaba en el informe
+    anterior y ya no está tiene que aparecer como VENDER**. Es el agujero de
+    CENCOMALLS, y sin la simétrica no falla.
     """
-    from src.libro import abiertas, movimientos_de
+    from src.libro import abiertas, cartera_publicada, movimientos_de
     libro = pd.read_csv(ROOT / "data" / "libro_posiciones.csv",
                         parse_dates=["fecha_entrada", "fecha_salida"])
-    senales = {"Sigma-6": pd.Timestamp("2026-09-17"), "Delta-12": pd.Timestamp("2026-08-31"),
-               "Gamma-6": pd.Timestamp("2026-08-31"), "Oro": pd.Timestamp("2026-09-17")}
-    movimientos = movimientos_de(libro, senales)
-    for estrategia, senal in senales.items():
-        cartera = abiertas(libro, estrategia)
-        compras = movimientos.loc[(movimientos.estrategia == estrategia)
-                                  & (movimientos.accion == "COMPRAR")]
-        for instrumento in compras.instrumento:
-            assert instrumento in cartera, f"{instrumento} se manda comprar y no está en la cartera"
-            assert cartera[instrumento] == senal, f"{instrumento} se manda comprar con otra fecha"
-        anteriores = {t for t, f in cartera.items() if f < senal}
-        assert not (anteriores & set(compras.instrumento)), "una posición vieja aparece como compra"
-        ventas = movimientos.loc[(movimientos.estrategia == estrategia)
-                                 & (movimientos.accion == "VENDER")]
-        assert not (set(ventas.instrumento) & set(cartera)), "se manda vender algo que sigue abierto"
+    estrategias = ["Sigma-6", "Delta-12", "Gamma-6", "Oro"]
+    vigente = {n: {t: f.date().isoformat() for t, f in abiertas(libro, n).items()} for n in estrategias}
+    publicada = cartera_publicada(ROOT / "data" / "cartera_publicada.json")
+    movimientos = movimientos_de(publicada, vigente)
+    for estrategia in estrategias:
+        antes = set(publicada.get(estrategia, {}))
+        ahora = set(vigente.get(estrategia, {}))
+        de_la_pieza = movimientos.loc[movimientos.estrategia == estrategia]
+        compras = set(de_la_pieza.loc[de_la_pieza.accion == "COMPRAR", "instrumento"])
+        ventas = set(de_la_pieza.loc[de_la_pieza.accion == "VENDER", "instrumento"])
+        assert compras <= ahora, "se manda comprar algo que no está en la cartera"
+        assert not (ventas & ahora), "se manda vender algo que sigue abierto"
+        assert compras == ahora - antes, "hay una posición nueva sin orden de compra"
+        assert ventas == antes - ahora, "hay una posición que salió sin orden de venta"
+

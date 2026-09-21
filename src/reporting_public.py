@@ -278,21 +278,24 @@ def _caja(portfolio: pd.DataFrame, capital_por_pieza: float | None) -> str:
 
 
 def _movimientos(movimientos: pd.DataFrame | None) -> str:
-    """Lo que cambió en la fecha de señal de cada estrategia, salido del libro.
+    """Qué cambió desde el informe anterior. No desde la fecha de señal.
 
     Tres de las cuatro piezas son mensuales, así que la mayoría de las semanas
     esto viene vacío. Un bloque vacío se lee como informe roto: cuando no hay
     nada, hay que decirlo con todas sus letras.
     """
     if movimientos is None or movimientos.empty:
-        return ('<p class="calm"><strong>Sin movimientos.</strong> Ninguna estrategia compró ni vendió '
-                'en su última revisión: las carteras de abajo siguen tal cual.</p>')
-    filas = [f'<tr><td><strong>{escape(str(r["accion"]).capitalize())}</strong></td>'
-             f'<td>{escape(str(r["instrumento"]))}</td><td>{escape(str(r["estrategia"]))}</td>'
-             f'<td>{pd.Timestamp(r["fecha"]):%d-%m-%Y}</td></tr>'
-             for r in movimientos.to_dict("records")]
+        return ('<p class="calm"><strong>Sin cambios desde el informe anterior.</strong> '
+                'Las carteras de abajo siguen tal cual.</p>')
+    filas = []
+    for r in movimientos.to_dict("records"):
+        fecha = pd.to_datetime(r.get("fecha"), errors="coerce")
+        desde = f"desde el {fecha:%d-%m-%Y}" if pd.notna(fecha) else "—"
+        filas.append(f'<tr><td><strong>{escape(str(r["accion"]).capitalize())}</strong></td>'
+                     f'<td>{escape(str(r["instrumento"]))}</td>'
+                     f'<td>{escape(str(r["estrategia"]))}</td><td>{desde}</td></tr>')
     return ('<table><thead><tr><th>Qué hacer</th><th>Acción</th><th>Estrategia</th>'
-            f'<th>Fecha de la señal</th></tr></thead><tbody>{"".join(filas)}</tbody></table>')
+            f'<th>En cartera</th></tr></thead><tbody>{"".join(filas)}</tbody></table>')
 
 
 def build_public_report(
@@ -412,7 +415,7 @@ def build_public_report(
     <p class="lead">{'Eso es ' + _signed(versus) + ' comparado con haber invertido en la bolsa chilena completa.' if versus is not None else 'La comparación con la bolsa chilena aparecerá cuando su serie esté completa.'}</p>
     </section>
 
-    <section><h2>Qué cambió en la última revisión</h2>
+    <section><h2>Qué cambió desde el informe anterior</h2>
     {orders_block}
     </section>
 
@@ -446,15 +449,17 @@ def build_public_report(
         "",
         f"**Conjunto (partes iguales en las cuatro piezas): {headline} desde el {inicio:%d-%m-%Y}.**",
         "",
-        "## Qué cambió en la última revisión",
+        "## Qué cambió desde el informe anterior",
         "",
     ]
     if movimientos is not None and len(movimientos):
         for record in movimientos.to_dict("records"):
+            fecha = pd.to_datetime(record.get("fecha"), errors="coerce")
+            desde = f" — en cartera desde el {fecha:%d-%m-%Y}" if pd.notna(fecha) else ""
             lines.append(f"- {str(record['accion']).capitalize()} {record['instrumento']} "
-                         f"({record['estrategia']}) — señal del {pd.Timestamp(record['fecha']):%d-%m-%Y}")
+                         f"({record['estrategia']}){desde}")
     else:
-        lines.append("- Sin movimientos. Ninguna estrategia compró ni vendió en su última revisión.")
+        lines.append("- Sin cambios desde el informe anterior. Las carteras siguen tal cual.")
     lines += ["", "## Cada estrategia", ""]
     for name in resumen:
         lines.append(f"- {name}: {_signed(metrics[name]['return'])} desde el {inicio:%d-%m-%Y}; peor caída {pct(metrics[name]['mdd'])}.")

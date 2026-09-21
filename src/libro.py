@@ -18,6 +18,7 @@ fabricó el +30% que este proyecto vino a terminar.
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pandas as pd
@@ -93,36 +94,56 @@ def anotar(libro: pd.DataFrame, estrategia: str, cartera: pd.DataFrame,
     return libro[COLUMNAS], movimientos
 
 
-def movimientos_de(libro: pd.DataFrame, fechas_senal: dict[str, pd.Timestamp]) -> pd.DataFrame:
-    """Lo que se abrió y se cerró en la fecha de señal vigente de cada estrategia.
+def movimientos_de(publicada: dict[str, dict[str, str]],
+                   vigente: dict[str, dict[str, str]]) -> pd.DataFrame:
+    """Qué cambió desde el informe anterior. No desde la fecha de señal.
 
-    Es la única fuente del bloque de movimientos del informe. Antes salía de
-    comparar la cartera publicada con la anterior, y eso confundía dos cosas:
-    lo que cambió esta semana y lo que hay que comprar para entrar hoy. Tras
-    el reinicio el informe decía «Comprar INTC» en la misma página en que la
-    tabla decía «comprada el 30-09-2025».
+    Antes esto leía el libro en la fecha de señal vigente, y cualquier cambio
+    que el libro situara en una fecha anterior quedaba invisible. No era
+    excepcional: **ocurre cada vez que el libro se reconstruye**, o sea cada
+    vez que cambia una regla.
 
-    La mayoría de las semanas esto viene vacío, porque tres de las cuatro
-    piezas son mensuales. Un bloque vacío se lee como informe roto, así que
-    quien lo dibuje tiene que decirlo con todas sus letras.
+    Y ya causó daño. El primer informe dijo «Comprar CENCOMALLS». Al encender
+    la SMA200 el recorrido situó su salida en la revisión del 11-09, no en la
+    del 17-09, así que el informe siguiente no la tenía y **nunca dijo que la
+    vendiera**. Quien la hubiera comprado se quedaba con una posición que el
+    modelo ya no tiene y sin ninguna instrucción.
+
+    Lo que el lector necesita no es «qué movimientos hay en la fecha de señal»
+    sino «qué cambió desde la última vez que leí». Eso es la diferencia entre
+    dos carteras publicadas, venga de donde venga: de una revisión nueva o de
+    una reconstrucción del libro.
+
+    `publicada` y `vigente` son `{estrategia: {instrumento: fecha_entrada}}`.
     """
     filas = []
-    for estrategia, fecha in fechas_senal.items():
-        if fecha is None or pd.isna(fecha):
-            continue
-        fecha = pd.Timestamp(fecha)
-        de_la_estrategia = libro.loc[libro.estrategia == estrategia] if len(libro) else libro
-        for _, fila in de_la_estrategia.iterrows():
-            if pd.notna(fila.fecha_salida) and pd.Timestamp(fila.fecha_salida) == fecha:
-                filas.append({"estrategia": estrategia, "instrumento": fila.instrumento,
-                              "accion": "VENDER", "fecha": fecha})
-            elif pd.isna(fila.fecha_salida) and pd.Timestamp(fila.fecha_entrada) == fecha:
-                filas.append({"estrategia": estrategia, "instrumento": fila.instrumento,
-                              "accion": "COMPRAR", "fecha": fecha})
+    for estrategia in sorted(set(publicada) | set(vigente)):
+        antes = publicada.get(estrategia, {})
+        ahora = vigente.get(estrategia, {})
+        for instrumento in sorted(set(antes) - set(ahora)):
+            filas.append({"estrategia": estrategia, "instrumento": instrumento,
+                          "accion": "VENDER", "fecha": pd.NaT})
+        for instrumento in sorted(set(ahora) - set(antes)):
+            filas.append({"estrategia": estrategia, "instrumento": instrumento,
+                          "accion": "COMPRAR", "fecha": pd.to_datetime(ahora[instrumento])})
     columnas = ["estrategia", "instrumento", "accion", "fecha"]
     if not filas:
         return pd.DataFrame(columns=columnas)
     return pd.DataFrame(filas)[columnas].sort_values(["estrategia", "accion", "instrumento"])
+
+
+def cartera_publicada(ruta: str | Path) -> dict[str, dict[str, str]]:
+    """La cartera del último informe emitido, para poder comparar contra ella."""
+    ruta = Path(ruta)
+    if not ruta.exists():
+        return {}
+    return json.loads(ruta.read_text(encoding="utf-8")).get("carteras", {})
+
+
+def guardar_publicada(carteras: dict[str, dict[str, str]], fecha, ruta: str | Path) -> None:
+    Path(ruta).write_text(json.dumps(
+        {"emitido": pd.Timestamp(fecha).date().isoformat(), "carteras": carteras},
+        ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
 def precios_de_entrada(libro: pd.DataFrame, estrategia: str) -> dict[str, float]:

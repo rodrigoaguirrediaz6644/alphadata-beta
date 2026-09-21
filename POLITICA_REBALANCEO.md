@@ -168,3 +168,30 @@ Hecho el 21-09-2026. Ver `data/archivo/cambio_aritmetica_nav.md` para las
 cifras antes y después, incluida una que la medición no anticipaba: la serie de
 Sigma-6 nunca se reconstruía, así que al recalcularla por primera vez con los
 datos reparados cae mucho más que lo que explica el cambio de aritmética.
+
+## El bloque de movimientos compara informes, no fechas de señal
+
+Antes leía el libro **en la fecha de señal vigente**, así que cualquier cambio
+que el libro situara en una fecha anterior quedaba invisible. No era
+excepcional: **ocurre cada vez que el libro se reconstruye**, o sea cada vez que
+cambia una regla, y eso pasó dos veces en una semana.
+
+Y ya había causado daño. El primer informe dijo «Comprar CENCOMALLS». Al
+encender la SMA200, el recorrido situó su salida en la revisión del 11-09 y no
+en la del 17-09, así que el informe siguiente no la tenía y **nunca dijo que la
+vendiera**. Quien la hubiera comprado se quedaba con una posición que el modelo
+ya no tiene y sin ninguna instrucción.
+
+Ahora el bloque compara **la cartera del informe anterior contra la vigente** y
+muestra la diferencia completa, venga de una revisión nueva o de una
+reconstrucción del libro. La cartera emitida se guarda en
+`data/cartera_publicada.json` después de generar el informe: lo que se compara
+la próxima vez es lo que el lector efectivamente recibió.
+
+Un cambio de fecha de entrada **no** es una operación: si LTM sigue en cartera
+y sólo cambió su fecha al reconstruirse el libro, no aparece.
+
+La prueba de invariante pasa a tener sus dos direcciones. La que existía cubría
+que toda COMPRAR estuviera en la cartera; faltaba la simétrica, que es la que
+habría atrapado a CENCOMALLS: **toda posición que estaba en el informe anterior
+y ya no está tiene que aparecer como VENDER.**
