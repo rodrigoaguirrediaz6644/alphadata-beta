@@ -10,6 +10,7 @@ import pandas as pd
 
 from src.fetch_prices import load_universe, operables
 from src.ingest_recommendations import ingest
+from src.ingreso import cartera_de_ingreso, markdown as markdown_ingreso
 from src.libro import abiertas as libro_abiertas, anotar, cargar as cargar_libro, cartera_publicada, guardar as guardar_libro, guardar_publicada, movimientos_de, precios_de_entrada
 from src.strategy_registry import validate_registry
 from src.reporting_public import build_public_report
@@ -485,6 +486,13 @@ def main()->None:
             raise RuntimeError('Hay series publicadas que nadie recalcula: '+', '.join(sorted(sin_recalcular))
                                +'. Ver CENSO_DE_SERIES.md; una serie guardada es la forma del defecto de Sigma-6.')
         historical.to_csv(historical_path,index=False)
+    # La cartera de ingreso, con sus relojes. Se regenera en cada corrida: una
+    # tabla de montos y fechas escrita a mano en la guía envejece sola.
+    costos={'Sigma-6':(.001785,1990.),'Delta-12':(.001785,1990.),
+            'Gamma-6':(US_COST_RATE,0.),'Oro':(US_COST_RATE,0.)}
+    ingreso=cartera_de_ingreso({'Sigma-6':sigma,'Delta-12':delta,'Gamma-6':gamma,'Oro':oro_portfolio},as_of,costos)
+    (REPORTS/'cartera_de_ingreso.md').write_text(markdown_ingreso(ingreso,as_of),encoding='utf-8')
+    ingreso.to_csv(DATA/'cartera_de_ingreso.csv',index=False)
     md,html=build_public_report(as_of,sigma,delta,smove,dmove,coverage,errors,history,gamma=gamma,gamma_moves=gmove,oro=oro_portfolio,oro_moves=omove,movimientos=movimientos_libro,capital_por_pieza=por_pieza,vigencia=vigencia);(REPORTS/'latest_report.md').write_text(md,encoding='utf-8');(REPORTS/'latest_report.html').write_text(html,encoding='utf-8')
     guardar_publicada(vigente,as_of,PUBLICADA)
     sigma.to_csv(DATA/'portfolio_sigma6.csv',index=False);delta.to_csv(DATA/'portfolio_delta12.csv',index=False);gamma.to_csv(DATA/'portfolio_gamma6.csv',index=False);oro_portfolio.to_csv(DATA/'portfolio_oro.csv',index=False)

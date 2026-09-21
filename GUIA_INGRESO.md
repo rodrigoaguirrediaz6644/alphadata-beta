@@ -139,6 +139,59 @@ de las ocho caen en ese 40%. El que se salta las que "parecen" próximas a
 venderse está aplicando un criterio propio encima de la estrategia, que es
 exactamente lo que el protocolo existe para evitar.
 
+## Los relojes: lo que hay que saber antes de la primera orden
+
+La regla no cambia —se compra la cartera vigente completa— pero quien compra
+tiene que **saber qué está comprando**, y eso son tres cosas que esta guía no
+tenía porque hasta hace poco no existían. Están en
+**`reports/cartera_de_ingreso.md`**, que se regenera en cada corrida: una tabla
+de montos y fechas escrita a mano acá envejecería sola.
+
+Para cada posición vigente:
+
+- **El monto en pesos**, y cuántas unidades caben.
+- **Hace cuánto la tiene el modelo.** Sin tope de tenencia, Sigma-6 puede
+  sostener un nombre por años: BCI viene desde octubre de 2024, 706 días. No es
+  lo mismo heredar una posición de dos semanas que una de dos años.
+- **Su próxima salida conocida, si la tiene.** En Sigma-6 la recomendación
+  caduca a los 365 días y eso es una fecha: VAPORES el 24-11-2026, BCI y
+  PARAUCO el 01-07-2027, LTM el 09-07-2027. En Delta-12 y Gamma-6 las salidas
+  son **por ranking y no tienen fecha**, que es distinto de no saberse, y la
+  tabla lo dice en vez de dejar la celda vacía.
+- **El costo del par entrada-salida en ese plazo**, en pesos, como porcentaje
+  de la posición y anualizado.
+
+Ese último es el que cambia una decisión. Con el mínimo de $1.990 por
+operación, **VAPORES cuesta 0,80% por nueve semanas de tenencia —4,3%
+anualizado— y BCI cuesta 0,87% repartido en diez meses, 1,1% anualizado.** El
+mismo porcentaje, cuatro veces el costo por mes mantenido.
+
+**Es información, no un filtro.** La decisión de comprar la cartera completa
+está tomada y medida —ver más arriba— y saltarse las que parezcan caras es
+exactamente el criterio propio que este protocolo existe para evitar. Lo que
+esto impide es enterarse después.
+
+## El redondeo, que aparece el primer día
+
+Las acciones chilenas se transan por **unidades enteras**. $625.000 en BCI a
+$65.600 son 9,53 acciones: se compran **9 por $590.400** y quedan **$34.600**
+en caja.
+
+La regla es **redondear hacia abajo, con el residuo a la caja de la pieza**,
+igual que el producto de una venta.
+
+Con veinte posiciones el residuo es real: al 17-09-2026 son **$433.493 de
+$17.000.000, un 2,5%**. **Los pesos efectivos del primer día no van a calzar
+con los de referencia, y eso es esperado, no un error.**
+
+Cuanto más caro el instrumento, mayor el residuo, y por eso se concentra en
+Gamma-6: **$318.804 de su pieza de $5 millones, un 6,4%**, porque en MRK a
+$140.392 caben cinco unidades y sobran $131.369.
+
+**Para los CDV estadounidenses hay que confirmar con la corredora si admiten
+fracciones o tienen lote mínimo.** Es una pregunta para Trii, no un cálculo, y
+ahí vale plata: es donde está casi todo el residuo.
+
 ## Lo que este documento no cubre
 
 Las mediciones se hicieron sobre Delta-12. Sigma-6 comparte estructura —
