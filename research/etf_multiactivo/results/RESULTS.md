@@ -1,9 +1,7 @@
 # Candidatos de ETF para una cuarta estrategia
 
-Generado automáticamente. Universo: 56 instrumentos; con datos utilizables: 55.
+Generado automáticamente. Universo: 56 instrumentos; con datos utilizables: 56.
 Todo está medido **en pesos**: los precios en dólares se convierten con el tipo de cambio diario, porque la correlación que importa es la que enfrenta un inversionista local.
-
-**Sin datos en Yahoo (1):** IBB. Para los ETF locales esto sólo significa que el símbolo supuesto no existe; hay que buscar el correcto o descartarlos.
 
 ## Los que más diversifican
 
@@ -11,21 +9,21 @@ Correlación de retornos mensuales contra cada estrategia. Mientras más baja, m
 
 | ETF | Qué es | Categoría | Corr. conjunto | Sigma-6 | Delta-12 | Gamma-6 | Retorno anual | Peor caída | Meses |
 | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| FXI | iShares China Large-Cap | pais | +0.03 | -0.01 | -0.04 | +0.09 | 7.7% | -63.0% | 60 |
-| MCHI | iShares MSCI China | pais | +0.05 | -0.00 | -0.05 | +0.14 | 6.8% | -51.3% | 60 |
-| IAU | iShares Gold Trust | commodity | +0.07 | -0.04 | -0.06 | +0.21 | 13.6% | -32.7% | 60 |
-| EWH | iShares MSCI Hong Kong | pais | +0.10 | -0.01 | +0.02 | +0.18 | 9.1% | -52.5% | 60 |
-| INDA | iShares MSCI India | pais | +0.11 | -0.13 | -0.16 | +0.42 | 10.2% | -40.5% | 60 |
-| HYG | iShares iBoxx High Yield Corporate Bond | bono_corporativo | +0.12 | -0.24 | -0.27 | +0.63 | 8.3% | -26.0% | 60 |
-| LQD | iShares iBoxx Investment Grade Corporate Bond | bono_corporativo | +0.14 | -0.22 | -0.26 | +0.62 | 6.1% | -27.0% | 60 |
-| TLT | iShares 20+ Year Treasury Bond | bono_soberano | +0.14 | -0.15 | -0.20 | +0.54 | 5.3% | -44.5% | 60 |
-| IYE | iShares U.S. Energy | sector_us | +0.16 | -0.07 | +0.02 | +0.32 | 11.8% | -61.6% | 60 |
-| IYK | iShares U.S. Consumer Staples | sector_us | +0.19 | -0.09 | -0.07 | +0.48 | 11.5% | -32.8% | 60 |
-| CFIETFCD | ETF local — mandato por confirmar | local_por_confirmar | +0.20 | +0.25 | +0.15 | +0.06 | 4.9% | -1.5% | 60 |
-| EMB | iShares J.P. Morgan USD Emerging Markets Bond | bono_emergente | +0.22 | -0.15 | -0.20 | +0.67 | 8.3% | -25.9% | 60 |
-| CFIETFCC | ETF local — mandato por confirmar | local_por_confirmar | +0.23 | +0.17 | +0.27 | +0.08 | 6.3% | -10.5% | 60 |
-| IDU | iShares U.S. Utilities | sector_us | +0.25 | -0.14 | -0.05 | +0.60 | 11.6% | -37.7% | 60 |
-| IYZ | iShares U.S. Telecommunications | sector_us | +0.26 | -0.07 | -0.02 | +0.56 | 8.3% | -52.8% | 60 |
+| IYE | iShares U.S. Energy | sector_us | +0.13 | -0.07 | +0.02 | +0.32 | 11.8% | -61.6% | 60 |
+| FXI | iShares China Large-Cap | pais | +0.15 | -0.01 | -0.04 | +0.09 | 7.7% | -63.0% | 60 |
+| CFIETFCD | ETF local — mandato por confirmar | local_por_confirmar | +0.16 | +0.25 | +0.15 | +0.06 | 4.9% | -1.5% | 60 |
+| MCHI | iShares MSCI China | pais | +0.17 | -0.00 | -0.05 | +0.14 | 6.8% | -51.3% | 60 |
+| INDA | iShares MSCI India | pais | +0.20 | -0.13 | -0.16 | +0.42 | 10.2% | -40.5% | 60 |
+| CFIETFCC | ETF local — mandato por confirmar | local_por_confirmar | +0.22 | +0.17 | +0.27 | +0.08 | 6.3% | -10.5% | 60 |
+| EWH | iShares MSCI Hong Kong | pais | +0.22 | -0.01 | +0.02 | +0.18 | 9.1% | -52.5% | 60 |
+| HYG | iShares iBoxx High Yield Corporate Bond | bono_corporativo | +0.24 | -0.24 | -0.27 | +0.63 | 8.3% | -26.0% | 60 |
+| TLT | iShares 20+ Year Treasury Bond | bono_soberano | +0.27 | -0.15 | -0.20 | +0.54 | 5.3% | -44.5% | 60 |
+| LQD | iShares iBoxx Investment Grade Corporate Bond | bono_corporativo | +0.27 | -0.22 | -0.26 | +0.62 | 6.1% | -27.0% | 60 |
+| EWT | iShares MSCI Taiwan | pais | +0.28 | -0.00 | -0.02 | +0.51 | 13.5% | -51.2% | 60 |
+| IYK | iShares U.S. Consumer Staples | sector_us | +0.32 | -0.09 | -0.07 | +0.48 | 11.5% | -32.8% | 60 |
+| IYZ | iShares U.S. Telecommunications | sector_us | +0.33 | -0.07 | -0.02 | +0.56 | 8.3% | -52.8% | 60 |
+| IYF | iShares U.S. Financials | sector_us | +0.33 | -0.02 | -0.09 | +0.69 | 9.2% | -76.7% | 60 |
+| IYG | iShares U.S. Financial Services | sector_us | +0.33 | +0.02 | -0.05 | +0.67 | 8.5% | -79.8% | 60 |
 
 ## Los redundantes
 
@@ -61,7 +59,7 @@ Retorno en pesos durante cada episodio. Las primeras filas, en negrita, son las 
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | **ECH** | — | -23.3% | -6.6% | -5.2% | -35.0% | 14.7% |
 | **IVV** | -45.1% | -6.0% | -7.6% | -14.8% | -28.4% | -17.8% |
-| TLT | 53.4% | 55.1% | 16.0% | 10.9% | 23.7% | -23.1% |
+| TLT | 53.5% | 55.1% | 16.0% | 10.9% | 23.7% | -23.1% |
 | IAU | 52.2% | 23.6% | 18.7% | 12.4% | 4.3% | 1.1% |
 | LQD | 14.4% | 19.5% | 5.8% | 4.3% | -5.0% | -14.1% |
 | EMB | — | 14.2% | 3.7% | 3.2% | -14.9% | -17.9% |
@@ -77,18 +75,18 @@ Retorno en pesos durante cada episodio. Las primeras filas, en negrita, son las 
 
 | Categoría | Instrumentos | Corr. conjunto (mediana) | Retorno anual (mediana) |
 | --- | ---: | ---: | ---: |
-| bono_corporativo | 2 | +0.13 | 7.2% |
-| bono_emergente | 1 | +0.22 | 8.3% |
-| bono_soberano | 1 | +0.14 | 5.3% |
-| commodity | 1 | +0.07 | 13.6% |
-| cripto | 1 | +0.39 | 24.7% |
-| estilo | 3 | +0.39 | 15.8% |
-| indice_amplio | 2 | +0.44 | 13.3% |
-| local_por_confirmar | 8 | +0.35 | 6.9% |
-| pais | 17 | +0.37 | 9.2% |
-| region | 5 | +0.36 | 10.4% |
-| sector_us | 13 | +0.33 | 11.5% |
-| tematico | 1 | +0.36 | -0.4% |
+| bono_corporativo | 2 | +0.26 | 7.2% |
+| bono_emergente | 1 | +0.34 | 8.3% |
+| bono_soberano | 1 | +0.27 | 5.3% |
+| commodity | 1 | +0.45 | 13.6% |
+| cripto | 1 | +0.40 | 24.7% |
+| estilo | 3 | +0.42 | 15.8% |
+| indice_amplio | 2 | +0.48 | 13.3% |
+| local_por_confirmar | 8 | +0.37 | 6.9% |
+| pais | 17 | +0.44 | 9.2% |
+| region | 5 | +0.46 | 10.4% |
+| sector_us | 14 | +0.38 | 11.5% |
+| tematico | 1 | +0.37 | -0.4% |
 
 ## Qué daría una rotación sobre este universo
 
@@ -96,8 +94,8 @@ Referencia, no propuesta: la misma señal de Gamma-6 (momentum compuesto 3/6/12)
 
 | Variante | Retorno anual | Volatilidad | Peor caída | Sharpe | Posiciones |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Top 5 con filtro de tendencia | 11.8% | 24.2% | -26.1% | +0.49 | 5.0 |
-| Top 5 sin filtro | 11.9% | 24.2% | -25.8% | +0.49 | 5.0 |
+| Top 5 con filtro de tendencia | 11.1% | 24.2% | -26.4% | +0.46 | 5.0 |
+| Top 5 sin filtro | 11.3% | 24.3% | -25.8% | +0.47 | 5.0 |
 
 ## Cómo leer esto
 
