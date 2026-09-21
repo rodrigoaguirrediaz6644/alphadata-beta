@@ -70,7 +70,14 @@ Validado contra esa fuente en las 20 ruedas que se superponen: razón mediana
 0,99999965 y diferencia máxima 0,0008%, que es el redondeo a dos decimales de
 investing.com. Son la misma serie.
 
-Pendiente: revisar si la descarga de la Bolsa es una petición simple con
-parámetros —en la pestaña de red de las herramientas de desarrollador— o si va
-detrás del captcha de Radware como el resto del sitio. En el segundo caso queda
-como descarga manual semanal.
+**Revisado, y no se puede automatizar.** Al abrir
+`bolsadesantiago.com/indices_rv_indices` desde un navegador limpio, el sitio
+redirige a una página de captcha de Radware con el mensaje "ANOMALY DETECTED" y
+pide resolverlo para dar acceso. Encima corre una segunda capa de detección de
+F5. No se llegó a ver la petición de descarga porque no se llega a la página, y
+resolver un captcha no es una opción: ni se hace, ni funcionaría en un runner
+desatendido, que es precisamente lo que esas defensas están para bloquear.
+
+Queda como **descarga manual semanal**. No bloquea nada: cada archivo trae 20
+ruedas, así que hay cuatro semanas de solape y se puede saltar una o dos sin
+perder días. El almacén de sólo agregar ignora lo repetido.
