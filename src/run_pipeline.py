@@ -56,10 +56,17 @@ def enrich_open_positions(portfolio: pd.DataFrame, prices: pd.DataFrame, as_of: 
     entrada.** El costo vive en el NAV. La consecuencia es que esta columna y
     el rendimiento de la estrategia no cuadran exactamente, y es por diseño:
     son dos mediciones distintas, como en cualquier cartola.
+
+    De ahí sale `con_dividendo`: cuando entre los dos cierres crudos hubo un
+    dividendo, la variación no se puede verificar con los dos precios a la
+    vista y hay que decirlo. VAPORES muestra $48,89 de entrada, $48,30 hoy y
+    +12,9%, y sin la marca eso se lee como un error de cálculo. Son nueve de
+    las veinte posiciones abiertas: el caso normal, no el excepcional.
     """
     result = portfolio.copy()
     for column in ["entry_price", "current_price", "open_return"]:
         result[column] = pd.NA
+    result["con_dividendo"] = False
     for index, row in result.iterrows():
         opened_at = pd.to_datetime(row.get("opened_at"), errors="coerce")
         series = prices.loc[
@@ -76,8 +83,11 @@ def enrich_open_positions(portfolio: pd.DataFrame, prices: pd.DataFrame, as_of: 
             continue
         result.at[index, "entry_price"] = float(entry.close.iloc[0])
         result.at[index, "current_price"] = float(current.close.iloc[0])
-        result.at[index, "open_return"] = (float(current.adjusted_close.iloc[0])
-                                           / float(entry.adjusted_close.iloc[0]) - 1)
+        ajustada = (float(current.adjusted_close.iloc[0])
+                    / float(entry.adjusted_close.iloc[0]) - 1)
+        result.at[index, "open_return"] = ajustada
+        cruda = float(current.close.iloc[0]) / float(entry.close.iloc[0]) - 1
+        result.at[index, "con_dividendo"] = bool(abs(ajustada - cruda) > 5e-4)
     return result
 
 

@@ -186,6 +186,11 @@ def _positions(portfolio: pd.DataFrame, currency: str = "$") -> str:
     El precio de entrada va al lado del de hoy a propósito: sin él, «va
     ganando 22,9%» es un número que el lector tiene que creer. Con los dos
     precios a la vista, lo puede verificar de memoria.
+
+    Salvo cuando hubo dividendo de por medio, y ahí la marca es obligatoria:
+    VAPORES muestra $48,89 de entrada, $48,30 hoy y +12,9%, porque la
+    variación incluye lo que se cobró. Sin decirlo, poner los dos precios al
+    lado convierte un número correcto en uno que se lee como error.
     """
     if portfolio is None or portfolio.empty:
         return '<p class="muted">Sin posiciones abiertas.</p>'
@@ -196,6 +201,8 @@ def _positions(portfolio: pd.DataFrame, currency: str = "$") -> str:
         gain = record.get("open_return")
         gain_text = _signed(float(gain)) if pd.notna(gain) else "—"
         color = "" if gain_text == "—" else ' class="up"' if float(gain) >= 0 else ' class="down"'
+        if gain_text != "—" and record.get("con_dividendo"):
+            gain_text += " *"
         rows.append(f'<tr><td>{escape(str(record["ticker"]))}</td>'
                     f'<td>{pct(float(record["target_weight"]))}</td><td>{fecha}</td>'
                     f'<td>{_precio(record.get("entry_price"), currency)}</td>'
@@ -267,6 +274,14 @@ def build_public_report(
     problems_block = f'<div class="warn"><strong>Revisar:</strong> {" ".join(problems)}</div>' if problems else '<p class="calm">Todos los datos llegaron completos.</p>'
 
     inicio = pd.to_datetime(history["date"]).min()
+    # La nota del asterisco sólo se imprime si alguna fila lo lleva.
+    con_dividendo = any(bool(frame["con_dividendo"].any()) for frame in portfolios.values()
+                        if frame is not None and "con_dividendo" in frame and len(frame))
+    nota_dividendos = ('<p class="muted"><strong>*</strong> Esa acción repartió dividendos desde que se compró'
+                       ' y la variación los incluye, así que no cuadra con los dos precios de la fila.'
+                       ' Una acción puede valer hoy menos que cuando se compró y aun así ir ganando,'
+                       ' porque además pagó.</p>'
+                       ) if con_dividendo else ""
 
     positions_blocks = "".join(
         f'<h3>{name} · {QUE_INVIERTE[name]}</h3>{_positions(portfolios[name])}'
@@ -318,6 +333,7 @@ def build_public_report(
 
     <section><h2>Qué tienes comprado hoy</h2>
     {positions_blocks}
+    {nota_dividendos}
     <p class="muted"><strong>Va ganando</strong> es cuánto se movió el precio de esa acción desde el día en que se compró, que es distinto del rendimiento de la estrategia desde el {inicio:%d-%m-%Y}: una acción comprada hace ocho meses puede ir muy arriba aunque la estrategia lleve poco medida. Los dos números son correctos y no tienen por qué calzar.</p>
     <p class="muted">Todos los precios están en pesos. Gamma-6 y el oro se compran en Chile como CDV, así que su resultado ya incluye el efecto del tipo de cambio. El oro no se compra ni se vende por señales: es una posición fija que está para amortiguar las caídas del resto.</p>
     </section>
