@@ -3,11 +3,11 @@
   "delta_rule_version": "2.1.0",
   "gamma_rule_version": "1.0.0",
   "sigma_entries": {
-    "LTM": "2026-09-17",
-    "PARAUCO": "2026-09-17",
-    "VAPORES": "2026-09-17",
     "BCI": "2026-09-17",
-    "CENCOMALLS": "2026-09-17"
+    "PARAUCO": "2026-09-17",
+    "CENCOMALLS": "2026-09-17",
+    "VAPORES": "2026-09-17",
+    "LTM": "2026-09-17"
   },
   "delta_entries": {
     "PARAUCO": "2026-09-17",
@@ -34,168 +34,168 @@
     {
       "ticker": "BCI",
       "target_weight": 0.1,
-      "opened_at": "2026-09-17",
-      "entry_price": 65600.0,
+      "opened_at": "2026-01-16",
+      "entry_price": 64500.0,
       "current_price": 65600.0,
-      "open_return": -0.001781819452277511
+      "open_return": 0.04291157535146506
     },
     {
       "ticker": "CENCOMALLS",
       "target_weight": 0.1,
-      "opened_at": "2026-09-17",
-      "entry_price": 2240.0,
+      "opened_at": "2026-04-02",
+      "entry_price": 2449.89990234375,
       "current_price": 2240.0,
-      "open_return": -0.001781819452277622
+      "open_return": -0.08055524581677742
     },
     {
       "ticker": "LTM",
       "target_weight": 0.1,
-      "opened_at": "2026-09-17",
-      "entry_price": 24.78,
+      "opened_at": "2026-08-28",
+      "entry_price": 23.69,
       "current_price": 24.78,
-      "open_return": -0.001781819452277622
+      "open_return": 0.04601097509497687
     },
     {
       "ticker": "PARAUCO",
       "target_weight": 0.1,
-      "opened_at": "2026-09-17",
-      "entry_price": 3900.0,
+      "opened_at": "2026-06-26",
+      "entry_price": 3827.0,
       "current_price": 3900.0,
-      "open_return": -0.001781819452277622
+      "open_return": 0.019074993467467882
     },
     {
       "ticker": "VAPORES",
       "target_weight": 0.1,
-      "opened_at": "2026-09-17",
-      "entry_price": 48.3,
+      "opened_at": "2026-03-27",
+      "entry_price": 48.88999938964844,
       "current_price": 48.3,
-      "open_return": -0.001781819452277622
+      "open_return": 0.12859361704881578
     }
   ],
   "delta_portfolio": [
     {
       "ticker": "PARAUCO",
       "target_weight": 0.125,
-      "opened_at": "2026-09-17",
-      "entry_price": 3900.0,
+      "opened_at": "2026-03-31",
+      "entry_price": 3780.0,
       "current_price": 3900.0,
-      "open_return": -0.001781819452277622
+      "open_return": 0.04226273210435516
     },
     {
       "ticker": "BCI",
       "target_weight": 0.125,
-      "opened_at": "2026-09-17",
-      "entry_price": 65600.0,
+      "opened_at": "2026-08-31",
+      "entry_price": 64500.0,
       "current_price": 65600.0,
-      "open_return": -0.001781819452277511
+      "open_return": 0.01705426356589146
     },
     {
       "ticker": "MALLPLAZA",
       "target_weight": 0.125,
-      "opened_at": "2026-09-17",
-      "entry_price": 3900.0,
+      "opened_at": "2026-02-27",
+      "entry_price": 4080.0,
       "current_price": 3900.0,
-      "open_return": -0.001781819452277622
+      "open_return": -0.026912146551193894
     },
     {
       "ticker": "ITAUCL",
       "target_weight": 0.125,
-      "opened_at": "2026-09-17",
-      "entry_price": 24200.0,
+      "opened_at": "2026-02-27",
+      "entry_price": 20900.0,
       "current_price": 24200.0,
-      "open_return": -0.001781819452277511
+      "open_return": 0.22933278039240412
     },
     {
       "ticker": "ECL",
       "target_weight": 0.125,
-      "opened_at": "2026-09-17",
-      "entry_price": 1855.0,
+      "opened_at": "2026-06-30",
+      "entry_price": 1800.0,
       "current_price": 1855.0,
-      "open_return": -0.001781819452277622
+      "open_return": 0.030555555555555447
     },
     {
       "ticker": "CHILE",
       "target_weight": 0.125,
-      "opened_at": "2026-09-17",
-      "entry_price": 197.9,
+      "opened_at": "2026-06-30",
+      "entry_price": 180.5,
       "current_price": 197.9,
-      "open_return": -0.001781819452277733
+      "open_return": 0.0963988919667591
     },
     {
       "ticker": "BSANTANDER",
       "target_weight": 0.125,
-      "opened_at": "2026-09-17",
-      "entry_price": 81.82,
+      "opened_at": "2026-07-31",
+      "entry_price": 80.99,
       "current_price": 81.82,
-      "open_return": -0.001781819452277622
+      "open_return": 0.010248178787504614
     },
     {
       "ticker": "ANDINA-B",
       "target_weight": 0.125,
-      "opened_at": "2026-09-17",
-      "entry_price": 4900.0,
+      "opened_at": "2026-08-31",
+      "entry_price": 4530.0,
       "current_price": 4900.0,
-      "open_return": -0.001781819452277511
+      "open_return": 0.08167770419426046
     }
   ],
   "gamma_portfolio": [
     {
       "ticker": "TGT",
       "target_weight": 0.16666666666666666,
-      "opened_at": "2026-09-17",
-      "entry_price": 152490.6108784424,
+      "opened_at": "2026-07-31",
+      "entry_price": 133660.4778176574,
       "current_price": 152490.6108784424,
-      "open_return": -0.0009990009990008542
+      "open_return": 0.14963716685185435
     },
     {
       "ticker": "INTC",
       "target_weight": 0.16666666666666666,
-      "opened_at": "2026-09-17",
-      "entry_price": 103803.90877099613,
+      "opened_at": "2025-09-30",
+      "entry_price": 32373.736345718382,
       "current_price": 103803.90877099613,
-      "open_return": -0.0009990009990009652
+      "open_return": 2.2064234928732533
     },
     {
       "ticker": "MRK",
       "target_weight": 0.16666666666666666,
-      "opened_at": "2026-09-17",
-      "entry_price": 140392.86869152822,
+      "opened_at": "2026-07-31",
+      "entry_price": 120441.505587616,
       "current_price": 140392.86869152822,
-      "open_return": -0.0009990009990008542
+      "open_return": 0.17253253214297049
     },
     {
       "ticker": "BAC",
       "target_weight": 0.16666666666666666,
-      "opened_at": "2026-09-17",
-      "entry_price": 55508.375685449224,
+      "opened_at": "2026-07-31",
+      "entry_price": 57306.847449531546,
       "current_price": 55508.375685449224,
-      "open_return": -0.0009990009990008542
+      "open_return": -0.02644124722680763
     },
     {
       "ticker": "JNJ",
       "target_weight": 0.16666666666666666,
-      "opened_at": "2026-09-17",
-      "entry_price": 257811.50338266604,
+      "opened_at": "2026-08-31",
+      "entry_price": 247641.9417816773,
       "current_price": 257811.50338266604,
-      "open_return": -0.0009990009990008542
+      "open_return": 0.041065586579652535
     },
     {
       "ticker": "ABT",
       "target_weight": 0.16666666666666666,
-      "opened_at": "2026-09-17",
-      "entry_price": 97535.60334987799,
+      "opened_at": "2026-08-31",
+      "entry_price": 102801.44524628296,
       "current_price": 97535.60334987799,
-      "open_return": -0.0009990009990008542
+      "open_return": -0.05122342282046255
     }
   ],
   "oro_portfolio": [
     {
       "ticker": "IAU",
       "target_weight": 1.0,
-      "opened_at": "2026-09-17",
-      "entry_price": 77938.79892536625,
+      "opened_at": "2026-01-01",
+      "entry_price": 73374.63739833981,
       "current_price": 77938.79892536625,
-      "open_return": -0.0009990009990008542
+      "open_return": 0.062203530931925544
     }
   ],
   "valuation_date": "2026-09-17",
@@ -219,7 +219,7 @@
     "uploaded_files": 0,
     "history_rows": 1108
   },
-  "last_run_utc": "2026-09-21T06:13:23.428781+00:00",
+  "last_run_utc": "2026-09-21T06:49:24.096734+00:00",
   "entry_dates_version": 3,
   "delta_last_period": "2026-08",
   "gamma_last_period": "2026-08"

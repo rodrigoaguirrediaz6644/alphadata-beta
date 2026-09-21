@@ -10,6 +10,7 @@ import pandas as pd
 
 from src.fetch_prices import load_universe, operables
 from src.ingest_recommendations import ingest
+from src.libro import abiertas as libro_abiertas, anotar, cargar as cargar_libro, guardar as guardar_libro
 from src.strategy_registry import validate_registry
 from src.reporting_public import build_public_report
 from src.strategy_engine import ORO_TICKER, RECOMMENDATION_COLUMNS, combined_equal_weight, delta12, delta12_historical_nav, gamma6, gamma6_historical_nav, movements, oro, oro_historical_nav, reconstruct_entry_dates, sigma6, to_clp, validate_recommendations
@@ -38,7 +39,24 @@ def portfolio_return(prices:pd.DataFrame,weights:list[dict],start:pd.Timestamp,e
     return total
 
 def enrich_open_positions(portfolio: pd.DataFrame, prices: pd.DataFrame, as_of: pd.Timestamp, buy_cost: float = .001785) -> pd.DataFrame:
-    """Add entry/current prices and unrealized return for every open position."""
+    """Precios de entrada y de hoy, y la variación entre ambos.
+
+    Tres decisiones de cálculo que conviene no deshacer:
+
+    **El precio que se muestra es el cierre crudo**, el de la fecha de entrada
+    y el de hoy. Es lo que habrías pagado y lo que reconoces en la pantalla de
+    la corredora.
+
+    **La variación se calcula sobre el cierre ajustado.** Si se calculara sobre
+    el crudo, una acción que repartió dividendo aparecería perdiendo lo que en
+    realidad cobraste. Con ocho chilenas en cartera es el caso más probable, no
+    el excepcional.
+
+    **La variación es movimiento de precio y no descuenta la comisión de
+    entrada.** El costo vive en el NAV. La consecuencia es que esta columna y
+    el rendimiento de la estrategia no cuadran exactamente, y es por diseño:
+    son dos mediciones distintas, como en cualquier cartola.
+    """
     result = portfolio.copy()
     for column in ["entry_price", "current_price", "open_return"]:
         result[column] = pd.NA
@@ -46,7 +64,7 @@ def enrich_open_positions(portfolio: pd.DataFrame, prices: pd.DataFrame, as_of: 
         opened_at = pd.to_datetime(row.get("opened_at"), errors="coerce")
         series = prices.loc[
             (prices.alphadata_ticker == row["ticker"]) & (prices.date <= as_of),
-            ["date", "adjusted_close"],
+            ["date", "close", "adjusted_close"],
         ].dropna().sort_values("date")
         if pd.isna(opened_at) or series.empty:
             continue
@@ -56,12 +74,10 @@ def enrich_open_positions(portfolio: pd.DataFrame, prices: pd.DataFrame, as_of: 
         current = series.tail(1)
         if entry.empty or current.empty or float(entry.adjusted_close.iloc[0]) <= 0:
             continue
-        entry_price = float(entry.adjusted_close.iloc[0])
-        current_price = float(current.adjusted_close.iloc[0])
-        result.at[index, "opened_at"] = entry.date.iloc[0].date().isoformat()
-        result.at[index, "entry_price"] = entry_price
-        result.at[index, "current_price"] = current_price
-        result.at[index, "open_return"] = current_price / (entry_price * (1 + buy_cost)) - 1
+        result.at[index, "entry_price"] = float(entry.close.iloc[0])
+        result.at[index, "current_price"] = float(current.close.iloc[0])
+        result.at[index, "open_return"] = (float(current.adjusted_close.iloc[0])
+                                           / float(entry.adjusted_close.iloc[0]) - 1)
     return result
 
 
@@ -256,6 +272,27 @@ def main()->None:
         entradas_oro=state.get('oro_entries',{})
         state['oro_entries']={t:entradas_oro.get(t,as_of.date().isoformat()) for t in oro_portfolio.ticker}
         oro_portfolio['opened_at']=oro_portfolio.ticker.map(state['oro_entries'])
+    # El libro de posiciones manda sobre la fecha de apertura. Producción lo
+    # escribe: cada corrida anota sus aperturas y sus cierres, con la fecha en
+    # que la estrategia dio la señal. Sin esto el informe no distingue una
+    # posición recién tomada de una que viene corriendo un año.
+    LIBRO = DATA / 'libro_posiciones.csv'
+    libro = cargar_libro(LIBRO)
+    fx_libro = prices_us_clp if len(prices_us_clp) else prices
+    precios_mostrados = pd.concat([prices, prices_us_clp, prices_oro_clp], ignore_index=True)
+    anotados = []
+    for nombre, cartera, senal in [('Sigma-6', sigma, as_of), ('Delta-12', delta, delta_cutoff),
+                                   ('Gamma-6', gamma, gamma_cutoff), ('Oro', oro_portfolio, as_of)]:
+        libro, movimientos = anotar(libro, nombre, cartera, senal, precios_mostrados)
+        anotados += [f'{nombre}: {m}' for m in movimientos]
+    guardar_libro(libro, LIBRO)
+    if anotados:
+        print('Libro de posiciones: ' + '; '.join(anotados))
+    for nombre, cartera in [('Sigma-6', sigma), ('Delta-12', delta), ('Gamma-6', gamma), ('Oro', oro_portfolio)]:
+        if len(cartera):
+            entradas = libro_abiertas(libro, nombre)
+            cartera['opened_at'] = cartera.ticker.map(lambda t: entradas[t].date().isoformat() if t in entradas else pd.NA)
+
     # Tras un reinicio del seguimiento, ninguna posición puede tener fecha de
     # apertura anterior a esa fecha. Las carteras se heredan pero los precios de
     # entrada no: quien empieza hoy compra hoy. Publicar que una posición "va
@@ -271,9 +308,6 @@ def main()->None:
         reinicio['primera_corrida']=piso; state['reinicio']=reinicio
         for clave in ('sigma_entries','delta_entries','gamma_entries','oro_entries'):
             state[clave]={t:max(f,piso) for t,f in state.get(clave,{}).items()}
-        for cartera in (sigma,delta,gamma,oro_portfolio):
-            if len(cartera) and 'opened_at' in cartera:
-                cartera['opened_at']=cartera['opened_at'].map(lambda f: max(str(f),piso) if pd.notna(f) else f)
     sigma=enrich_open_positions(sigma,prices,as_of)
     delta=enrich_open_positions(delta,prices,as_of)
     gamma=enrich_open_positions(gamma,prices_us_clp,as_of,buy_cost=US_COST_RATE)
