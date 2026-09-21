@@ -113,6 +113,69 @@ Dos observaciones del censo:
 | `data/archivo/*` | series retiradas; no se reescriben nunca, por definición |
 | `data/market_prices_daily.csv` | almacén append-only, con guardias propias |
 
+## Lo que quedó pendiente del censo, contestado
+
+### `SERIES_RECONSTRUIDAS` declaraba; ahora también obliga
+
+Era una **declaración**, no un motor: el pipeline llamaba a cada función por
+separado y después comparaba el conjunto de columnas contra la lista. Una serie
+listada cuyo recálculo quedara en nada habría pasado igual —que es exactamente
+el fallo de Sigma-6— porque cada reconstrucción estaba envuelta en un
+`if len(...)` que, al venir vacía, **conservaba los valores anteriores en
+silencio**.
+
+Cerrado: cada reconstrucción es obligatoria y **la corrida se detiene** si
+alguna viene vacía. No hay camino por el que una serie publicada conserve
+valores viejos sin que nadie se entere.
+
+### La prueba que lo zanja
+
+Perturbación sobre una copia de trabajo: **1.629 filas de mayo de 2023, 74
+instrumentos, multiplicadas por 1,30**, y la corrida completa.
+
+| serie | desvío máximo | |
+|---|---|---|
+| Sigma-6 | 28,69% | se movió |
+| Delta-12 | 29,25% | se movió |
+| Gamma-6 | 69,00% | se movió |
+| Oro | 69,00% | se movió |
+| IPSA Total Return | 30,00% | se movió |
+| Conjunto AlphaData | 49,15% | se movió |
+
+**Las seis se movieron.** Y el primer intento tiene su propia lección: alterando
+sólo BCI, INTC, IAU, el IPSA y el tipo de cambio, **Sigma-6 no se movió**, y no
+era un fallo —Sigma-6 no tenía BCI en mayo de 2023, sino BESALCO, CCU,
+CENCOSUD, ECL, ENELCHILE, FORUS, ILC, QUINENCO, RIPLEY, SMSAAM y SMU—. Una
+prueba de perturbación sólo prueba lo que toca.
+
+### El 0,87% del IPSA TR
+
+La serie guardada y su recálculo divergen en tres ruedas —09 y 10 de julio de
+2026, y 23 de marzo de 2026— y coinciden en todo lo demás. La causa es la
+**costura del reemplazo del benchmark**: la columna guardada se calculó cuando
+la serie empalmada `IPSA_TR` todavía no existía en su forma actual, y en esas
+ruedas tomó valores del ETF proxy (`CFMITNIPSA`), que es un instrumento
+distinto del índice y puede separarse de él en un día. El 09-07-2026 el proxy
+sube 1,02% y el índice baja 0,11%.
+
+Los extremos calzan porque el reemplazo se calibró a razón 1,000000. Ahora hay
+una sola fuente leída de punta a punta.
+
+### `cartera_publicada.json` arranca con una semilla
+
+Anotado **dentro del propio archivo**, en un campo `procedencia`: sembrado a
+mano el 21-09-2026 con la cartera del commit `c945d8a`, el último informe
+emitido antes de encender la SMA200. Sin la semilla la primera comparación
+habría sido contra nada. No es registro continuo desde antes de esa fecha.
+
+### Completitud de lo que baja Horizonte
+
+**Pendiente.** Los 332 → 366 datos de 2012 son treinta y cuatro días que el
+recálculo rellenó: la corrida anterior tenía huecos y que el resumen publicado
+no se moviera fue suerte. Hace falta una verificación de completitud sobre las
+cuotas de Cuprum, como el informe de cobertura la tiene para los precios. No
+está hecha.
+
 ## La regla que queda
 
 **Ninguna serie publicada puede quedar guardada sin que alguien pueda decir de

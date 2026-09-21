@@ -445,29 +445,27 @@ def main()->None:
     historical_path=DATA/'reconstruccion_historica.csv'
     if historical_path.exists():
         historical=pd.read_csv(historical_path,parse_dates=['date']).sort_values('date')
-        rebuilt=delta12_historical_nav(prices,universe,historical.date.min(),historical.date.max())
-        if len(rebuilt):
-            values=rebuilt.set_index('date')['Delta-12']
-            historical['Delta-12']=historical.date.map(values)
+        def _reconstruir(nombre,serie):
+            if not len(serie):
+                raise RuntimeError(f'La reconstrucción de {nombre} vino vacía. No se conservan los '
+                                   'valores anteriores: una serie que no se recalcula y se publica '
+                                   'igual es el defecto de Sigma-6. Ver CENSO_DE_SERIES.md.')
+            historical[nombre]=historical.date.map(serie.set_index('date')[nombre]).ffill()
+        _reconstruir('Delta-12',delta12_historical_nav(prices,universe,historical.date.min(),historical.date.max()))
         # Sigma-6 también se reconstruye: sin esto, las otras dos cambiaban de
         # aritmética y Sigma-6 se quedaba con la serie vieja, de peso constante.
-        sigma_rebuilt=sigma6_historical_nav(valid,prices,universe,historical.date.min(),historical.date.max())
-        if len(sigma_rebuilt):
-            historical['Sigma-6']=historical.date.map(sigma_rebuilt.set_index('date')['Sigma-6']).ffill()
-        gamma_rebuilt=gamma6_historical_nav(prices_us,universe,fx,historical.date.min(),historical.date.max(),US_COST_RATE)
-        if len(gamma_rebuilt):
-            gamma_values=gamma_rebuilt.set_index('date')['Gamma-6']
-            historical['Gamma-6']=historical.date.map(gamma_values).ffill()
-        oro_rebuilt=oro_historical_nav(prices_oro,universe,fx,historical.date.min(),historical.date.max(),US_COST_RATE)
-        if len(oro_rebuilt):
-            historical['Oro']=historical.date.map(oro_rebuilt.set_index('date')['Oro']).ffill()
+        _reconstruir('Sigma-6',sigma6_historical_nav(valid,prices,universe,historical.date.min(),historical.date.max()))
+        _reconstruir('Gamma-6',gamma6_historical_nav(prices_us,universe,fx,historical.date.min(),historical.date.max(),US_COST_RATE))
+        _reconstruir('Oro',oro_historical_nav(prices_oro,universe,fx,historical.date.min(),historical.date.max(),US_COST_RATE))
         # El benchmark también. Era la última serie guardada de la
         # reconstrucción, y una serie guardada es la forma que ya falló: la de
         # Sigma-6 sobrevivió intacta a la reparación de los precios chilenos y
         # publicó +28,75% cuando el número era diez puntos menos.
         ipsa=prices.loc[prices.alphadata_ticker=='IPSA_TR',['date','adjusted_close']].dropna().sort_values('date')
         ipsa=ipsa.loc[ipsa.date.between(historical.date.min(),historical.date.max())].set_index('date').adjusted_close
-        if len(ipsa)>1: historical[BENCHMARK_RECONSTRUIDO]=historical.date.map(ipsa/ipsa.iloc[0]*100).ffill()
+        if len(ipsa)<=1:
+            raise RuntimeError('La serie del benchmark vino vacía. Ver CENSO_DE_SERIES.md.')
+        historical[BENCHMARK_RECONSTRUIDO]=historical.date.map(ipsa/ipsa.iloc[0]*100).ffill()
         historical_combined=combined_equal_weight(historical,STRATEGY_SERIES)
         if len(historical_combined): historical[CONJUNTO]=historical.date.map(historical_combined)
         sin_recalcular=set(historical.columns)-{'date'}-SERIES_RECONSTRUIDAS
