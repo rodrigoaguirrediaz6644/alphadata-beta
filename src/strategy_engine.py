@@ -9,6 +9,8 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from src.nav_historico import nav_corrido
+
 BROKERS = ["Credicorp Capital"]
 BROKER_KEYS = {"credicorpcapital": "Credicorp Capital", "credicorp": "Credicorp Capital"}
 SIGNALS = {
@@ -264,68 +266,43 @@ def to_clp(prices: pd.DataFrame, universe: pd.DataFrame, fx: pd.DataFrame) -> pd
 
 
 def gamma6_historical_nav(prices: pd.DataFrame, universe: pd.DataFrame, fx: pd.DataFrame, start: pd.Timestamp, end: pd.Timestamp, cost_rate: float = .001) -> pd.DataFrame:
-    """Reconstruye Gamma-6 en pesos usando sólo información disponible en cada revisión mensual."""
+    """Reconstruye Gamma-6 en pesos con los pesos corriendo. Ver delta12_historical_nav."""
     us=set(universe.loc[universe.tipo=="accion_us","alphadata_ticker"])
     clp=to_clp(prices,universe,fx)
     panel=clp.loc[clp.alphadata_ticker.isin(us)&clp.date.between(start-pd.Timedelta(days=700),end)].pivot(index="date",columns="alphadata_ticker",values="adjusted_close").sort_index().ffill(limit=3)
-    sessions=panel.index[panel.index>=pd.Timestamp(start)]
-    if len(sessions)==0: return pd.DataFrame(columns=["date","Gamma-6"])
-    weights: dict[str,float]={}; nav=100.; rows=[]; previous_date=None; current_month=None
-    for session in sessions:
-        if previous_date is None:
-            rows.append({"date":session,"Gamma-6":nav}); previous_date=session; current_month=session.to_period("M"); continue
-        day_return=0.
-        for ticker,weight in weights.items():
-            if ticker in panel and pd.notna(panel.at[previous_date,ticker]) and pd.notna(panel.at[session,ticker]) and panel.at[previous_date,ticker]>0:
-                day_return+=weight*(panel.at[session,ticker]/panel.at[previous_date,ticker]-1)
-        nav*=1+day_return
-        month=session.to_period("M")
-        if month!=current_month:
-            review_dates=panel.index[panel.index<session]
-            if len(review_dates):
-                portfolio,_=gamma6(prices,universe,pd.Timestamp(review_dates[-1]))
-                new_weights=dict(zip(portfolio.ticker,portfolio.target_weight))
-                risky=sum(abs(new_weights.get(t,0)-weights.get(t,0)) for t in set(weights)|set(new_weights))
-                cash=abs((1-sum(new_weights.values()))-(1-sum(weights.values())))
-                nav*=1-.5*(risky+cash)*cost_rate
-                weights=new_weights
-            current_month=month
-        rows.append({"date":session,"Gamma-6":nav})
-        previous_date=session
-    return pd.DataFrame(rows)
+    sesiones=panel.index[panel.index>=pd.Timestamp(start)]
+    return nav_corrido(panel,sesiones,"M",lambda f: dict(zip(*[gamma6(prices,universe,f)[0][c] for c in ("ticker","target_weight")])),cost_rate,"Gamma-6")
 
 
 def delta12_historical_nav(prices: pd.DataFrame, universe: pd.DataFrame, start: pd.Timestamp, end: pd.Timestamp, cost_rate: float = .001785) -> pd.DataFrame:
-    """Reconstruct Delta-12 2.1.0 using only information available at each monthly review."""
+    """Reconstruye Delta-12 con la política escrita: los pesos corren.
+
+    Antes calculaba con el peso constante, que es la aritmética de una cartera
+    rebalanceada a diario y gratis. Ver `src/nav_historico.py` y
+    `POLITICA_REBALANCEO.md`.
+    """
     local=set(universe.loc[universe.tipo=="accion_local","alphadata_ticker"])
     panel=prices.loc[prices.alphadata_ticker.isin(local)&prices.date.between(start-pd.Timedelta(days=400),end)].pivot(index="date",columns="alphadata_ticker",values="adjusted_close").sort_index().ffill(limit=3)
-    sessions=panel.index[panel.index>=pd.Timestamp(start)]
-    if len(sessions)==0:
-        return pd.DataFrame(columns=["date","Delta-12"])
-    weights: dict[str,float]={}; nav=100.; rows=[]
-    previous_date=None; current_month=None
-    for session in sessions:
-        if previous_date is None:
-            rows.append({"date":session,"Delta-12":nav}); previous_date=session; current_month=session.to_period("M"); continue
-        day_return=0.
-        for ticker,weight in weights.items():
-            if ticker in panel and pd.notna(panel.at[previous_date,ticker]) and pd.notna(panel.at[session,ticker]) and panel.at[previous_date,ticker]>0:
-                day_return+=weight*(panel.at[session,ticker]/panel.at[previous_date,ticker]-1)
-        nav*=1+day_return
-        month=session.to_period("M")
-        if month!=current_month:
-            review_dates=panel.index[panel.index<session]
-            if len(review_dates):
-                portfolio,_=delta12(prices,universe,pd.Timestamp(review_dates[-1]))
-                new_weights=dict(zip(portfolio.ticker,portfolio.target_weight))
-                risky=sum(abs(new_weights.get(t,0)-weights.get(t,0)) for t in set(weights)|set(new_weights))
-                cash=abs((1-sum(new_weights.values()))-(1-sum(weights.values())))
-                nav*=1-.5*(risky+cash)*cost_rate
-                weights=new_weights
-            current_month=month
-        rows.append({"date":session,"Delta-12":nav})
-        previous_date=session
-    return pd.DataFrame(rows)
+    sesiones=panel.index[panel.index>=pd.Timestamp(start)]
+    return nav_corrido(panel,sesiones,"M",lambda f: dict(zip(*[delta12(prices,universe,f)[0][c] for c in ("ticker","target_weight")])),cost_rate,"Delta-12")
+
+
+def sigma6_historical_nav(valid: pd.DataFrame, prices: pd.DataFrame, universe: pd.DataFrame, start: pd.Timestamp, end: pd.Timestamp, cost_rate: float = .001785, exigir_sma200: bool = False) -> pd.DataFrame:
+    """Reconstruye Sigma-6 semanal con los pesos corriendo.
+
+    No existía: la serie de Sigma-6 venía congelada en
+    `data/reconstruccion_historica.csv` desde antes del reinicio. Sin ella, las
+    otras dos cambiaban de aritmética y Sigma-6 se quedaba con la vieja.
+    """
+    locales=set(universe.loc[universe.tipo.isin({"accion_local","accion_sigma"}),"alphadata_ticker"])
+    panel=prices.loc[prices.alphadata_ticker.isin(locales)&prices.date.between(start-pd.Timedelta(days=400),end)].pivot(index="date",columns="alphadata_ticker",values="adjusted_close").sort_index().ffill(limit=3)
+    sesiones=panel.index[panel.index>=pd.Timestamp(start)]
+    estado={"sigma_entries":{}}
+    def elegir(f):
+        nonlocal estado
+        cartera,_,estado=sigma6(valid,prices.loc[prices.date<=f],f,estado,exigir_sma200=exigir_sma200)
+        return dict(zip(cartera.ticker,cartera.target_weight))
+    return nav_corrido(panel,sesiones,"W-FRI",elegir,cost_rate,"Sigma-6")
 
 
 def combined_equal_weight(frame: pd.DataFrame, columns: list[str], date_column: str = "date", freq: str = "M") -> pd.Series:

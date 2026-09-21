@@ -13,7 +13,7 @@ from src.ingest_recommendations import ingest
 from src.libro import abiertas as libro_abiertas, anotar, cargar as cargar_libro, guardar as guardar_libro, movimientos_de, precios_de_entrada
 from src.strategy_registry import validate_registry
 from src.reporting_public import build_public_report
-from src.strategy_engine import TOPE_TENENCIA_SIGMA, ORO_TICKER, RECOMMENDATION_COLUMNS, combined_equal_weight, delta12, delta12_historical_nav, gamma6, gamma6_historical_nav, movements, oro, oro_historical_nav, reconstruct_entry_dates, sigma6, to_clp, validate_recommendations
+from src.strategy_engine import TOPE_TENENCIA_SIGMA, ORO_TICKER, RECOMMENDATION_COLUMNS, combined_equal_weight, delta12, delta12_historical_nav, gamma6, gamma6_historical_nav, movements, sigma6_historical_nav, oro, oro_historical_nav, reconstruct_entry_dates, sigma6, to_clp, validate_recommendations
 
 ROOT=Path(__file__).resolve().parents[1]; DATA=ROOT/'data'; REPORTS=ROOT/'reports'; STATE=DATA/'strategy_state.json'; NAV=DATA/'strategy_nav.csv'
 US_COST_RATE=.001  # spread de Trii para acciones de EE.UU. (0,1% por lado)
@@ -430,6 +430,11 @@ def main()->None:
         if len(rebuilt):
             values=rebuilt.set_index('date')['Delta-12']
             historical['Delta-12']=historical.date.map(values)
+        # Sigma-6 también se reconstruye: sin esto, las otras dos cambiaban de
+        # aritmética y Sigma-6 se quedaba con la serie vieja, de peso constante.
+        sigma_rebuilt=sigma6_historical_nav(valid,prices,universe,historical.date.min(),historical.date.max())
+        if len(sigma_rebuilt):
+            historical['Sigma-6']=historical.date.map(sigma_rebuilt.set_index('date')['Sigma-6']).ffill()
         gamma_rebuilt=gamma6_historical_nav(prices_us,universe,fx,historical.date.min(),historical.date.max(),US_COST_RATE)
         if len(gamma_rebuilt):
             gamma_values=gamma_rebuilt.set_index('date')['Gamma-6']
