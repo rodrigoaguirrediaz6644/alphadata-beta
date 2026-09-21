@@ -10,13 +10,14 @@ import pandas as pd
 
 from src.fetch_prices import load_universe, operables
 from src.ingest_recommendations import ingest
-from src.libro import abiertas as libro_abiertas, anotar, cargar as cargar_libro, guardar as guardar_libro
+from src.libro import abiertas as libro_abiertas, anotar, cargar as cargar_libro, guardar as guardar_libro, movimientos_de, precios_de_entrada
 from src.strategy_registry import validate_registry
 from src.reporting_public import build_public_report
 from src.strategy_engine import ORO_TICKER, RECOMMENDATION_COLUMNS, combined_equal_weight, delta12, delta12_historical_nav, gamma6, gamma6_historical_nav, movements, oro, oro_historical_nav, reconstruct_entry_dates, sigma6, to_clp, validate_recommendations
 
 ROOT=Path(__file__).resolve().parents[1]; DATA=ROOT/'data'; REPORTS=ROOT/'reports'; STATE=DATA/'strategy_state.json'; NAV=DATA/'strategy_nav.csv'
 US_COST_RATE=.001  # spread de Trii para acciones de EE.UU. (0,1% por lado)
+CONFIG=ROOT/'config'/'runtime.v2.json'
 GAMMA_RULE_VERSION='1.0.0'
 STRATEGY_SERIES=['Sigma-6','Delta-12','Gamma-6','Oro']
 CONJUNTO='Conjunto AlphaData'
@@ -38,7 +39,9 @@ def portfolio_return(prices:pd.DataFrame,weights:list[dict],start:pd.Timestamp,e
         if t in matrix and pd.notna(a.iloc[0][t]) and pd.notna(z.iloc[0][t]) and a.iloc[0][t]>0: total+=w*(z.iloc[0][t]/a.iloc[0][t]-1)
     return total
 
-def enrich_open_positions(portfolio: pd.DataFrame, prices: pd.DataFrame, as_of: pd.Timestamp, buy_cost: float = .001785) -> pd.DataFrame:
+def enrich_open_positions(portfolio: pd.DataFrame, prices: pd.DataFrame, as_of: pd.Timestamp, buy_cost: float = .001785,
+                          precios_anotados: dict[str, float] | None = None,
+                          dividendos: pd.DataFrame | None = None) -> pd.DataFrame:
     """Precios de entrada y de hoy, y la variación entre ambos.
 
     Tres decisiones de cálculo que conviene no deshacer:
@@ -57,16 +60,29 @@ def enrich_open_positions(portfolio: pd.DataFrame, prices: pd.DataFrame, as_of: 
     el rendimiento de la estrategia no cuadran exactamente, y es por diseño:
     son dos mediciones distintas, como en cualquier cartola.
 
-    De ahí sale `con_dividendo`: cuando entre los dos cierres crudos hubo un
-    dividendo, la variación no se puede verificar con los dos precios a la
-    vista y hay que decirlo. VAPORES muestra $48,89 de entrada, $48,30 hoy y
-    +12,9%, y sin la marca eso se lee como un error de cálculo. Son nueve de
-    las veinte posiciones abiertas: el caso normal, no el excepcional.
+De ahí salen las dos últimas columnas. Cuando entre los dos cierres crudos
+    hubo un dividendo, la variación no se puede verificar con los dos precios a
+    la vista: VAPORES muestra $48,89 de entrada, $48,30 hoy y +12,9%. Son nueve
+    de las veinte posiciones abiertas, el caso normal y no el excepcional, así
+    que en vez de una marca va el monto: `dividendos_clp`, sumado de
+    `data/dividendos.csv` sobre la ventana de tenencia. Son pesos que llegaron
+    a la cuenta y se pueden contrastar con el aviso de la empresa.
+
+    La tabla sólo tiene instrumentos chilenos. Una posición estadounidense
+    cuyo ajustado se movió sin dividendo itemizado queda con `con_dividendo` y
+    sin monto, que es lo que corresponde decir mientras no exista esa tabla.
+
+    `precios_anotados` es el precio de entrada que el libro guardó al abrir la
+    posición. Sin él el precio mostrado se recalcula en cada corrida desde la
+    serie, y una corrección de un precio pasado lo mueve: en una copia de
+    trabajo con febrero alterado, ITAUCL pasaba de $20.900 a $8.360.
     """
     result = portfolio.copy()
     for column in ["entry_price", "current_price", "open_return"]:
         result[column] = pd.NA
     result["con_dividendo"] = False
+    result["dividendos_clp"] = pd.NA
+    precios_anotados = precios_anotados or {}
     for index, row in result.iterrows():
         opened_at = pd.to_datetime(row.get("opened_at"), errors="coerce")
         series = prices.loc[
@@ -81,14 +97,28 @@ def enrich_open_positions(portfolio: pd.DataFrame, prices: pd.DataFrame, as_of: 
         current = series.tail(1)
         if entry.empty or current.empty or float(entry.adjusted_close.iloc[0]) <= 0:
             continue
-        result.at[index, "entry_price"] = float(entry.close.iloc[0])
+        result.at[index, "entry_price"] = float(precios_anotados.get(row["ticker"], entry.close.iloc[0]))
         result.at[index, "current_price"] = float(current.close.iloc[0])
         ajustada = (float(current.adjusted_close.iloc[0])
                     / float(entry.adjusted_close.iloc[0]) - 1)
         result.at[index, "open_return"] = ajustada
         cruda = float(current.close.iloc[0]) / float(entry.close.iloc[0]) - 1
-        result.at[index, "con_dividendo"] = bool(abs(ajustada - cruda) > 5e-4)
+        hubo = bool(abs(ajustada - cruda) > 5e-4)
+        cobrados = _dividendos_cobrados(dividendos, row["ticker"],
+                                        pd.Timestamp(entry.date.iloc[0]), pd.Timestamp(current.date.iloc[0]))
+        result.at[index, "dividendos_clp"] = cobrados if cobrados is not None else pd.NA
+        result.at[index, "con_dividendo"] = hubo and cobrados is None
     return result
+
+
+def _dividendos_cobrados(dividendos: pd.DataFrame | None, ticker: str,
+                         desde: pd.Timestamp, hasta: pd.Timestamp) -> float | None:
+    """Los pesos por acción que se repartieron mientras la posición estuvo abierta."""
+    if dividendos is None or dividendos.empty:
+        return None
+    fechas = pd.to_datetime(dividendos.fecha_ex, errors="coerce")
+    dentro = dividendos.loc[(dividendos.alphadata_ticker == ticker) & (fechas > desde) & (fechas <= hasta)]
+    return float(dentro.monto.sum()) if len(dentro) else None
 
 
 def movements_for_report(current: pd.DataFrame, previous_path: Path) -> pd.DataFrame:
@@ -318,10 +348,17 @@ def main()->None:
         reinicio['primera_corrida']=piso; state['reinicio']=reinicio
         for clave in ('sigma_entries','delta_entries','gamma_entries','oro_entries'):
             state[clave]={t:max(f,piso) for t,f in state.get(clave,{}).items()}
-    sigma=enrich_open_positions(sigma,prices,as_of)
-    delta=enrich_open_positions(delta,prices,as_of)
-    gamma=enrich_open_positions(gamma,prices_us_clp,as_of,buy_cost=US_COST_RATE)
-    oro_portfolio=enrich_open_positions(oro_portfolio,prices_oro_clp,as_of,buy_cost=US_COST_RATE)
+    dividendos=pd.read_csv(DATA/'dividendos.csv') if (DATA/'dividendos.csv').exists() else None
+    sigma=enrich_open_positions(sigma,prices,as_of,precios_anotados=precios_de_entrada(libro,'Sigma-6'),dividendos=dividendos)
+    delta=enrich_open_positions(delta,prices,as_of,precios_anotados=precios_de_entrada(libro,'Delta-12'),dividendos=dividendos)
+    gamma=enrich_open_positions(gamma,prices_us_clp,as_of,buy_cost=US_COST_RATE,precios_anotados=precios_de_entrada(libro,'Gamma-6'),dividendos=dividendos)
+    oro_portfolio=enrich_open_positions(oro_portfolio,prices_oro_clp,as_of,buy_cost=US_COST_RATE,precios_anotados=precios_de_entrada(libro,'Oro'),dividendos=dividendos)
+    # Cuántos pesos es cada posición, con el capital de la configuración.
+    capital=json.loads(CONFIG.read_text(encoding='utf-8')).get('capital',{})
+    por_pieza=float(capital.get('total_clp',0))/len(STRATEGY_SERIES)
+    for cartera in (sigma,delta,gamma,oro_portfolio):
+        if len(cartera): cartera['monto_clp']=(cartera.target_weight.astype(float)*por_pieza).round()
+    movimientos_libro=movimientos_de(libro,{'Sigma-6':as_of,'Delta-12':delta_cutoff,'Gamma-6':gamma_cutoff,'Oro':as_of})
     smove=movements_for_report(movements(old_sigma,sigma),DATA/'movements_sigma6.csv')
     dmove=movements_for_report(movements(old_delta,delta),DATA/'movements_delta12.csv')
     gmove=movements_for_report(movements(old_gamma,gamma),DATA/'movements_gamma6.csv')
@@ -359,7 +396,7 @@ def main()->None:
         historical_combined=combined_equal_weight(historical,STRATEGY_SERIES)
         if len(historical_combined): historical[CONJUNTO]=historical.date.map(historical_combined)
         historical.to_csv(historical_path,index=False)
-    md,html=build_public_report(as_of,sigma,delta,smove,dmove,coverage,errors,history,gamma=gamma,gamma_moves=gmove,oro=oro_portfolio,oro_moves=omove);(REPORTS/'latest_report.md').write_text(md,encoding='utf-8');(REPORTS/'latest_report.html').write_text(html,encoding='utf-8')
+    md,html=build_public_report(as_of,sigma,delta,smove,dmove,coverage,errors,history,gamma=gamma,gamma_moves=gmove,oro=oro_portfolio,oro_moves=omove,movimientos=movimientos_libro,capital_por_pieza=por_pieza);(REPORTS/'latest_report.md').write_text(md,encoding='utf-8');(REPORTS/'latest_report.html').write_text(html,encoding='utf-8')
     sigma.to_csv(DATA/'portfolio_sigma6.csv',index=False);delta.to_csv(DATA/'portfolio_delta12.csv',index=False);gamma.to_csv(DATA/'portfolio_gamma6.csv',index=False);oro_portfolio.to_csv(DATA/'portfolio_oro.csv',index=False)
     s_audit.to_csv(DATA/'audit_sigma6.csv',index=False);d_audit.to_csv(DATA/'audit_delta12.csv',index=False)
     if len(g_audit): g_audit.to_csv(DATA/'audit_gamma6.csv',index=False)

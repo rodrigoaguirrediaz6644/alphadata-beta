@@ -52,5 +52,10 @@
       "GAMMA6",
       "ORO"
     ]
+  },
+  "capital": {
+    "total_clp": 20000000,
+    "reparto": "equal_per_strategy",
+    "nota": "Capital de referencia del suscriptor. Se reparte en cuartos entre las cuatro piezas y, dentro de cada pieza, segun target_weight. Sigma-6 deja en caja lo que no alcanza a ponderar. No lo escriba a mano en el codigo: el informe lo lee de aca."
   }
 }

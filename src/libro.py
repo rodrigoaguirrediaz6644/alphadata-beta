@@ -78,6 +78,56 @@ def anotar(libro: pd.DataFrame, estrategia: str, cartera: pd.DataFrame,
     return libro[COLUMNAS], movimientos
 
 
+def movimientos_de(libro: pd.DataFrame, fechas_senal: dict[str, pd.Timestamp]) -> pd.DataFrame:
+    """Lo que se abrió y se cerró en la fecha de señal vigente de cada estrategia.
+
+    Es la única fuente del bloque de movimientos del informe. Antes salía de
+    comparar la cartera publicada con la anterior, y eso confundía dos cosas:
+    lo que cambió esta semana y lo que hay que comprar para entrar hoy. Tras
+    el reinicio el informe decía «Comprar INTC» en la misma página en que la
+    tabla decía «comprada el 30-09-2025».
+
+    La mayoría de las semanas esto viene vacío, porque tres de las cuatro
+    piezas son mensuales. Un bloque vacío se lee como informe roto, así que
+    quien lo dibuje tiene que decirlo con todas sus letras.
+    """
+    filas = []
+    for estrategia, fecha in fechas_senal.items():
+        if fecha is None or pd.isna(fecha):
+            continue
+        fecha = pd.Timestamp(fecha)
+        de_la_estrategia = libro.loc[libro.estrategia == estrategia] if len(libro) else libro
+        for _, fila in de_la_estrategia.iterrows():
+            if pd.notna(fila.fecha_salida) and pd.Timestamp(fila.fecha_salida) == fecha:
+                filas.append({"estrategia": estrategia, "instrumento": fila.instrumento,
+                              "accion": "VENDER", "fecha": fecha})
+            elif pd.isna(fila.fecha_salida) and pd.Timestamp(fila.fecha_entrada) == fecha:
+                filas.append({"estrategia": estrategia, "instrumento": fila.instrumento,
+                              "accion": "COMPRAR", "fecha": fecha})
+    columnas = ["estrategia", "instrumento", "accion", "fecha"]
+    if not filas:
+        return pd.DataFrame(columns=columnas)
+    return pd.DataFrame(filas)[columnas].sort_values(["estrategia", "accion", "instrumento"])
+
+
+def precios_de_entrada(libro: pd.DataFrame, estrategia: str) -> dict[str, float]:
+    """El precio anotado al abrir, que no vuelve a calcularse.
+
+    La fecha ya estaba protegida por el libro; el precio no lo estaba. En una
+    copia de trabajo con veinte ruedas de febrero alteradas, el informe pasaba
+    de mostrar ITAUCL a $20.900 y +22,9% a mostrarlo a $8.360 y +207,3%. Lo
+    que se pagó es un hecho y no se recalcula.
+
+    La variación sí sigue saliendo de la serie ajustada, a propósito: si
+    mañana se corrige un dividendo mal fechado, ese número tiene que moverse.
+    """
+    if libro.empty:
+        return {}
+    vivas = libro.loc[(libro.estrategia == estrategia) & libro.fecha_salida.isna()]
+    vivas = vivas.loc[vivas.precio_entrada.notna()]
+    return dict(zip(vivas.instrumento, vivas.precio_entrada.astype(float)))
+
+
 def guardar(libro: pd.DataFrame, ruta: str | Path) -> None:
     libro.sort_values(["estrategia", "fecha_entrada", "instrumento"]).to_csv(
         ruta, index=False, date_format="%Y-%m-%d")
