@@ -301,12 +301,18 @@ def main() -> None:
     pendientes_path = DATA_DIR / "dividendos_pendientes.csv"
     if pendientes_path.exists():
         pendientes = pd.read_csv(pendientes_path, parse_dates=["fecha_declarada"])
+        # Sólo bloquean los que **pueden** confirmarse. Un dividendo pequeño cae
+        # en la banda donde el precio no informa —100% de falsos positivos en la
+        # prueba nula— así que nunca se confirmaría, y bloquear por él dejaría
+        # la corrida detenida para siempre sin salida posible. Esos entran a la
+        # tabla por convención el mismo día que se detectan.
         viejos = pendientes.loc[pendientes.fecha_declarada < pd.Timestamp.now().normalize() - pd.Timedelta(days=15)]
         if len(viejos):
             detalle = ", ".join(f"{r.alphadata_ticker} {r.fecha_declarada:%d-%m-%Y}" for r in viejos.itertuples())
-            raise SystemExit(f"Hay {len(viejos)} dividendos detectados y sin confirmar desde hace más de quince días "
-                             f"({detalle}). Desde su fecha ex el cierre ajustado de esos papeles está mal y lo sabemos. "
-                             "Correr tools/construir_dividendos antes de calcular.")
+            raise SystemExit(f"Hay {len(viejos)} dividendos grandes detectados y sin confirmar desde hace más de "
+                             f"quince días ({detalle}). Son de los que el precio sí puede confirmar, así que si no "
+                             "calzan hay algo raro: desde su fecha ex el cierre ajustado de esos papeles está mal. "
+                             "Revisar a mano antes de calcular.")
     alarma_adr = adr_contra_local(daily)
     if len(alarma_adr):
         detalle = "; ".join(f"{r.adr} se movió {r.movimiento_adr:.1%} y {r.local} no se movió nada" for r in alarma_adr.itertuples())

@@ -67,6 +67,70 @@ los dos.
   para esa fecha. No ajusta nada; impide que la tabla manual se quede atrás sin
   que nadie se entere, que es el riesgo real de anotar a mano.
 
+## La prueba nula: el verificador no verificaba
+
+El confirmador busca, en una ventana de hasta nueve ruedas alrededor de la
+fecha declarada, el día cuya caída coincide con el monto. Sobre una serie
+ruidosa eso encuentra algo casi siempre. Medido: 1.480 fechas **sin dividendo**,
+con los montos reales de cada papel y la misma ventana.
+
+| tamaño del dividendo, en tolerancias | n | "confirmados" sin existir |
+|---|---|---|
+| menor a 0,5 | 529 | **100,0%** |
+| 0,5 a 1 | 393 | **99,7%** |
+| 1 a 2 | 375 | 74,7% |
+| 2 a 4 | 180 | 6,1% |
+| mayor a 4 | 3 | 0,0% |
+
+**81,9% de falsos positivos en total**, y de los 134 dividendos de la tabla, 92
+caían en las bandas donde el método confirma cualquier cosa.
+
+### Los dos regímenes
+
+- **Confirmada por el precio**: tamaño mayor a 2 tolerancias. Siete
+  dividendos, y son justamente los que producían los artefactos visibles.
+- **Fecha por convención**: los demás, fechados 5 ruedas antes de la declarada.
+  Ese 5 sale de medir el desfase donde sí es verificable —mediana 5, cuartiles
+  4 y 5— y mejora sobre el proveedor, que tiene la misma mediana pero disperso
+  entre −2 y +9.
+
+No aplicar los pequeños no era opción: suman una mediana de 3,60% por
+instrumento en dos años, con máximo de 7,74%.
+
+La columna `origen` de la tabla dice cuál es cuál. Siete verificadas y 127
+asumidas es una descripción honesta; "134 confirmadas" no lo era.
+
+## Cuánto importó tener mal esa columna
+
+Se volvieron a correr las selecciones con el ajustado del proveedor y con el
+derivado, en la ventana 06-2025 a 09-2026, que es donde la tabla cubre la
+ventana completa del momentum 12-1:
+
+| | revisiones | con cartera distinta |
+|---|---|---|
+| Delta-12 (mensual) | 16 | **7 — 44%** |
+| Sigma-6 (semanal) | 68 | **14 — 21%** |
+
+Delta-12 cambia uno o dos nombres en siete de dieciséis revisiones: entra CHILE
+y sale ENELCHILE, entra COLBUN y sale AGUAS-A, entran BSANTANDER y LTM y salen
+CHILE y ECL. **El defecto no era inocuo.**
+
+### Pero eso no prueba que la columna nueva sea la correcta
+
+Sólo cuatro instrumentos de cuarenta tienen algún dividendo verificado contra
+el precio: BSANTANDER, CHILE, QUINENCO y VAPORES. La mayoría de los cambios de
+cartera involucra papeles cuyas fechas son **asumidas por convención**:
+ENELCHILE, COLBUN, AGUAS-A, ANDINA-B, LTM, ECL, SQM-B, COPEC.
+
+O sea, el 44% mide cuánto depende la cartera de esta columna, no cuánto
+mejoró. Lo que sí se sabe: la columna anterior estaba demostrablemente mal en
+los siete casos verificables, y la nueva está bien en esos siete. Para el
+resto, la nueva está mejor razonada y sigue sin estar verificada.
+
+Lo que cerraría esto es una fuente de dividendos con fecha ex publicada —la
+empresa o la bolsa— contra la cual confirmar las 127. Es el camino manual que
+el diseño ya contempla.
+
 ## Lo que falta
 
 La tabla en sí. La derivación entrega candidatos, no una tabla: de los 58

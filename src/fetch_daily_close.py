@@ -32,7 +32,7 @@ from typing import Callable
 import pandas as pd
 
 from src.fetch_prices import PRICE_COLUMNS, _ajustar_chilenos, load_universe, operables
-from src.dividendos import descargar_eventos, detectar_nuevos
+from src.dividendos import COLUMNAS_TABLA, descargar_eventos, detectar_nuevos, localizar_fecha_ex
 from src.guards import ruedas_faltantes
 from src.price_store import agregar
 
@@ -152,37 +152,73 @@ def capturar(universe: pd.DataFrame, descargar: Callable[[str], dict] = _descarg
             pd.DataFrame(incidencias, columns=["alphadata_ticker", "motivo"]))
 
 
-def vigilar_dividendos(universe: pd.DataFrame) -> pd.DataFrame:
-    """Compara los eventos del proveedor contra la tabla y anota los nuevos.
+def vigilar_dividendos(universe: pd.DataFrame, precios: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Incorpora lo que se puede resolver hoy y deja pendiente sólo lo demás.
 
-    No los incorpora: los deja en `data/dividendos_pendientes.csv` para que se
-    confirmen con `tools/construir_dividendos`. La corrida oficial se niega a
-    calcular si alguno lleva demasiado tiempo pendiente, porque desde la fecha
-    ex el cierre ajustado de ese papel está mal y lo sabemos.
+    Sin esto la tabla nace correcta y se degrada sola: el próximo reparto de
+    cualquiera de los cuarenta instrumentos produciría un ajustado equivocado
+    en silencio.
+
+    El reparto entre incorporar y dejar pendiente **no es discrecional**, sale
+    del mismo criterio que la tabla histórica:
+
+    - Un dividendo **pequeño** no se puede confirmar con el precio: la prueba
+      nula da 100% de falsos positivos en su banda. No tiene sentido dejarlo
+      esperando una confirmación que no va a llegar nunca, así que entra de
+      inmediato con la fecha por convención, exactamente como los 127
+      históricos.
+    - Un dividendo **grande** sí se puede confirmar, pero necesita que la rueda
+      ex ya haya ocurrido y esté descargada. Mientras no calce queda pendiente,
+      y se reintenta **cada día**: se resuelve solo en cuanto llegue el precio.
+
+    Si no se distinguieran, el primer dividendo chico que repartiera cualquier
+    papel dejaría la corrida bloqueada para siempre, esperando una confirmación
+    imposible.
     """
-    tabla_path, pendientes_path = DATA / "dividendos.csv", DATA / "dividendos_pendientes.csv"
-    tabla = pd.read_csv(tabla_path) if tabla_path.exists() else pd.DataFrame()
-    pendientes = pd.read_csv(pendientes_path) if pendientes_path.exists() else pd.DataFrame()
-    desde = pd.Timestamp.now(tz="UTC").tz_localize(None) - pd.Timedelta(days=120)
-    hasta = pd.Timestamp.now(tz="UTC").tz_localize(None) + pd.Timedelta(days=30)
-    nuevos = []
-    for item in operables(universe).loc[lambda u: u.tipo.isin(TIPOS_LOCALES)].itertuples(index=False):
+    tabla_path = DATA / "dividendos.csv"
+    pendientes_path = DATA / "dividendos_pendientes.csv"
+    tabla = pd.read_csv(tabla_path, parse_dates=["fecha_ex", "fecha_declarada"]) if tabla_path.exists() else pd.DataFrame(columns=COLUMNAS_TABLA)
+    pendientes = pd.read_csv(pendientes_path, parse_dates=["fecha_declarada"]) if pendientes_path.exists() else pd.DataFrame(columns=["alphadata_ticker", "fecha_declarada", "monto", "detectado"])
+    ahora = pd.Timestamp.now(tz="UTC").tz_localize(None)
+    locales = operables(universe).loc[lambda u: u.tipo.isin(TIPOS_LOCALES)]
+
+    candidatos: list[dict] = []
+    for item in locales.itertuples(index=False):
         try:
-            eventos = descargar_eventos(item.yahoo_ticker, desde, hasta)
+            eventos = descargar_eventos(item.yahoo_ticker, ahora - pd.Timedelta(days=120), ahora + pd.Timedelta(days=30))
         except Exception:
             continue
-        for evento in detectar_nuevos(tabla, pendientes, eventos, item.alphadata_ticker):
-            nuevos.append({"alphadata_ticker": item.alphadata_ticker, **evento,
-                           "detectado": pd.Timestamp.now(tz="UTC").date().isoformat()})
+        for evento in detectar_nuevos(tabla, pd.DataFrame(), eventos, item.alphadata_ticker):
+            candidatos.append({"alphadata_ticker": item.alphadata_ticker, **evento})
         time.sleep(.2)
-    if not nuevos:
-        return pendientes
-    salida = pd.concat([pendientes, pd.DataFrame(nuevos)], ignore_index=True)
-    salida.to_csv(pendientes_path, index=False, date_format="%Y-%m-%d")
-    detalle = ", ".join(f"{n['alphadata_ticker']} {pd.Timestamp(n['fecha_declarada']):%d-%m-%Y}" for n in nuevos)
-    print(f"ADVERTENCIA: {len(nuevos)} dividendos nuevos sin confirmar ({detalle}). "
-          "Correr tools/construir_dividendos antes de la próxima corrida oficial.")
-    return salida
+    # Los que ya estaban pendientes se reintentan: puede que hoy sí calcen.
+    for fila in pendientes.itertuples(index=False):
+        candidatos.append({"alphadata_ticker": fila.alphadata_ticker, "monto": float(fila.monto),
+                           "fecha_declarada": pd.Timestamp(fila.fecha_declarada)})
+
+    incorporados, siguen_pendientes = [], []
+    for candidato in candidatos:
+        serie = precios.loc[precios.alphadata_ticker == candidato["alphadata_ticker"]].set_index("date")["close"]
+        calce = localizar_fecha_ex(serie, candidato["fecha_declarada"], candidato["monto"])
+        if calce is not None and not calce["rechazado"]:
+            incorporados.append({**{k: v for k, v in calce.items() if k != "rechazado"}, **candidato})
+        else:
+            siguen_pendientes.append({**candidato, "detectado": ahora.date().isoformat()})
+
+    if incorporados:
+        tabla = pd.concat([tabla, pd.DataFrame(incorporados)], ignore_index=True)
+        tabla = tabla.drop_duplicates(["alphadata_ticker", "fecha_declarada"], keep="last")
+        tabla.sort_values(["alphadata_ticker", "fecha_ex"])[COLUMNAS_TABLA].to_csv(
+            tabla_path, index=False, date_format="%Y-%m-%d")
+        detalle = ", ".join(f"{i['alphadata_ticker']} {pd.Timestamp(i['fecha_ex']):%d-%m-%Y}" for i in incorporados)
+        print(f"Dividendos incorporados a la tabla: {len(incorporados)} ({detalle}).")
+    nueva = pd.DataFrame(siguen_pendientes, columns=["alphadata_ticker", "fecha_declarada", "monto", "detectado"])
+    nueva.to_csv(pendientes_path, index=False, date_format="%Y-%m-%d")
+    if len(nueva):
+        detalle = ", ".join(f"{r.alphadata_ticker} {pd.Timestamp(r.fecha_declarada):%d-%m-%Y}" for r in nueva.itertuples())
+        print(f"ADVERTENCIA: {len(nueva)} dividendos grandes sin confirmar todavía ({detalle}). "
+              "Se reintentan cada día; si persisten, revisar a mano.")
+    return tabla, nueva
 
 
 def main() -> None:
@@ -220,7 +256,7 @@ def main() -> None:
         print("ADVERTENCIA: ruedas en que el ADR testigo operó y no hay cierre local grabado: "
               + ", ".join(f"{d:%d-%m-%Y}" for d in faltantes)
               + ". Si no son feriados chilenos, hay que rellenarlas a mano.")
-    vigilar_dividendos(universe)
+    vigilar_dividendos(universe, resultado)
     (DATA / "ultima_captura_diaria.json").write_text(json.dumps({
         "ejecutada_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "ruedas": fechas, "leidos": int(len(capturadas)), "agregados": int(agregadas),
