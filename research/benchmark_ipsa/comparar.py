@@ -27,7 +27,7 @@ def metricas(serie: pd.Series) -> dict:
 
 def main(ruta: str) -> int:
     indice = leer(ruta)
-    nav = pd.read_csv(ROOT / "data" / "historical_model_nav.csv", parse_dates=["date"]).set_index("date")
+    nav = pd.read_csv(ROOT / "data" / "reconstruccion_historica.csv", parse_dates=["date"]).set_index("date")
     base, fin = nav.index.min(), nav.index.max()
     tramo = indice.loc[:fin]
     if indice.loc[:base].empty or tramo.empty:

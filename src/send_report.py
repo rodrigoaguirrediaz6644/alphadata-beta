@@ -23,9 +23,13 @@ def main() -> None:
     msg.set_content(md)
     msg.add_alternative(html, subtype="html")
     html_part = msg.get_payload()[-1]
-    chart = ROOT / "reports" / "historical_performance.png"
-    if chart.exists():
-        html_part.add_related(chart.read_bytes(), maintype="image", subtype="png", cid="<historical_performance>", filename=chart.name)
+    # El informe lleva dos gráficos separados: el seguimiento en vivo y la
+    # reconstrucción. Son series distintas y van como imágenes distintas.
+    for nombre in ("seguimiento_vivo.png", "reconstruccion.png"):
+        grafico = ROOT / "reports" / nombre
+        if grafico.exists():
+            html_part.add_related(grafico.read_bytes(), maintype="image", subtype="png",
+                                  cid=f"<{Path(nombre).stem}>", filename=nombre)
     with smtplib.SMTP(os.environ["SMTP_HOST"], int(os.getenv("SMTP_PORT", "587"))) as smtp:
         smtp.starttls()
         smtp.login(os.environ["SMTP_USER"], os.environ["SMTP_PASSWORD"])

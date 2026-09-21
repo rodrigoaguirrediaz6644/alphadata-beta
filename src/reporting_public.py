@@ -20,7 +20,7 @@ QUE_INVIERTE = {
     "Oro": "Oro, como seguro del conjunto",
     BENCHMARK: "La bolsa chilena completa",
 }
-HISTORICAL = ROOT / "data" / "historical_model_nav.csv"
+HISTORICAL = ROOT / "data" / "reconstruccion_historica.csv"
 
 
 def pct(value: float | None, digits: int = 1) -> str:
@@ -76,72 +76,81 @@ def _series_metrics(frame: pd.DataFrame) -> dict[str, dict]:
     return {name: _metrics(frame[name], frame["date"]) if name in frame else _metrics(pd.Series(dtype=float), pd.Series(dtype=float)) for name in SERIES}
 
 
-def chart_frame(history: pd.DataFrame, historical_path: Path = HISTORICAL, benchmark_usable: bool = True) -> pd.DataFrame:
-    """Encadena la reconstrucción histórica con el seguimiento vivo.
-
-    La reconstrucción termina el día anterior a la puesta en marcha y el
-    seguimiento vivo arranca ese día siguiente en base 100. Dibujar sólo la
-    primera deja el gráfico congelado donde terminó la reconstrucción, que se
-    atrasa una semana por cada corrida; pegar la segunda sin escalar inventa un
-    desplome hasta 100. Cada serie viva se multiplica por el último valor
-    histórico, que es el mismo enganche que `combined_equal_weight` hace entre
-    un mes y el siguiente.
-
-    Se trabaja en memoria: `historical_model_nav.csv` es historial oficial ya
-    publicado y no se reescribe desde aquí.
-    """
-    names = [name for name in SERIES if name != BENCHMARK or benchmark_usable]
-    live = history.copy()
-    live["date"] = pd.to_datetime(live["date"], errors="coerce")
-    live = live.dropna(subset=["date"]).sort_values("date").set_index("date")
-    live = live[[name for name in names if name in live]].apply(pd.to_numeric, errors="coerce")
-    if not Path(historical_path).exists() or live.empty:
-        return live.rename_axis("date").reset_index()
-    past = pd.read_csv(historical_path, parse_dates=["date"]).rename(columns={"IPSA Total Return": BENCHMARK}).sort_values("date").set_index("date")
-    past = past[[name for name in names if name in past]].apply(pd.to_numeric, errors="coerce")
-    past = past.loc[past.index < live.index.min()]
-    for name in live.columns:
-        base = past[name].dropna() if name in past else pd.Series(dtype=float)
-        if len(base):
-            live[name] = live[name] * base.iloc[-1] / 100
-    return pd.concat([past, live]).sort_index().rename_axis("date").reset_index()
-
-
-def _chart(frame: pd.DataFrame, benchmark_usable: bool = True) -> str:
-    """Dibuja la evolución de los últimos 5 años y devuelve el bloque HTML."""
-    data = chart_frame(frame, benchmark_usable=benchmark_usable)
-    names = [name for name in SERIES if name in data and pd.to_numeric(data[name], errors="coerce").notna().sum() > 1]
-    if len(data) < 2 or not names:
-        return '<p class="muted">El gráfico aparecerá cuando haya al menos dos fechas de seguimiento.</p>'
-    window = data.loc[data["date"] >= data["date"].max() - pd.DateOffset(years=5), ["date", *names]].copy()
-    normalized = window[names].apply(pd.to_numeric, errors="coerce")
-    for name in names:
-        valid = normalized[name].dropna()
-        normalized[name] = normalized[name] / valid.iloc[0] * 100 if len(valid) else np.nan
+def _dibujar(data: pd.DataFrame, nombres: list[str], titulo: str, archivo: str,
+             pie: str) -> str:
+    """Dibuja una serie de NAV y devuelve el bloque HTML."""
+    if len(data) < 2 or not nombres:
+        return ""
+    ventana = data.loc[data["date"] >= data["date"].max() - pd.DateOffset(years=5), ["date", *nombres]].copy()
+    normalizado = ventana[nombres].apply(pd.to_numeric, errors="coerce")
+    for nombre in nombres:
+        validos = normalizado[nombre].dropna()
+        normalizado[nombre] = normalizado[nombre] / validos.iloc[0] * 100 if len(validos) else np.nan
 
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
-    output = ROOT / "reports" / "historical_performance.png"
-    output.parent.mkdir(parents=True, exist_ok=True)
-    figure, axis = plt.subplots(figsize=(10, 4.6), dpi=150)
-    for name in names:
-        series = normalized[name]
-        width = 3.2 if name == CONJUNTO else 1.8
-        axis.plot(window["date"], series, label=name, color=COLORS[name], linewidth=width)
-        valid = series.dropna()
-        if len(valid):
-            axis.annotate(f"{valid.iloc[-1]:,.0f}".replace(",", "."), (window.loc[valid.index[-1], "date"], valid.iloc[-1]), xytext=(6, 0), textcoords="offset points", color=COLORS[name], weight="bold", va="center", fontsize=9)
-    axis.axhline(100, color="#98a2b3", linewidth=1, linestyle="--")
-    axis.set_title("Si hubieras puesto $100 hace 5 años, hoy tendrías…", loc="left", weight="bold")
-    axis.grid(True, color="#eceff3", linewidth=.7)
-    axis.spines[["top", "right"]].set_visible(False)
-    axis.legend(frameon=False, ncol=len(names), loc="upper left", fontsize=9)
-    figure.tight_layout()
-    figure.savefig(output, bbox_inches="tight", facecolor="white")
-    plt.close(figure)
-    return f'''<img src="cid:historical_performance" alt="Evolución de las estrategias en los últimos 5 años" style="display:block;width:100%;max-width:900px;height:auto">
-    <p class="muted">Desde {window.date.min():%m-%Y} hasta {window.date.max():%m-%Y}.</p>'''
+    salida = ROOT / "reports" / archivo
+    salida.parent.mkdir(parents=True, exist_ok=True)
+    figura, eje = plt.subplots(figsize=(10, 4.6), dpi=150)
+    for nombre in nombres:
+        serie = normalizado[nombre]
+        eje.plot(ventana["date"], serie, label=nombre, color=COLORS[nombre],
+                 linewidth=3.2 if nombre == CONJUNTO else 1.8)
+        validos = serie.dropna()
+        if len(validos):
+            eje.annotate(f"{validos.iloc[-1]:,.0f}".replace(",", "."),
+                         (ventana.loc[validos.index[-1], "date"], validos.iloc[-1]),
+                         xytext=(6, 0), textcoords="offset points", color=COLORS[nombre],
+                         weight="bold", va="center", fontsize=9)
+    eje.axhline(100, color="#98a2b3", linewidth=1, linestyle="--")
+    eje.set_title(titulo, loc="left", weight="bold")
+    eje.grid(True, color="#eceff3", linewidth=.7)
+    eje.spines[["top", "right"]].set_visible(False)
+    eje.legend(frameon=False, ncol=len(nombres), loc="upper left", fontsize=9)
+    figura.tight_layout()
+    figura.savefig(salida, bbox_inches="tight", facecolor="white")
+    plt.close(figura)
+    return (f'<img src="cid:{Path(archivo).stem}" alt="{titulo}" '
+            'style="display:block;width:100%;max-width:900px;height:auto">'
+            f'<p class="muted">{pie}</p>')
+
+
+def _series_presentes(data: pd.DataFrame) -> list[str]:
+    return [n for n in SERIES if n in data and pd.to_numeric(data[n], errors="coerce").notna().sum() > 1]
+
+
+def _chart(frame: pd.DataFrame, benchmark_usable: bool = True) -> str:
+    """Dos gráficos separados: el seguimiento en vivo y la reconstrucción.
+
+    **No se encadenan, y la separación es estructural y no visual.** Son dos
+    archivos distintos —`strategy_nav.csv` y `reconstruccion_historica.csv`—
+    que se leen por separado y se dibujan por separado. Antes se pegaban en
+    memoria escalando una sobre la otra, y eso fue lo que hizo que un +30%
+    inventado se leyera como resultado. Un corte dibujado se borra; dos
+    gráficos con dos títulos no se juntan solos.
+    """
+    vivo = frame.copy()
+    vivo["date"] = pd.to_datetime(vivo["date"])
+    nombres_vivo = [n for n in _series_presentes(vivo) if n != BENCHMARK or benchmark_usable]
+    bloques = []
+    if len(vivo) >= 2 and nombres_vivo:
+        bloques.append(_dibujar(vivo, nombres_vivo, "Seguimiento en vivo", "seguimiento_vivo.png",
+                                f"Desde el {vivo.date.min():%d-%m-%Y}, cuando empezó esta serie."))
+    else:
+        bloques.append(f'<p class="muted">El seguimiento en vivo empezó el '
+                       f'{vivo.date.min():%d-%m-%Y}; el gráfico aparece con la segunda jornada.</p>')
+
+    if HISTORICAL.exists():
+        recon = pd.read_csv(HISTORICAL, parse_dates=["date"]).rename(
+            columns={"IPSA Total Return": BENCHMARK}).sort_values("date")
+        nombres = _series_presentes(recon)
+        if nombres:
+            bloques.append("<h3>Reconstrucción</h3>" + _dibujar(
+                recon, nombres, "Aplicando las mismas reglas hacia atrás", "reconstruccion.png",
+                f"De {recon.date.min():%m-%Y} a {recon.date.max():%m-%Y}. Es una serie distinta "
+                "de la de arriba y no se encadena con ella."))
+    return "".join(bloques)
 
 
 def _orders(moves: pd.DataFrame, strategy: str) -> list[str]:
@@ -277,7 +286,9 @@ def build_public_report(
     <p class="muted"><strong>Peor caída:</strong> lo máximo que llegó a bajar desde su punto más alto antes de recuperarse. Mientras más chica, más tranquilo el camino.</p>
     </section>
 
-    <section><h2>Evolución</h2>{_chart(history, benchmark_usable)}</section>
+    <section><h2>Evolución</h2>
+    <p class="lead">El seguimiento en vivo corre desde el {pd.to_datetime(history["date"]).min():%d-%m-%Y}.</p>
+    {_chart(history, benchmark_usable)}</section>
 
     <section><h2>Qué tienes comprado hoy</h2>
     {positions_blocks}

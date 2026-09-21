@@ -13,7 +13,7 @@ Qué hace, en orden:
    oficial, porque la correlación que importa es la que ve un inversionista
    local: el dólar es parte del riesgo, no un detalle contable.
 3. Mide, contra las series de Sigma-6, Delta-12, Gamma-6 y el conjunto
-   (`data/historical_model_nav.csv`), la correlación de retornos mensuales y
+   (`data/reconstruccion_historica.csv`), la correlación de retornos mensuales y
    semanales en la ventana común.
 4. Ordena los candidatos por correlación con el conjunto y por retorno ajustado
    por riesgo, y marca los redundantes (los que replican lo que ya se tiene).
@@ -37,7 +37,7 @@ ROOT = Path(__file__).resolve().parents[2]
 OUT = Path(__file__).resolve().parent / "results"
 UNIVERSE_PATH = ROOT / "config" / "universe_etf.csv"
 PRICES_OFICIALES = ROOT / "data" / "market_prices_daily.csv"
-NAV_HISTORICO = ROOT / "data" / "historical_model_nav.csv"
+NAV_HISTORICO = ROOT / "data" / "reconstruccion_historica.csv"
 
 PRICES_START = "2000-01-01"  # se pide toda la historia disponible: varios de estos ETF existen desde 2000-2007
 FX_TICKER = "USDCLP=X"  # se descarga aparte para no depender del archivo oficial, que sólo parte en 2015
@@ -337,7 +337,7 @@ def main() -> None:
     navs = pd.read_csv(NAV_HISTORICO, parse_dates=["date"]).rename(columns={"IPSA Total Return": "IPSA TR"}).set_index("date").sort_index()
     navs = navs[[c for c in ESTRATEGIAS if c in navs.columns]]
     if navs.empty:
-        raise RuntimeError("data/historical_model_nav.csv no tiene las series de estrategias esperadas.")
+        raise RuntimeError("data/reconstruccion_historica.csv no tiene las series de estrategias esperadas.")
 
     corr_mensual = correlaciones(panel_clp, navs, "ME")
     corr_semanal = correlaciones(panel_clp, navs, "W-FRI")

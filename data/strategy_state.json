@@ -1,217 +1,29 @@
 {
   "methodology_version": "2.3.0",
-  "sigma_entries": {
-    "PARAUCO": "2026-06-29",
-    "LTM": "2026-06-29",
-    "CENCOMALLS": "2026-06-29",
-    "BCI": "2026-06-29",
-    "VAPORES": "2026-09-11"
-  },
-  "sigma_portfolio": [
-    {
-      "ticker": "BCI",
-      "target_weight": 0.1,
-      "opened_at": "2026-06-30",
-      "entry_price": 60569.0,
-      "current_price": 62502.0,
-      "open_return": 0.030075330954675517
-    },
-    {
-      "ticker": "CENCOMALLS",
-      "target_weight": 0.1,
-      "opened_at": "2026-06-30",
-      "entry_price": 2362.0,
-      "current_price": 2210.0,
-      "open_return": -0.06601939923350275
-    },
-    {
-      "ticker": "LTM",
-      "target_weight": 0.1,
-      "opened_at": "2026-06-30",
-      "entry_price": 26.86000061035156,
-      "current_price": 24.690000534057617,
-      "open_return": -0.08242714628491188
-    },
-    {
-      "ticker": "PARAUCO",
-      "target_weight": 0.1,
-      "opened_at": "2026-06-30",
-      "entry_price": 3864.89990234375,
-      "current_price": 4039.89990234375,
-      "open_return": 0.04341681078648163
-    },
-    {
-      "ticker": "VAPORES",
-      "target_weight": 0.1,
-      "opened_at": "2026-09-11",
-      "entry_price": 46.5099983215332,
-      "current_price": 46.5099983215332,
-      "open_return": -0.001781819452277511
-    }
-  ],
-  "delta_portfolio": [
-    {
-      "ticker": "PARAUCO",
-      "target_weight": 0.125,
-      "opened_at": "2026-04-01",
-      "entry_price": 4037.793212890625,
-      "current_price": 4039.89990234375,
-      "open_return": -0.0012610063244126168
-    },
-    {
-      "ticker": "ILC",
-      "target_weight": 0.125,
-      "opened_at": "2026-07-01",
-      "entry_price": 22000.0,
-      "current_price": 21450.0,
-      "open_return": -0.026737273965970587
-    },
-    {
-      "ticker": "MALLPLAZA",
-      "target_weight": 0.125,
-      "opened_at": "2026-01-02",
-      "entry_price": 3142.603759765625,
-      "current_price": 3950.0,
-      "open_return": 0.2546799134032631
-    },
-    {
-      "ticker": "BCI",
-      "target_weight": 0.125,
-      "opened_at": "2026-03-02",
-      "entry_price": 55498.47265625,
-      "current_price": 62502.0,
-      "open_return": 0.12418648179802805
-    },
-    {
-      "ticker": "ECL",
-      "target_weight": 0.125,
-      "opened_at": "2026-04-01",
-      "entry_price": 1538.9454345703125,
-      "current_price": 1807.0,
-      "open_return": 0.17208850406925968
-    },
-    {
-      "ticker": "CHILE",
-      "target_weight": 0.125,
-      "opened_at": "2026-07-01",
-      "entry_price": 179.50999450683594,
-      "current_price": 198.0,
-      "open_return": 0.10103730041015857
-    },
-    {
-      "ticker": "BSANTANDER",
-      "target_weight": 0.125,
-      "opened_at": "2026-08-03",
-      "entry_price": 77.0,
-      "current_price": 77.0,
-      "open_return": -0.001781819452277733
-    },
-    {
-      "ticker": "ENELCHILE",
-      "target_weight": 0.125,
-      "opened_at": "2026-09-01",
-      "entry_price": 81.01000213623047,
-      "current_price": 81.01000213623047,
-      "open_return": -0.001781819452277622
-    }
-  ],
-  "nav": {
-    "Sigma-6": 111.20858332763282,
-    "Delta-12": 130.21456663884587,
-    "Gamma-6": 99.9,
-    "Oro": 99.9,
-    "IPSA TR": 212.5567414816112
-  },
-  "delta_last_period": "2026-08",
-  "valuation_date": "2026-09-18",
-  "ingestion": {
-    "uploaded_files": 0,
-    "history_rows": 1108
-  },
-  "last_run_utc": "2026-09-20T20:59:03.224430+00:00",
-  "delta_entries": {
-    "PARAUCO": "2026-04-01",
-    "ILC": "2026-07-01",
-    "MALLPLAZA": "2026-01-02",
-    "BCI": "2026-03-02",
-    "ECL": "2026-04-01",
-    "CHILE": "2026-07-01",
-    "BSANTANDER": "2026-08-03",
-    "ENELCHILE": "2026-09-01"
-  },
-  "entry_dates_version": 3,
   "delta_rule_version": "2.1.0",
-  "gamma_entries": {
-    "TGT": "2026-09-01",
-    "INTC": "2026-09-01",
-    "MRK": "2026-09-01",
-    "BAC": "2026-09-01",
-    "JNJ": "2026-09-01",
-    "ABT": "2026-09-01"
-  },
-  "gamma_last_period": "2026-08",
   "gamma_rule_version": "1.0.0",
-  "gamma_portfolio": [
-    {
-      "ticker": "TGT",
-      "target_weight": 0.16666666666666666,
-      "opened_at": "2026-09-01",
-      "entry_price": 152947.41729736328,
-      "current_price": 151704.2123413086,
-      "open_return": -0.0091191969134371
-    },
-    {
-      "ticker": "INTC",
-      "target_weight": 0.16666666666666666,
-      "opened_at": "2026-09-01",
-      "entry_price": 83100.65284671634,
-      "current_price": 104147.39853668213,
-      "open_return": 0.25201609875934716
-    },
-    {
-      "ticker": "MRK",
-      "target_weight": 0.16666666666666666,
-      "opened_at": "2026-09-01",
-      "entry_price": 139152.35986072943,
-      "current_price": 140848.3253173828,
-      "open_return": 0.011176654427638155
-    },
-    {
-      "ticker": "BAC",
-      "target_weight": 0.16666666666666666,
-      "opened_at": "2026-09-01",
-      "entry_price": 57606.6113289129,
-      "current_price": 55363.06956100464,
-      "open_return": -0.03990600170146896
-    },
-    {
-      "ticker": "JNJ",
-      "target_weight": 0.16666666666666666,
-      "opened_at": "2026-09-01",
-      "entry_price": 253299.60592536628,
-      "current_price": 258920.40063476562,
-      "open_return": 0.021169132699256688
-    },
-    {
-      "ticker": "ABT",
-      "target_weight": 0.16666666666666666,
-      "opened_at": "2026-09-01",
-      "entry_price": 101743.89137635194,
-      "current_price": 98402.99058532715,
-      "open_return": -0.03380257458605107
-    }
-  ],
-  "oro_entries": {
-    "IAU": "2026-09-18"
+  "sigma_entries": {},
+  "delta_entries": {},
+  "gamma_entries": {},
+  "oro_entries": {},
+  "sigma_portfolio": [],
+  "delta_portfolio": [],
+  "gamma_portfolio": [],
+  "oro_portfolio": [],
+  "valuation_date": "2026-09-17",
+  "nav": {
+    "Sigma-6": 100.0,
+    "Delta-12": 100.0,
+    "Gamma-6": 100.0,
+    "Oro": 100.0,
+    "IPSA TR": 100.0
   },
-  "oro_portfolio": [
-    {
-      "ticker": "IAU",
-      "target_weight": 1.0,
-      "opened_at": "2026-09-18",
-      "entry_price": 78858.57321929932,
-      "current_price": 78858.57321929932,
-      "open_return": -0.0009990009990008542
-    }
-  ]
+  "reinicio": {
+    "fecha": "2026-09-17",
+    "motivo": "feed chileno detenido entre el 17-07 y el 16-09 de 2026",
+    "series_archivadas": [
+      "strategy_nav_incidente_2026.csv",
+      "strategy_state_incidente_2026.json"
+    ]
+  }
 }

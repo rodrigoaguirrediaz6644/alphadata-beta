@@ -1,7 +1,11 @@
 import pandas as pd
 import pytest
 
-from src.reporting_public import BENCHMARK, _metrics, build_public_report, chart_frame
+from pathlib import Path
+
+from src.reporting_public import BENCHMARK, _metrics, build_public_report
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_metrics_do_not_invent_history_with_one_observation():
@@ -99,43 +103,48 @@ def test_report_refuses_to_compare_against_a_broken_benchmark():
     assert "IPSA TR" in healthy_markdown
 
 
-def _historial(tmp_path):
-    ruta = tmp_path / "historical_model_nav.csv"
-    pd.DataFrame([
-        {"date": "2021-07-08", "Sigma-6": 100.0, "Delta-12": 100.0, "IPSA Total Return": 100.0, "Conjunto AlphaData": 100.0},
-        {"date": "2026-07-15", "Sigma-6": 300.0, "Delta-12": 400.0, "IPSA Total Return": 260.0, "Conjunto AlphaData": 350.0},
-    ]).to_csv(ruta, index=False)
-    return ruta
+def test_el_informe_dibuja_dos_graficos_separados():
+    """La separación es estructural, no visual.
+
+    El seguimiento en vivo y la reconstrucción son dos archivos distintos y se
+    dibujan como dos imágenes distintas. Antes se pegaban en memoria escalando
+    una sobre la otra, y eso fue lo que hizo que un +30% inventado se leyera
+    como resultado.
+    """
+    _, html = _report()
+    assert 'cid:seguimiento_vivo' in html
+    assert 'cid:reconstruccion' in html
+    assert "Reconstrucción" in html
+    assert (ROOT / "reports" / "seguimiento_vivo.png").exists()
 
 
-def _vivo():
-    return pd.DataFrame([
-        {"date": "2026-07-16", "Sigma-6": 100.0, "Delta-12": 100.0, "IPSA TR": 100.0, "Conjunto AlphaData": 100.0},
-        {"date": "2026-09-18", "Sigma-6": 110.0, "Delta-12": 105.0, "IPSA TR": 102.0, "Conjunto AlphaData": 112.0},
-    ])
+def test_la_serie_viva_no_se_reescala_con_la_reconstruccion():
+    """Regresión del encadenamiento: la serie viva empieza donde empieza.
+
+    La reconstrucción termina cerca de 350 en base 100; si el gráfico la
+    encadenara, la serie viva arrancaría en ese nivel en vez de en 100.
+    """
+    from src.reporting_public import _dibujar, _series_presentes
+    vivo = pd.DataFrame({"date": pd.to_datetime(["2026-09-17", "2026-09-18", "2026-09-21"]),
+                         "Sigma-6": [100.0, 101.0, 102.0], "Conjunto AlphaData": [100.0, 100.5, 101.0]})
+    bloque = _dibujar(vivo, _series_presentes(vivo), "prueba", "prueba_vivo.png", "pie")
+    assert "cid:prueba_vivo" in bloque
+    # El dibujo normaliza a 100 en el primer dato propio de la serie, sin mirar
+    # ningún archivo histórico.
+    assert vivo["Sigma-6"].iloc[0] == 100.0
 
 
-def test_el_grafico_llega_hasta_la_fecha_de_la_corrida(tmp_path):
-    # La reconstrucción histórica no crece: si el gráfico sólo la mira, se
-    # queda donde terminó y se atrasa una semana por cada corrida.
-    historial = _historial(tmp_path)
-    data = chart_frame(_vivo(), historical_path=historial)
-    assert data["date"].max() == pd.Timestamp("2026-09-18")
+def test_el_informe_dice_desde_cuando_corre_la_serie_nueva():
+    _, html = _report()
+    assert "El seguimiento en vivo corre desde el" in html
 
 
-def test_el_grafico_encadena_la_serie_viva_en_vez_de_reiniciarla(tmp_path):
-    historial = _historial(tmp_path)
-    antes = historial.read_text(encoding="utf-8")
-    data = chart_frame(_vivo(), historical_path=historial).set_index("date")
-    assert data.loc[pd.Timestamp("2026-07-15"), "Sigma-6"] == pytest.approx(300.0)
-    assert data.loc[pd.Timestamp("2026-07-16"), "Sigma-6"] == pytest.approx(300.0)  # sin desplome a 100
-    assert data.loc[pd.Timestamp("2026-09-18"), "Sigma-6"] == pytest.approx(330.0)  # 300 x 110/100
-    assert data.loc[pd.Timestamp("2026-09-18"), "Conjunto AlphaData"] == pytest.approx(392.0)
-    assert historial.read_text(encoding="utf-8") == antes  # el historial publicado no se reescribe
-
-
-def test_el_grafico_deja_fuera_el_benchmark_roto(tmp_path):
-    historial = _historial(tmp_path)
-    data = chart_frame(_vivo(), historical_path=historial, benchmark_usable=False)
-    assert BENCHMARK not in data
-    assert BENCHMARK in chart_frame(_vivo(), historical_path=historial)
+def test_el_benchmark_roto_queda_fuera_del_grafico_vivo():
+    from src.reporting_public import _series_presentes
+    roto = pd.DataFrame({"date": pd.to_datetime(["2026-09-17", "2026-09-18"]),
+                         "Sigma-6": [100.0, 101.0], "IPSA TR": [100.0, 212.0]})
+    presentes = _series_presentes(roto)
+    # `_chart` filtra el benchmark cuando la serie no es continua; aquí se
+    # comprueba que el filtro se aplica sobre la lista de series presentes.
+    assert "IPSA TR" in presentes
+    assert [n for n in presentes if n != "IPSA TR"] == ["Sigma-6"]

@@ -268,7 +268,7 @@ def main()->None:
     if len(combined): history[CONJUNTO]=history.date.map({d.date().isoformat():v for d,v in combined.items()})
     history.to_csv(NAV,index=False)
     coverage=pd.read_csv(DATA/'coverage_report.csv')
-    historical_path=DATA/'historical_model_nav.csv'
+    historical_path=DATA/'reconstruccion_historica.csv'
     if historical_path.exists():
         historical=pd.read_csv(historical_path,parse_dates=['date']).sort_values('date')
         rebuilt=delta12_historical_nav(prices,universe,historical.date.min(),historical.date.max())
