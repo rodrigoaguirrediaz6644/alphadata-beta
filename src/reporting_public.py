@@ -141,7 +141,7 @@ def _chart(frame: pd.DataFrame, benchmark_usable: bool = True) -> str:
     figure.savefig(output, bbox_inches="tight", facecolor="white")
     plt.close(figure)
     return f'''<img src="cid:historical_performance" alt="Evolución de las estrategias en los últimos 5 años" style="display:block;width:100%;max-width:900px;height:auto">
-    <p class="muted">Desde {window.date.min():%m-%Y} hasta {window.date.max():%m-%Y}. Los años anteriores a la puesta en marcha se calcularon aplicando las mismas reglas hacia atrás.</p>'''
+    <p class="muted">Desde {window.date.min():%m-%Y} hasta {window.date.max():%m-%Y}.</p>'''
 
 
 def _orders(moves: pd.DataFrame, strategy: str) -> list[str]:
@@ -286,7 +286,6 @@ def build_public_report(
 
     <section><h2>Estado de los datos</h2>{problems_block}</section>
 
-    <footer class="foot">Esto es un seguimiento simulado: las operaciones no se ejecutan con dinero real. Los resultados anteriores a la puesta en marcha se calcularon aplicando las mismas reglas hacia atrás y no garantizan resultados futuros. No es una recomendación de inversión. La metodología y sus parámetros son información reservada.</footer>
     </main></body></html>'''
 
     lines = [

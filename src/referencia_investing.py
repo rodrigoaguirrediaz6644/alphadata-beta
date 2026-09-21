@@ -49,12 +49,17 @@ NOMBRES_EN_INGLES = {
 }
 
 
+# El proveedor usa su propio símbolo, que no siempre es el del universo.
+ALIAS = {"MULTIX": "MULTIFOODS"}
+
+
 def ticker_de(ruta: str | Path) -> str | None:
     """Deduce el ticker AlphaData desde el nombre del archivo."""
     base = Path(ruta).stem
     entre_parentesis = re.search(r"\(([^)]+)\)\s*$", base)
     if entre_parentesis:
-        return entre_parentesis.group(1).strip().upper()
+        simbolo = entre_parentesis.group(1).strip().upper()
+        return ALIAS.get(simbolo, simbolo)
     limpio = base.lower().replace(" stock price history", "").strip()
     return NOMBRES_EN_INGLES.get(limpio)
 

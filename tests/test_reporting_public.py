@@ -35,9 +35,18 @@ def test_public_report_hides_strategy_methodology():
         pd.DataFrame(),
         pd.DataFrame([{"date": "2026-07-16", "Sigma-6": 100, "Delta-12": 100, "IPSA TR": 100}]),
     )
-    assert "información reservada" in html
     for secret in ["momentum_12_1", "SMA200", "sma200", "RSI", "z-score", "score", "Credicorp", "252"]:
         assert secret not in html
+
+
+def test_el_informe_no_lleva_descargos():
+    # Cambio de criterio: es una herramienta personal y el único lector ya
+    # conoce las limitaciones. Las consideraciones van en la documentación
+    # interna, no en lo que se publica.
+    _, html = _report()
+    for descargo in ["seguimiento simulado", "no garantizan", "recomendación de inversión",
+                     "aplicando las mismas reglas hacia atrás"]:
+        assert descargo not in html
 
 
 def test_report_leads_with_the_combined_result_and_the_weekly_orders():
