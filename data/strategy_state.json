@@ -3,11 +3,11 @@
   "delta_rule_version": "2.1.0",
   "gamma_rule_version": "1.0.0",
   "sigma_entries": {
-    "CENCOMALLS": "2026-09-17",
-    "VAPORES": "2026-09-17",
-    "BCI": "2026-09-17",
     "LTM": "2026-09-17",
-    "PARAUCO": "2026-09-17"
+    "PARAUCO": "2026-09-17",
+    "BCI": "2026-09-17",
+    "VAPORES": "2026-09-17",
+    "CENCOMALLS": "2026-09-17"
   },
   "delta_entries": {
     "PARAUCO": "2026-09-17",
@@ -40,6 +40,7 @@
       "open_return": 0.4465570644309813,
       "con_dividendo": false,
       "dividendos_clp": 1500.0,
+      "peso_real": 0.1,
       "dias_tenencia": 328,
       "tope_tenencia": 365,
       "monto_clp": 500000.0
@@ -53,6 +54,7 @@
       "open_return": -0.08055524581677742,
       "con_dividendo": false,
       "dividendos_clp": 15.0,
+      "peso_real": 0.1,
       "dias_tenencia": 168,
       "tope_tenencia": 365,
       "monto_clp": 500000.0
@@ -66,6 +68,7 @@
       "open_return": 0.04601097509497687,
       "con_dividendo": false,
       "dividendos_clp": null,
+      "peso_real": 0.1,
       "dias_tenencia": 20,
       "tope_tenencia": 365,
       "monto_clp": 500000.0
@@ -79,6 +82,7 @@
       "open_return": 0.019074993467467882,
       "con_dividendo": false,
       "dividendos_clp": null,
+      "peso_real": 0.1,
       "dias_tenencia": 83,
       "tope_tenencia": 365,
       "monto_clp": 500000.0
@@ -92,6 +96,7 @@
       "open_return": 0.12859361704881578,
       "con_dividendo": false,
       "dividendos_clp": 6.705327,
+      "peso_real": 0.1,
       "dias_tenencia": 174,
       "tope_tenencia": 365,
       "monto_clp": 500000.0
@@ -107,7 +112,8 @@
       "open_return": 0.04226273210435516,
       "con_dividendo": false,
       "dividendos_clp": 44.387047,
-      "monto_clp": 625000.0
+      "monto_clp": 625000.0,
+      "peso_real": 0.12218785686014448
     },
     {
       "ticker": "BCI",
@@ -118,7 +124,8 @@
       "open_return": 0.01705426356589146,
       "con_dividendo": false,
       "dividendos_clp": null,
-      "monto_clp": 625000.0
+      "monto_clp": 625000.0,
+      "peso_real": 0.1242716807755888
     },
     {
       "ticker": "MALLPLAZA",
@@ -129,7 +136,8 @@
       "open_return": -0.026912146551193894,
       "con_dividendo": false,
       "dividendos_clp": 70.0,
-      "monto_clp": 625000.0
+      "monto_clp": 625000.0,
+      "peso_real": 0.12214056254571884
     },
     {
       "ticker": "ITAUCL",
@@ -140,7 +148,8 @@
       "open_return": 0.22933278039240412,
       "con_dividendo": false,
       "dividendos_clp": 1187.2706,
-      "monto_clp": 625000.0
+      "monto_clp": 625000.0,
+      "peso_real": 0.1337984676930089
     },
     {
       "ticker": "ECL",
@@ -151,7 +160,8 @@
       "open_return": 0.030555555555555447,
       "con_dividendo": false,
       "dividendos_clp": null,
-      "monto_clp": 625000.0
+      "monto_clp": 625000.0,
+      "peso_real": 0.1156420788140653
     },
     {
       "ticker": "CHILE",
@@ -162,7 +172,8 @@
       "open_return": 0.0963988919667591,
       "con_dividendo": false,
       "dividendos_clp": null,
-      "monto_clp": 625000.0
+      "monto_clp": 625000.0,
+      "peso_real": 0.12561546427336412
     },
     {
       "ticker": "BSANTANDER",
@@ -173,7 +184,8 @@
       "open_return": 0.010248178787504614,
       "con_dividendo": false,
       "dividendos_clp": null,
-      "monto_clp": 625000.0
+      "monto_clp": 625000.0,
+      "peso_real": 0.12417600854921153
     },
     {
       "ticker": "ANDINA-B",
@@ -184,7 +196,8 @@
       "open_return": 0.08167770419426046,
       "con_dividendo": false,
       "dividendos_clp": null,
-      "monto_clp": 625000.0
+      "monto_clp": 625000.0,
+      "peso_real": 0.132167880488898
     }
   ],
   "gamma_portfolio": [
@@ -197,7 +210,8 @@
       "open_return": 0.14963716685185435,
       "con_dividendo": true,
       "dividendos_clp": null,
-      "monto_clp": 833333.0
+      "monto_clp": 833333.0,
+      "peso_real": 0.16292889883764636
     },
     {
       "ticker": "INTC",
@@ -208,7 +222,8 @@
       "open_return": 2.2064234928732533,
       "con_dividendo": false,
       "dividendos_clp": null,
-      "monto_clp": 833333.0
+      "monto_clp": 833333.0,
+      "peso_real": 0.19934219162650593
     },
     {
       "ticker": "MRK",
@@ -219,7 +234,8 @@
       "open_return": 0.17253253214297049,
       "con_dividendo": true,
       "dividendos_clp": null,
-      "monto_clp": 833333.0
+      "monto_clp": 833333.0,
+      "peso_real": 0.16428627831007572
     },
     {
       "ticker": "BAC",
@@ -230,7 +246,8 @@
       "open_return": -0.02644124722680763,
       "con_dividendo": true,
       "dividendos_clp": null,
-      "monto_clp": 833333.0
+      "monto_clp": 833333.0,
+      "peso_real": 0.15482981300648938
     },
     {
       "ticker": "JNJ",
@@ -241,7 +258,8 @@
       "open_return": 0.041065586579652535,
       "con_dividendo": false,
       "dividendos_clp": null,
-      "monto_clp": 833333.0
+      "monto_clp": 833333.0,
+      "peso_real": 0.166695050759511
     },
     {
       "ticker": "ABT",
@@ -252,7 +270,8 @@
       "open_return": -0.05122342282046255,
       "con_dividendo": false,
       "dividendos_clp": null,
-      "monto_clp": 833333.0
+      "monto_clp": 833333.0,
+      "peso_real": 0.15191776745977137
     }
   ],
   "oro_portfolio": [
@@ -265,6 +284,7 @@
       "open_return": 0.062203530931925544,
       "con_dividendo": false,
       "dividendos_clp": null,
+      "peso_real": 1.0,
       "monto_clp": 5000000.0
     }
   ],
@@ -289,7 +309,7 @@
     "uploaded_files": 0,
     "history_rows": 1108
   },
-  "last_run_utc": "2026-09-21T13:28:15.964455+00:00",
+  "last_run_utc": "2026-09-21T14:19:08.190788+00:00",
   "entry_dates_version": 3,
   "delta_last_period": "2026-08",
   "gamma_last_period": "2026-08"

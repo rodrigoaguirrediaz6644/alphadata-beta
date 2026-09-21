@@ -121,6 +121,35 @@ def _dividendos_cobrados(dividendos: pd.DataFrame | None, ticker: str,
     return float(dentro.monto.sum()) if len(dentro) else None
 
 
+def pesos_corridos(portfolio: pd.DataFrame, prices: pd.DataFrame,
+                   senal: pd.Timestamp, as_of: pd.Timestamp) -> pd.Series:
+    """Donde estaria hoy cada peso si nadie hubiera tocado la cartera.
+
+    Desde la ultima revision, cada posicion crece con su propio precio y el
+    conjunto se renormaliza. Es la deriva que el NAV publicado no modela: su
+    aritmetica --`retorno_dia += peso * (precio_hoy/precio_ayer - 1)` con el
+    peso fijo-- es la de una cartera que vuelve al objetivo todos los dias, y
+    ese rebalanceo nunca se ordena ni se cobra.
+    """
+    matriz = prices.pivot(index="date", columns="alphadata_ticker", values="adjusted_close").sort_index().ffill(limit=3)
+    inicio = matriz.loc[:pd.Timestamp(senal)].tail(1)
+    fin = matriz.loc[:pd.Timestamp(as_of)].tail(1)
+    vacio = pd.Series([pd.NA] * len(portfolio), index=portfolio.index)
+    if inicio.empty or fin.empty:
+        return vacio
+    crecido = {}
+    for fila in portfolio.itertuples():
+        t = fila.ticker
+        if t in matriz and pd.notna(inicio.iloc[0][t]) and pd.notna(fin.iloc[0][t]) and inicio.iloc[0][t] > 0:
+            crecido[fila.Index] = float(fila.target_weight) * float(fin.iloc[0][t]) / float(inicio.iloc[0][t])
+    if not crecido:
+        return vacio
+    # La caja no se mueve: entra al denominador con su peso original.
+    caja = 1 - float(portfolio.target_weight.sum())
+    total = sum(crecido.values()) + caja
+    return pd.Series({i: v / total for i, v in crecido.items()}).reindex(portfolio.index)
+
+
 def movements_for_report(current: pd.DataFrame, previous_path: Path) -> pd.DataFrame:
     """Keep the latest meaningful rebalance visible between routine daily runs."""
     meaningful = current.loc[current.action != "MANTIENE"] if len(current) else current
@@ -353,6 +382,14 @@ def main()->None:
     delta=enrich_open_positions(delta,prices,as_of,precios_anotados=precios_de_entrada(libro,'Delta-12'),dividendos=dividendos)
     gamma=enrich_open_positions(gamma,prices_us_clp,as_of,buy_cost=US_COST_RATE,precios_anotados=precios_de_entrada(libro,'Gamma-6'),dividendos=dividendos)
     oro_portfolio=enrich_open_positions(oro_portfolio,prices_oro_clp,as_of,buy_cost=US_COST_RATE,precios_anotados=precios_de_entrada(libro,'Oro'),dividendos=dividendos)
+    # Peso real contra peso objetivo. El NAV supone que la cartera vuelve al
+    # objetivo todos los días, gratis; una cuenta de verdad deja correr los
+    # pesos entre revisiones y los ganadores se van concentrando. Sin esta
+    # columna la divergencia es invisible hasta que es grande.
+    for cartera, serie, senal in [(sigma, prices, as_of), (delta, prices, delta_cutoff),
+                                  (gamma, prices_us_clp, gamma_cutoff), (oro_portfolio, prices_oro_clp, as_of)]:
+        if len(cartera): cartera['peso_real']=pesos_corridos(cartera, serie, senal, as_of)
+
     # Cuánto le queda a cada posición de Sigma-6 antes de que el tope la
     # suelte. Una venta por calendario y no por señal es información de
     # ejecución, y no estaba en ninguna parte del informe.

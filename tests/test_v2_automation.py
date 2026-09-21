@@ -110,3 +110,35 @@ def test_el_correo_reescribe_los_graficos_a_cid():
     for nombre in GRAFICOS:
         html = html.replace(f'src="{nombre}"', f'src="cid:{Path(nombre).stem}"')
     assert html == '<img src="cid:seguimiento_vivo"><img src="cid:reconstruccion">'
+
+
+def test_los_pesos_corren_entre_revisiones_y_el_nav_no_lo_modela():
+    """`pesos_corridos` dice dónde quedó cada peso sin tocar la cartera.
+
+    Dos posiciones al 50%: una duplica y la otra se queda quieta. La que subió
+    pasa a pesar dos tercios. El NAV publicado seguiría calculando con 50% y
+    50%, que es la aritmética de una cartera rebalanceada a diario, gratis.
+    """
+    from src.run_pipeline import pesos_corridos
+    precios = pd.DataFrame({
+        "date": pd.to_datetime(["2026-08-31", "2026-08-31", "2026-09-17", "2026-09-17"]),
+        "alphadata_ticker": ["SUBE", "QUIETA", "SUBE", "QUIETA"],
+        "adjusted_close": [100., 100., 200., 100.],
+    })
+    cartera = pd.DataFrame({"ticker": ["SUBE", "QUIETA"], "target_weight": [.5, .5]})
+    r = pesos_corridos(cartera, precios, pd.Timestamp("2026-08-31"), pd.Timestamp("2026-09-17"))
+    assert abs(float(r.iloc[0]) - 2 / 3) < 1e-9
+    assert abs(float(r.iloc[1]) - 1 / 3) < 1e-9
+
+
+def test_la_caja_no_se_mueve_al_correr_los_pesos():
+    """Con la mitad en caja, una posición que duplica no llega al 100%."""
+    from src.run_pipeline import pesos_corridos
+    precios = pd.DataFrame({
+        "date": pd.to_datetime(["2026-08-31", "2026-09-17"]),
+        "alphadata_ticker": ["SUBE", "SUBE"],
+        "adjusted_close": [100., 200.],
+    })
+    cartera = pd.DataFrame({"ticker": ["SUBE"], "target_weight": [.5]})
+    r = pesos_corridos(cartera, precios, pd.Timestamp("2026-08-31"), pd.Timestamp("2026-09-17"))
+    assert abs(float(r.iloc[0]) - 2 / 3) < 1e-9   # 1,0 sobre 1,0 + 0,5 de caja

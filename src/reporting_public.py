@@ -184,6 +184,7 @@ def _positions(portfolio: pd.DataFrame, currency: str = "$") -> str:
         return '<p class="muted">Sin posiciones abiertas.</p>'
     hay_montos = "monto_clp" in portfolio and portfolio["monto_clp"].notna().any()
     hay_dividendos = "dividendos_clp" in portfolio and portfolio["dividendos_clp"].notna().any()
+    hay_deriva = "peso_real" in portfolio and portfolio["peso_real"].notna().any()
     hay_tope = "tope_tenencia" in portfolio and portfolio.get("dias_tenencia", pd.Series(dtype="object")).notna().any()
     rows = []
     for record in portfolio.to_dict("records"):
@@ -197,7 +198,10 @@ def _positions(portfolio: pd.DataFrame, currency: str = "$") -> str:
         celdas = [escape(str(record["ticker"]))]
         if hay_montos:
             celdas.append(_pesos(record.get("monto_clp"), currency))
-        celdas += [pct(float(record["target_weight"])), fecha,
+        celdas.append(pct(float(record["target_weight"])))
+        if hay_deriva:
+            celdas.append(_deriva(record.get("peso_real"), record.get("target_weight")))
+        celdas += [fecha,
                    _precio(record.get("entry_price"), currency),
                    _precio(record.get("current_price"), currency)]
         if hay_dividendos:
@@ -206,9 +210,30 @@ def _positions(portfolio: pd.DataFrame, currency: str = "$") -> str:
             celdas.append(_tenencia(record.get("dias_tenencia"), record.get("tope_tenencia")))
         rows.append("<tr>" + "".join(f"<td>{c}</td>" for c in celdas)
                     + f'<td{color}>{gain_text}</td></tr>')
-    cabecera = ["Acción"] + (["Cuánto invertir"] if hay_montos else []) +                ["Cuánto pesa", "Comprada el", "Precio de entrada", "Precio hoy"] +                (["Dividendos cobrados"] if hay_dividendos else []) +                (["Tiempo en cartera"] if hay_tope else []) + ["Va ganando"]
+    cabecera = (["Acción"]
+                + (["Cuánto invertir"] if hay_montos else [])
+                + ["Cuánto pesa"]
+                + (["Peso hoy"] if hay_deriva else [])
+                + ["Comprada el", "Precio de entrada", "Precio hoy"]
+                + (["Dividendos cobrados"] if hay_dividendos else [])
+                + (["Tiempo en cartera"] if hay_tope else [])
+                + ["Va ganando"])
     return ("<table><thead><tr>" + "".join(f"<th>{c}</th>" for c in cabecera)
             + f'</tr></thead><tbody>{"".join(rows)}</tbody></table>')
+
+
+def _deriva(real, objetivo) -> str:
+    """El peso al que llegó la posición, contra el que el modelo supone.
+
+    El NAV publicado se calcula como si la cartera volviera al objetivo todos
+    los días. Nadie da esa orden y nadie paga ese costo, así que en una cuenta
+    real los ganadores se van concentrando. Se marca cuando la diferencia pasa
+    de dos puntos, que es donde deja de ser ruido.
+    """
+    if real is None or pd.isna(real) or objetivo is None or pd.isna(objetivo):
+        return "—"
+    lejos = abs(float(real) - float(objetivo)) > .02
+    return f"<strong>{pct(float(real))}</strong>" if lejos else pct(float(real))
 
 
 def _tenencia(dias, tope) -> str:

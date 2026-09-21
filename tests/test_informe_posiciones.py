@@ -140,3 +140,20 @@ def test_el_informe_dice_que_las_fechas_salen_de_aplicar_las_reglas_hacia_atras(
                                      pd.DataFrame([{"status": "OK"}]), pd.DataFrame(), historia)
     assert "no de operaciones registradas en vivo" in html
     assert "el modelo la seleccionó ese día y no la ha soltado" in html
+
+
+def test_la_columna_de_peso_hoy_marca_la_deriva_grande():
+    """El NAV supone que la cartera vuelve al objetivo todos los días.
+
+    Nadie da esa orden ni paga ese costo, así que en una cuenta real los
+    ganadores se concentran: INTC salió del 16,7% y hoy pesa 19,9%. Sin la
+    columna eso es invisible hasta que es grande.
+    """
+    from src.reporting_public import _deriva
+    assert _deriva(.199, 1 / 6) == "<strong>19,9%</strong>"   # 3,2 puntos: se marca
+    assert _deriva(.163, 1 / 6) == "16,3%"                    # 0,4 puntos: ruido
+    assert _deriva(pd.NA, 1 / 6) == "—"
+    con = CARTERA.assign(peso_real=[.199])
+    html = _positions(con)
+    assert "<th>Peso hoy</th>" in html and "<strong>19,9%</strong>" in html
+    assert "<th>Peso hoy</th>" not in _positions(CARTERA)
