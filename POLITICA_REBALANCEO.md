@@ -101,6 +101,35 @@ Es una de las opciones indistinguibles entre sí, es la única que no requiere
 elegir un número que la medición no puede justificar, y es la más simple de
 ejecutar: la orden es la que ya aparece en el informe.
 
+### Cómo se financia una entrada
+
+La política dejaba esto abierto, y la implementación lo iba a resolver sola.
+Delta-12 vende ILC, que después de subir vale más de lo que pesaba al entrar, y
+compra ANDINA-B. **ANDINA-B recibe el producto de la venta**, no un octavo del
+valor de la pieza: lo segundo obligaría a mover plata desde o hacia las demás
+posiciones, y eso ya es un rebalanceo parcial, justo lo que esta política dice
+no hacer.
+
+En cada revisión:
+
+1. Las que siguen conservan el peso al que llegaron. **No se tocan.**
+2. Las que salen se venden enteras.
+3. Lo liberado, más la caja, se reparte **en partes iguales entre las que
+   entran**, con tope en el peso de referencia de la estrategia; lo que sobre
+   queda en caja.
+
+El tope del punto 3 evita que una entrada herede de golpe el tamaño de un
+ganador recién vendido. Es lo que se midió y lo que `src/nav_historico.py`
+calcula. Requiere exactamente las mismas operaciones que ya se hacen.
+
+### El peso de referencia no es un objetivo
+
+Bajo esta política el peso de referencia **sólo aplica en el momento de
+entrar**; de ahí en adelante el peso real es el único que existe. Por eso el
+informe no lo llama «objetivo»: una columna que dijera «objetivo 16,7%» al lado
+de «hoy 19,9%», con una política que dice no corregir nunca, se leería como una
+instrucción pendiente que nadie va a ejecutar.
+
 Consecuencias que hay que aceptar con ella:
 
 - **Los ganadores se concentran.** INTC ya está en 19,9% de Gamma-6 contra un
@@ -109,15 +138,33 @@ Consecuencias que hay que aceptar con ella:
   cae queda bajo su peso y volver a ponerla en el objetivo es **comprar más del
   perdedor**. Promediar a la baja dentro de una estrategia de momentum, sin que
   nadie lo haya decidido. Ésa es otra razón para no hacerlo.
-- **No hay guardia de concentración.** Si una posición se va muy arriba, nada la
-  recorta. Poner un tope sería inventar un número que la medición no respalda;
-  queda anotado como decisión pendiente, no como regla.
+### Esta política concentra, y hay que decirlo
 
-## Lo que falta
+El +14,6% de Gamma-6 y el INTC en 19,9% contra 16,7% son el mismo fenómeno
+visto dos veces: dejar correr los pesos captura al ganador completo —por eso
+gana— y **por eso mismo concentra**.
 
-El modelo todavía calcula `constante`. Mientras no se cambie, **el NAV publicado
-describe una cartera que nadie tiene.** Cambiar
-`delta12_historical_nav`, `gamma6_historical_nav` y la serie de Sigma-6 a la
-aritmética de pesos que corren mueve todos los números publicados: Delta-12 y
-Sigma-6 bajan unos tres puntos acumulados en cinco años, Gamma-6 sube quince.
-No se toca hasta que la política esté aprobada.
+Si INTC sigue corriendo puede llegar a ser un tercio de la pieza. El único
+techo que existe hoy es que el nombre salga del top 6 en alguna revisión,
+momento en el cual se vende entero; para INTC eso no ha ocurrido en doce meses.
+
+La peor caída medida —−28,9% contra −26,4%— probablemente **subestima** esto,
+porque depende de si la ventana contiene un caso donde el ganador grande se dio
+vuelta. Con un solo ganador de esa magnitud en la muestra, no hay cómo saberlo.
+
+Esto no cambia la decisión, pero se toma con los ojos abiertos.
+
+**Queda abierto un tope de concentración por posición** —por ejemplo, recortar
+sólo cuando una posición supera el 25% de su pieza—. No es una banda de
+rebalanceo, que ya se descartó por ruido: sería un **límite de cola**, y su
+justificación no es «mejora el retorno» sino «no quiero un tercio de una pieza
+en un solo papel». Esa pregunta no se contesta con backtest y no está decidida.
+Mientras tanto, la columna de peso real es el instrumento para mirar cómo
+evoluciona.
+
+## El modelo ya calcula esto
+
+Hecho el 21-09-2026. Ver `data/archivo/cambio_aritmetica_nav.md` para las
+cifras antes y después, incluida una que la medición no anticipaba: la serie de
+Sigma-6 nunca se reconstruía, así que al recalcularla por primera vez con los
+datos reparados cae mucho más que lo que explica el cambio de aritmética.

@@ -142,3 +142,27 @@ def test_la_caja_no_se_mueve_al_correr_los_pesos():
     cartera = pd.DataFrame({"ticker": ["SUBE"], "target_weight": [.5]})
     r = pesos_corridos(cartera, precios, pd.Timestamp("2026-08-31"), pd.Timestamp("2026-09-17"))
     assert abs(float(r.iloc[0]) - 2 / 3) < 1e-9   # 1,0 sobre 1,0 + 0,5 de caja
+
+
+def test_una_entrada_se_financia_con_el_producto_de_la_salida():
+    """La pregunta que la política dejaba abierta.
+
+    ILC subió y pesa 15% cuando sale; ANDINA-B entra en su lugar. Recibe el
+    producto de la venta, no un octavo de la pieza: lo segundo obligaría a
+    mover plata desde las sobrevivientes, que es el rebalanceo que la política
+    descarta. Con tope en el peso de referencia, y lo que sobra a caja.
+    """
+    from src.nav_historico import _reasignar
+    pesos = {"ILC": .15, "BCI": .13, "CHILE": .11}
+    nuevos, caja = _reasignar(pesos, .61, {"ANDINA-B": .125, "BCI": .125, "CHILE": .125})
+    assert nuevos["BCI"] == .13 and nuevos["CHILE"] == .11   # no se tocan
+    assert nuevos["ANDINA-B"] == .125                        # topada en la referencia
+    assert abs(caja - (1 - .13 - .11 - .125)) < 1e-12        # el resto queda en caja
+
+
+def test_sin_salidas_ni_entradas_una_revision_no_mueve_nada():
+    """Si nadie entra ni sale, la política no ordena ninguna operación."""
+    from src.nav_historico import _reasignar
+    pesos = {"BCI": .2, "CHILE": .1}
+    nuevos, caja = _reasignar(pesos, .7, {"BCI": .125, "CHILE": .125})
+    assert nuevos == pesos and abs(caja - .7) < 1e-12

@@ -157,3 +157,14 @@ def test_la_columna_de_peso_hoy_marca_la_deriva_grande():
     html = _positions(con)
     assert "<th>Peso hoy</th>" in html and "<strong>19,9%</strong>" in html
     assert "<th>Peso hoy</th>" not in _positions(CARTERA)
+
+
+def test_la_columna_del_peso_no_se_llama_objetivo():
+    """Bajo esta política el peso de referencia sólo aplica al entrar.
+
+    «Objetivo 16,7%» junto a «hoy 19,9%», con una política que dice no corregir
+    nunca, se lee como una instrucción pendiente que nadie va a ejecutar.
+    """
+    html = _positions(CARTERA.assign(peso_real=[.199]))
+    assert "<th>Peso de entrada</th>" in html
+    assert "objetivo" not in html.lower()

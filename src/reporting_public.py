@@ -212,7 +212,7 @@ def _positions(portfolio: pd.DataFrame, currency: str = "$") -> str:
                     + f'<td{color}>{gain_text}</td></tr>')
     cabecera = (["Acción"]
                 + (["Cuánto invertir"] if hay_montos else [])
-                + ["Cuánto pesa"]
+                + ["Peso de entrada"]
                 + (["Peso hoy"] if hay_deriva else [])
                 + ["Comprada el", "Precio de entrada", "Precio hoy"]
                 + (["Dividendos cobrados"] if hay_dividendos else [])
@@ -225,10 +225,11 @@ def _positions(portfolio: pd.DataFrame, currency: str = "$") -> str:
 def _deriva(real, objetivo) -> str:
     """El peso al que llegó la posición, contra el que el modelo supone.
 
-    El NAV publicado se calcula como si la cartera volviera al objetivo todos
-    los días. Nadie da esa orden y nadie paga ese costo, así que en una cuenta
-    real los ganadores se van concentrando. Se marca cuando la diferencia pasa
-    de dos puntos, que es donde deja de ser ruido.
+    El peso de referencia sólo aplica al entrar: la política dice dejar correr
+    los pesos y operar nada más que entradas y salidas, así que el peso real es
+    el único que existe después. La columna no es una instrucción pendiente.
+    Se marca cuando la diferencia pasa de dos puntos, que es donde deja de ser
+    ruido.
     """
     if real is None or pd.isna(real) or objetivo is None or pd.isna(objetivo):
         return "—"
@@ -331,7 +332,7 @@ def build_public_report(
                f"a cada pieza le tocan {_pesos(capital_por_pieza, '$')}. La columna dice cuántos pesos va "
                "en cada acción."
                if capital_por_pieza else
-               "La columna «cuánto pesa» es dentro de su propia pieza, y cada pieza es un cuarto del total.")
+               "El peso de entrada es dentro de su propia pieza, y cada pieza es un cuarto del total.")
 
     conjunto = metrics[CONJUNTO]
     headline = _signed(conjunto["return"])
