@@ -35,7 +35,18 @@ La convención difiere en una rueda y es sistemática: producción anotaba la
 **ejecución** —`next_session(review)`— y el libro anota la **señal**. Toda la
 comparación se hace corriendo el libro una sesión hacia adelante.
 
-### Delta-12: 8 de 8
+### Delta-12: 8 de 8, y lo que eso vale
+
+**Esto no es evidencia independiente de que las fechas sean correctas.** Las
+dos rutinas comparten la regla del calendario y leen la misma serie reparada,
+las dos aplicando las reglas de hoy: si la regla estuviera mal, se
+equivocarían igual. Lo que sí atrapa es error de programación —el recorrido
+implementado distinto de producción— y eso tiene valor propio.
+
+La evidencia que sí vale es otra, y es de otra clase: **el calentamiento no
+mueve ninguna de estas ocho fechas.** Arrancando el recorrido en 2024, 2023 o
+2021 en vez de 2025, Delta-12 da exactamente las mismas entradas. Eso descarta
+la dependencia del camino, que era el defecto que quedaba vivo.
 
 | posición | reconstrucción | libro (señal) | |
 |---|---|---|---|
@@ -54,17 +65,26 @@ equivocada se delataría.
 **Dos de estas ocho no calzaban contra el historial publicado**: ECL aparecía
 con `2026-04-01` y MALLPLAZA con `2026-01-02`. Las dos son exactamente las que
 el libro registra con una salida intermedia —ECL fuera entre el 29-05 y el
-30-06, MALLPLAZA entre el 30-01 y el 27-02— y las dos se resuelven a favor del
-libro al reparar la serie de precios. **Lo que movió esas dos fechas fue la
-reparación del dato, no el recorrido.**
+30-06, MALLPLAZA entre el 30-01 y el 27-02—.
 
-### La regla del calendario no cambió
+El hallazgo es que **lo que movió esas fechas fue el dato y no el recorrido**.
+Lo que no se puede decir es que eso las valide: datos reparados más reglas de
+hoy *es* el libro, así que resolverse a su favor era el único resultado
+posible.
 
-Era la pregunta de fondo. `reconstruct_entry_dates` usa
-`sessions.to_period("M") < as_of.to_period("M")` y toma el máximo de cada mes:
-**idéntico** a lo que hace el recorrido. `as_of.to_period('M') - 1` fue siempre
-el comportamiento de producción. La diferencia de una rueda es señal contra
-ejecución, no calendario.
+### La regla del calendario: la pregunta es inconducente
+
+Lo escribí como si estuviera contestada y no lo está. Que
+`reconstruct_entry_dates` y el recorrido usen el mismo
+`sessions.to_period("M") < as_of.to_period("M")` dice que **dos rutinas del
+código de hoy coinciden**, no que producción haya usado esa regla en febrero.
+La única evidencia posible era el historial, y el historial empieza el
+15-07-2026.
+
+Lo correcto es: **no hay evidencia en ningún sentido**, y la pregunta es
+inconducente, porque nunca hubo un sistema en vivo que pudiera haber tenido
+otra regla. La diferencia de una rueda entre las dos rutinas es señal contra
+ejecución.
 
 ### Gamma-6 y el oro: sin información
 
@@ -73,28 +93,45 @@ las seis posiciones de Gamma-6 quedaron estampadas con `2026-09-01` y el oro
 con `2026-09-18`. Que ABT y JNJ coincidan con el libro es casualidad. **El
 historial no dice nada sobre estas siete posiciones.**
 
-### Sigma-6: no reconcilia, y la causa es estructural
+### Sigma-6: el borde se propagaba un año, y se corrigió
 
 Sigma-6 tiene **tenencia máxima de 365 días**, así que es dependiente del
-camino: la fecha de entrada depende de dónde arranque el recorrido. El libro
-arranca el 02-01-2025 porque hacia atrás no hay dato reparado en que confiar.
+camino: la fecha de entrada depende de dónde arranque el recorrido.
+Arrancando en 2025, BCI quedaba con entrada el 16-01-2026; arrancando antes,
+queda el **24-10-2025**, que calza exacto con la reconstrucción.
 
-Corriendo el mismo recorrido desde 2021-07-09, **BCI se mueve del 16-01-2026
-al 24-10-2025 y calza exacto** con la reconstrucción. CENCOMALLS y PARAUCO
-calzan con cualquiera de los dos arranques. LTM y VAPORES siguen sin calzar, y
-ahí la causa es otra: la reconstrucción arma su calendario semanal con **todos
-los instrumentos, incluidos los estadounidenses**, mientras el libro usa sólo
-ruedas chilenas. Para una estrategia chilena semanal el calendario del libro es
-el correcto, pero los dos no coinciden.
+De ahí sale el calentamiento: el recorrido arranca el 02-01-2024 y publica
+desde el 02-01-2025. Ver `tools/construir_libro.py`.
 
-**Consecuencia, dicha sin adorno:** las fechas de Sigma-6 anteriores a
-2026-01 cargan el efecto del borde de la ventana. Las de Delta-12 no.
+LTM y VAPORES siguen sin calzar contra la reconstrucción, y ahí la causa es
+otra: la reconstrucción arma su calendario semanal con **todos los
+instrumentos, incluidos los estadounidenses**, mientras el libro usa sólo
+ruedas chilenas. Para una estrategia chilena semanal el calendario del libro
+es el correcto, pero los dos no coinciden.
+
+### Cuánto calentar: medido
+
+Mismo corte, cuatro arranques:
+
+| arranque | Sigma-6 | Delta-12 | Gamma-6 |
+|---|---|---|---|
+| 2025-01-02 | — | — | — |
+| 2024-01-02 | BCI 16-01-2026 → **24-10-2025** | idéntico | idéntico |
+| 2023-01-02 | BCI → 24-10-2025 | idéntico | idéntico |
+| 2021-07-09 | BCI → 24-10-2025 | idéntico | idéntico |
+
+Un año basta y converge. Para Sigma-6 la suficiencia es **estructural**: con
+tope de 365 días, el camino desde 365 días antes determina el estado. Para
+Delta-12 y Gamma-6, que no tienen tope, es **empírica**: se midió que no
+cambia nada hasta 2021, no se demostró que no pueda cambiar. **Si alguna de
+esas dos reglas se modifica, hay que volver a medirlo.**
 
 ## Las tres preguntas sobre el libro
 
-**¿Alguna posición con fecha 02-01-2025?** **No.** Ninguna de las 153 filas
-entra en el borde: la primera revisión mensual del recorrido es el 31-01-2025 y
-la primera semanal, el 03-01-2025. El resguardo existe y nunca se activó.
+**¿Alguna posición con fecha 02-01-2025?** **No**, y no tranquiliza. El borde
+no se manifiesta como una fila fechada en el borde, sino como fechas
+equivocadas un año después —BCI era exactamente eso—. La verificación que lo
+reemplaza es la comparación entre arranques de la tabla de más arriba.
 
 **¿Registra reentradas?** **Sí.** 42 de los 71 pares (estrategia, instrumento)
 tienen más de una fila, con las cerradas conservadas aparte. COPEC entra y sale
