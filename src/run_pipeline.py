@@ -21,6 +21,13 @@ CONFIG=ROOT/'config'/'runtime.v2.json'
 GAMMA_RULE_VERSION='1.0.0'
 STRATEGY_SERIES=['Sigma-6','Delta-12','Gamma-6','Oro']
 CONJUNTO='Conjunto AlphaData'
+BENCHMARK_RECONSTRUIDO='IPSA Total Return'
+# Toda columna de data/reconstruccion_historica.csv tiene que recalcularse en
+# cada corrida desde datos primarios. Si aparece una que no está acá, la corrida
+# se detiene: es exactamente la forma en que la serie de Sigma-6 publicó
+# +28,75% durante meses sin que nadie la volviera a calcular. Ver
+# CENSO_DE_SERIES.md.
+SERIES_RECONSTRUIDAS={*STRATEGY_SERIES,BENCHMARK_RECONSTRUIDO,CONJUNTO}
 
 def load_state()->dict:
     if STATE.exists():
@@ -442,8 +449,19 @@ def main()->None:
         oro_rebuilt=oro_historical_nav(prices_oro,universe,fx,historical.date.min(),historical.date.max(),US_COST_RATE)
         if len(oro_rebuilt):
             historical['Oro']=historical.date.map(oro_rebuilt.set_index('date')['Oro']).ffill()
+        # El benchmark también. Era la última serie guardada de la
+        # reconstrucción, y una serie guardada es la forma que ya falló: la de
+        # Sigma-6 sobrevivió intacta a la reparación de los precios chilenos y
+        # publicó +28,75% cuando el número era diez puntos menos.
+        ipsa=prices.loc[prices.alphadata_ticker=='IPSA_TR',['date','adjusted_close']].dropna().sort_values('date')
+        ipsa=ipsa.loc[ipsa.date.between(historical.date.min(),historical.date.max())].set_index('date').adjusted_close
+        if len(ipsa)>1: historical[BENCHMARK_RECONSTRUIDO]=historical.date.map(ipsa/ipsa.iloc[0]*100).ffill()
         historical_combined=combined_equal_weight(historical,STRATEGY_SERIES)
         if len(historical_combined): historical[CONJUNTO]=historical.date.map(historical_combined)
+        sin_recalcular=set(historical.columns)-{'date'}-SERIES_RECONSTRUIDAS
+        if sin_recalcular:
+            raise RuntimeError('Hay series publicadas que nadie recalcula: '+', '.join(sorted(sin_recalcular))
+                               +'. Ver CENSO_DE_SERIES.md; una serie guardada es la forma del defecto de Sigma-6.')
         historical.to_csv(historical_path,index=False)
     md,html=build_public_report(as_of,sigma,delta,smove,dmove,coverage,errors,history,gamma=gamma,gamma_moves=gmove,oro=oro_portfolio,oro_moves=omove,movimientos=movimientos_libro,capital_por_pieza=por_pieza);(REPORTS/'latest_report.md').write_text(md,encoding='utf-8');(REPORTS/'latest_report.html').write_text(html,encoding='utf-8')
     sigma.to_csv(DATA/'portfolio_sigma6.csv',index=False);delta.to_csv(DATA/'portfolio_delta12.csv',index=False);gamma.to_csv(DATA/'portfolio_gamma6.csv',index=False);oro_portfolio.to_csv(DATA/'portfolio_oro.csv',index=False)

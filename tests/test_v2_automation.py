@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 from src.ingest_recommendations import ingest
 from src.run_pipeline import enrich_open_positions, movements_for_report
@@ -192,3 +193,21 @@ def test_sigma6_exige_estar_sobre_la_sma200():
     sin, _, _ = sigma6(recomendacion, precios, as_of, {"sigma_entries": {}}, exigir_sma200=False)
     assert "CAE" not in set(con.ticker), "la SMA200 tiene que soltarla"
     assert "CAE" in set(sin.ticker), "sin la condición, el momentum 12-1 no ve la caída"
+
+
+def test_toda_serie_publicada_en_la_reconstruccion_se_recalcula():
+    """El censo, como guardia: una serie guardada es la forma que ya falló.
+
+    La de Sigma-6 sobrevivió intacta a la reparación de los precios chilenos,
+    a la reconstrucción de los dividendos y a los cambios de metodología, y
+    publicó +28,75% anual cuando el número era diez puntos menos. Agregar una
+    columna al archivo sin recalcularla deja de ser posible en silencio.
+    """
+    from pathlib import Path
+    from src.run_pipeline import SERIES_RECONSTRUIDAS
+    archivo = Path(__file__).resolve().parents[1] / "data" / "reconstruccion_historica.csv"
+    if not archivo.exists():
+        pytest.skip("todavía no hay reconstrucción")
+    columnas = set(pd.read_csv(archivo, nrows=1).columns) - {"date"}
+    assert columnas <= SERIES_RECONSTRUIDAS, (
+        f"series publicadas que nadie recalcula: {sorted(columnas - SERIES_RECONSTRUIDAS)}")
