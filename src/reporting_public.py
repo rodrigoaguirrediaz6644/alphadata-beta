@@ -267,9 +267,9 @@ def _vigencia(vigencia: dict | None) -> str:
     if vigencia.get("detenida"):
         return ('<div class="warn"><strong>Sigma-6 está detenida.</strong> La recomendación más '
                 f'reciente tiene {dias} días y el límite son {umbral}. La estrategia conserva su '
-                'cartera y no abre posiciones nuevas; tampoco vende, porque una venta disparada por '
-                'la falta del dato no es una señal. Se reanuda sola en cuanto entren recomendaciones '
-                f'nuevas.{("<p>Necesitan recomendación nueva:</p><ul>" + lista + "</ul>") if lista else ""}'
+                'cartera y no abre posiciones nuevas. Sí puede vender si el precio lo pide: lo que '
+                'falta son las recomendaciones, no los precios. Se reanuda sola en cuanto entren '
+                f'recomendaciones nuevas.{("<p>Necesitan recomendación nueva:</p><ul>" + lista + "</ul>") if lista else ""}'
                 "</div>")
     quedan = umbral - dias
     cuerpo = (f'<p class="muted">La recomendación más reciente tiene {dias} días. Si llega a '

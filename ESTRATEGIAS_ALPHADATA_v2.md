@@ -85,23 +85,42 @@ Los backtests independientes del capital aplican 0,1785% al monto transado y no 
 ### Guardia de vigencia de las recomendaciones
 
 Si en una revisión la recomendación más reciente del proveedor tiene **más de
-90 días**, Sigma-6 **conserva la cartera, no abre posiciones nuevas y no
-vende**. El informe lo dice. Se reanuda sola en cuanto entren recomendaciones
-nuevas.
+90 días**, Sigma-6 **no abre posiciones nuevas**. El informe lo dice, y la
+estrategia se reanuda sola en cuanto entren recomendaciones nuevas.
 
-Es la misma regla que para los precios: una venta disparada por la ausencia del
-insumo no es una señal, es un hueco. Sin la guardia, las posiciones se irían
-soltando una a una a medida que sus recomendaciones cumplen 365 días, y esa
-liquidación sería un artefacto de que nadie cargó el archivo.
+> **La regla, en su forma corta: un insumo viejo no puede agregar riesgo, pero
+> uno fresco sí puede quitarlo.**
+
+El principio es **no actuar sobre el dato que falta**, y lo que falta son las
+recomendaciones: los precios siguen llegando. De ahí sale qué se suspende y qué
+no.
+
+| condición | durante la guardia |
+|---|---|
+| La recomendación baja de nota a `0` o `-1` | **suspendida** |
+| La recomendación caduca a los 365 días | **suspendida** |
+| Abrir una posición nueva | **suspendido** |
+| `Momentum12-1 <= 0` | **sigue viva** |
+| `PrecioAjustado <= SMA200` | **sigue viva** |
+
+No se abre nada porque abrir sobre recomendaciones de tres meses es apostar
+sobre información que ya no se confirma. Sí se cierra por precio, y hay un
+argumento concreto además del principio: **la SMA200 se encendió precisamente
+porque Sigma-6 era la única estrategia sin salida que mirara el precio de hoy.**
+Suspenderla durante la guardia reabriría ese hueco justo en el periodo en que
+nadie está mirando.
+
+Sin la guardia, las posiciones se irían soltando una a una a medida que sus
+recomendaciones cumplen 365 días, y esa liquidación sería un artefacto de que
+nadie cargó el archivo, no una señal.
+
+**Consecuencia:** durante una guardia larga la cartera sólo puede encoger hacia
+caja. Es la dirección conservadora, y la regla de los dos disparos trae la
+decisión de vuelta antes de que llegue lejos.
 
 El umbral no está ajustado a la muestra: entre 2021 y 2026 el hueco más largo
 entre recomendaciones fue de **29 días**, así que la guardia nunca se habría
 activado y no cambia ninguna serie publicada.
-
-**Consecuencia que hay que aceptar:** mientras la guardia está activa también
-quedan suspendidas las salidas por precio. Una posición que cayera bajo su
-SMA200 durante ese periodo no se vendería. Es el precio de «no vende» dicho sin
-excepciones, y es deliberado.
 
 ### Límite de concentración
 

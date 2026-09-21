@@ -104,6 +104,19 @@ def recomendaciones_vencidas(valid: pd.DataFrame, as_of: pd.Timestamp,
     return int((pd.Timestamp(as_of).normalize()-disponibles.max().normalize()).days)
 
 
+def _sostiene_el_precio(ticker, momentum, sma200, ultimo, exigir_sma200: bool) -> bool:
+    """Si las condiciones de precio siguen sosteniendo una posicion ya abierta.
+
+    Se usa cuando la guardia de vigencia esta activa: las recomendaciones no
+    llegan, pero los precios si, y un insumo fresco si puede quitar riesgo.
+    """
+    mom=momentum.get(ticker,np.nan) if len(momentum) else np.nan
+    if pd.isna(mom) or mom<=0: return False
+    if not exigir_sma200: return True
+    referencia,precio=sma200.get(ticker,np.nan) if len(sma200) else np.nan, ultimo.get(ticker,np.nan) if len(ultimo) else np.nan
+    return bool(pd.notna(referencia) and pd.notna(precio) and precio>referencia)
+
+
 def sigma6(valid: pd.DataFrame, prices: pd.DataFrame, as_of: pd.Timestamp, previous: dict[str, Any], exigir_sma200: bool = True) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, Any]]:
     """Sigma-6: recomendacion de Credicorp vigente mas momentum 12-1 positivo.
 
@@ -160,8 +173,21 @@ def sigma6(valid: pd.DataFrame, prices: pd.DataFrame, as_of: pd.Timestamp, previ
     antiguedad=recomendaciones_vencidas(valid,as_of)
     detenida=antiguedad is not None and antiguedad>DIAS_VIGENCIA_RECOMENDACIONES
     if detenida:
-        # Se conserva la cartera tal cual: no se abre nada y no se vende nada.
-        eligible={t:1.0 for t in entries}
+        # **Un insumo viejo no puede agregar riesgo, pero uno fresco sí puede
+        # quitarlo.** Lo que falta son las recomendaciones; los precios siguen
+        # llegando. Se suspende lo que depende del insumo ausente —que la
+        # recomendación baje de nota, y su caducidad a los 365 días— y siguen
+        # vivas la SMA200 y el momentum.
+        #
+        # No se abre nada: abrir sobre recomendaciones de tres meses es apostar
+        # sobre información que ya no se confirma. Sí se cierra por precio:
+        # suspender la SMA200 reabriría, justo en el periodo en que nadie está
+        # mirando, el hueco que esa condición vino a tapar.
+        #
+        # La consecuencia es que durante una guardia larga la cartera sólo puede
+        # encoger hacia caja. Es la dirección conservadora, y la regla de los dos
+        # disparos trae la decisión de vuelta antes de que llegue lejos.
+        eligible={t:1.0 for t in entries if _sostiene_el_precio(t,momentum,sma200,ultimo,exigir_sma200)}
     weights=capped_pro_rata(pd.Series(eligible,dtype=float),.10)
     portfolio=pd.DataFrame({"ticker":weights.index,"target_weight":weights.values}) if len(weights) else pd.DataFrame(columns=["ticker","target_weight"])
     old=set(entries); new=set(portfolio.ticker); new_entries={t:(entries[t] if t in entries else as_of.date().isoformat()) for t in new}

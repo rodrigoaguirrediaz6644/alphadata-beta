@@ -282,10 +282,10 @@ def _precios_sanos(tickers, hasta="2026-12-31"):
 def test_la_guardia_de_vigencia_conserva_la_cartera_y_no_abre_nada():
     """Un mes saltado tiene que ser ruidoso, no silencioso.
 
-    Si la recomendación más reciente pasa de noventa días, Sigma-6 conserva la
-    cartera, no abre posiciones y **no vende**: una venta disparada por la
-    ausencia del insumo no es una señal, es un hueco. Es la misma regla que
-    para los precios.
+    **Un insumo viejo no puede agregar riesgo, pero uno fresco sí puede
+    quitarlo.** Si la recomendación más reciente pasa de noventa días, Sigma-6
+    no abre nada, porque abrir sobre recomendaciones de tres meses es apostar
+    sobre información que ya no se confirma.
     """
     from src.strategy_engine import sigma6
     v = pd.DataFrame([_recomendacion("VIEJA", "2026-07-22"), _recomendacion("NUEVA", "2026-07-22")])
@@ -338,3 +338,35 @@ def test_la_guardia_nunca_se_habria_activado_en_el_historial():
         errors="coerce").dropna()
     hueco = pd.Series(sorted(fechas.unique())).diff().dt.days.max()
     assert hueco < DIAS_VIGENCIA_RECOMENDACIONES, f"hueco histórico de {hueco} días"
+
+
+def test_durante_la_guardia_la_sma200_sigue_viva():
+    """Un insumo viejo no puede agregar riesgo, pero uno fresco sí puede quitarlo.
+
+    Lo que falta cuando la guardia dispara son las recomendaciones; los precios
+    siguen llegando. Suspender la SMA200 reabriría, justo en el periodo en que
+    nadie está mirando, el hueco que esa condición vino a tapar: Sigma-6 era la
+    única estrategia sin salida que mirara el precio de hoy.
+    """
+    from src.strategy_engine import sigma6
+    v = pd.DataFrame([_recomendacion("SANA", "2026-07-22"), _recomendacion("CAE", "2026-07-22")])
+    precios = _precios_sanos(["SANA", "CAE"], hasta="2026-12-31")
+    # CAE se desploma el último mes: el momentum 12-1 no lo ve, la SMA200 sí.
+    cae = precios.alphadata_ticker == "CAE"
+    corte = precios.loc[cae, "date"] >= pd.Timestamp("2026-11-20")
+    precios.loc[cae & corte.reindex(precios.index, fill_value=False),
+                ["close", "adjusted_close"]] *= .5
+    estado = {"sigma_entries": {"SANA": "2026-01-02", "CAE": "2026-01-02"}}
+    cartera, _, st = sigma6(v, precios, pd.Timestamp("2026-12-30"), estado)
+    assert st["vigencia_detenida"]
+    assert set(cartera.ticker) == {"SANA"}, "la que cayó bajo su SMA200 tiene que salir"
+
+
+def test_durante_la_guardia_la_cartera_solo_puede_encoger():
+    """No se abre nada, aunque el nombre nuevo cumpla todas las de precio."""
+    from src.strategy_engine import sigma6
+    v = pd.DataFrame([_recomendacion("DENTRO", "2026-07-22"), _recomendacion("FUERA", "2026-07-22")])
+    precios = _precios_sanos(["DENTRO", "FUERA"], hasta="2026-12-31")
+    estado = {"sigma_entries": {"DENTRO": "2026-01-02"}}
+    cartera, _, st = sigma6(v, precios, pd.Timestamp("2026-12-30"), estado)
+    assert st["vigencia_detenida"] and set(cartera.ticker) == {"DENTRO"}
