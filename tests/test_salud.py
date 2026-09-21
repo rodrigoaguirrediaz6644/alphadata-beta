@@ -1,0 +1,78 @@
+"""El panel de salud: una línea cuando todo está bien.
+
+El criterio de qué entra es que su falla pueda ensuciar un número publicado sin
+avisar. Y la regla que ya aprendimos: una alarma que siempre está roja por una
+razón conocida deja de ser una alarma.
+"""
+
+import pandas as pd
+
+from src.salud import CONOCIDOS, html, markdown, revisar
+
+SANO = dict(
+    as_of=pd.Timestamp("2026-09-17"), precios_al_dia=True, series_detenidas=set(),
+    cobertura_incompleta=set(), series_recalculadas={"Sigma-6", "Delta-12"},
+    series_publicadas={"Sigma-6", "Delta-12"}, carteras_reproducidas=True,
+    dias_sin_recomendaciones=57, umbral_vigencia=90, dividendos_sin_respaldo=set(),
+    suite_verde=True)
+
+
+def test_cuando_todo_esta_bien_es_una_sola_linea():
+    chequeos, conocidos = revisar(**SANO)
+    assert all(c.sano for c in chequeos) and conocidos == []
+    texto = html(chequeos, conocidos)
+    assert "Los datos están sanos y los cálculos cuadran" in texto
+    assert "<li>" not in texto          # nada de listas cuando no hay nada que decir
+    assert "asuntos conocidos" not in texto
+
+
+def test_cuando_algo_falla_dice_que_y_no_lo_demas():
+    chequeos, _ = revisar(**{**SANO, "carteras_reproducidas": False,
+                             "series_recalculadas": {"Sigma-6"}})
+    texto = html(chequeos)
+    assert "2 verificaciones que no pasaron" in texto
+    assert "no reproducen lo que publican las reglas" in texto
+    assert "sin recalcular: Delta-12" in texto
+    # Lo que sí pasó no aparece: un panel con filas verdes no se lee.
+    assert "la suite pasó" not in texto
+
+
+def test_lo_conocido_se_aparta_y_no_se_esconde():
+    """AESANDES no puede aparecer en rojo todas las semanas.
+
+    Está congelado desde abril de 2025 y anotado. Si saliera cada corrida, el
+    panel dejaría de leerse, que es peor que no tenerlo.
+    """
+    chequeos, conocidos = revisar(**{**SANO,
+                                     "cobertura_incompleta": {"AESANDES", "MULTIFOODS"},
+                                     "dividendos_sin_respaldo": {"MALLPLAZA 2026-09-03"}})
+    assert all(c.sano for c in chequeos)
+    assert conocidos == ["AESANDES", "MALLPLAZA 2026-09-03", "MULTIFOODS"]
+    texto = html(chequeos, conocidos)
+    assert "3 asuntos conocidos apartados" in texto or "3 asuntos conocidos" in texto
+    assert "AESANDES" in texto          # apartado, no escondido
+    assert "AESANDES" in markdown(chequeos, conocidos)
+
+
+def test_uno_nuevo_si_enciende_el_panel():
+    chequeos, conocidos = revisar(**{**SANO, "cobertura_incompleta": {"AESANDES", "CHILE"}})
+    assert conocidos == ["AESANDES"]
+    cobertura = [c for c in chequeos if c.nombre == "Cobertura"][0]
+    assert not cobertura.sano and "CHILE" in cobertura.detalle and "AESANDES" not in cobertura.detalle
+
+
+def test_la_vigencia_cuenta_los_dias_que_quedan():
+    chequeos, _ = revisar(**{**SANO, "dias_sin_recomendaciones": 91})
+    reco = [c for c in chequeos if c.nombre == "Recomendaciones"][0]
+    assert not reco.sano and "no abre" in reco.detalle
+    chequeos, _ = revisar(**SANO)
+    reco = [c for c in chequeos if c.nombre == "Recomendaciones"][0]
+    assert reco.sano and "quedan 33" in reco.detalle
+
+
+def test_todo_lo_conocido_esta_anotado_en_pendientes():
+    """Apartar algo exige que su razón esté escrita, o se vuelve una forma de esconder."""
+    from pathlib import Path
+    texto = (Path(__file__).resolve().parents[1] / "PENDIENTES.md").read_text(encoding="utf-8")
+    for clave in CONOCIDOS:
+        assert clave.split()[0] in texto, f"{clave} se aparta del panel y no está en PENDIENTES.md"

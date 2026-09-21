@@ -361,6 +361,8 @@ def build_public_report(
     movimientos: pd.DataFrame | None = None,
     capital_por_pieza: float | None = None,
     vigencia: dict | None = None,
+    salud: list | None = None,
+    conocidos: list | None = None,
 ) -> tuple[str, str]:
     vacio_cartera = pd.DataFrame(columns=["ticker", "target_weight"])
     vacio_movs = pd.DataFrame(columns=["ticker", "action", "target_weight"])
@@ -405,6 +407,8 @@ def build_public_report(
 
     problems = []
     aviso_vigencia = _vigencia(vigencia)
+    from src.salud import html as _salud_html, markdown as _salud_md
+    panel = _salud_html(salud, conocidos) if salud else ''
     if len(errors):
         problems.append(f"{len(errors)} recomendaciones nuevas no se pudieron usar porque venían incompletas.")
     if not benchmark_usable:
@@ -487,7 +491,9 @@ def build_public_report(
     <p class="muted">Todos los precios están en pesos. Gamma-6 y el oro se compran en Chile como CDV, así que su resultado ya incluye el efecto del tipo de cambio. El oro no se compra ni se vende por señales: es una posición fija que está para amortiguar las caídas del resto.</p>
     </section>
 
-    <section><h2>Estado de los datos</h2>{aviso_vigencia}{problems_block}</section>
+    <section><h2>¿Hay que preocuparse?</h2>
+    {panel}
+    {aviso_vigencia}{problems_block}</section>
 
     </main></body></html>'''
 
@@ -514,5 +520,6 @@ def build_public_report(
         lines.append(f"- {name}: {_signed(metrics[name]['return'])} desde el {inicio:%d-%m-%Y}; peor caída {pct(metrics[name]['mdd'])}.")
     if not benchmark_usable:
         lines.append("- La comparación con la bolsa chilena no está disponible: la serie del IPSA tiene un salto y quedó fuera hasta corregirla.")
+    lines += ["", "## ¿Hay que preocuparse?", "", _salud_md(salud, conocidos) if salud else "- Sin panel de salud en esta corrida.", ""]
     lines += ["", "El informe HTML incluye el gráfico y las carteras. La metodología y sus parámetros son información reservada.", ""]
     return "\n".join(lines), html

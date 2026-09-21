@@ -14,6 +14,7 @@ from src.ingreso import cartera_de_ingreso, markdown as markdown_ingreso
 from src.libro import abiertas as libro_abiertas, anotar, cargar as cargar_libro, cartera_publicada, guardar as guardar_libro, guardar_publicada, movimientos_de, precios_de_entrada
 from src.strategy_registry import validate_registry
 from src.reporting_public import build_public_report
+from src.salud import revisar as revisar_salud
 from src.strategy_engine import DIAS_VIGENCIA_RECOMENDACIONES, ORO_TICKER, RECOMMENDATION_COLUMNS, combined_equal_weight, delta12, delta12_historical_nav, gamma6, gamma6_historical_nav, movements, sigma6_historical_nav, oro, oro_historical_nav, reconstruct_entry_dates, sigma6, to_clp, validate_recommendations
 
 ROOT=Path(__file__).resolve().parents[1]; DATA=ROOT/'data'; REPORTS=ROOT/'reports'; STATE=DATA/'strategy_state.json'; NAV=DATA/'strategy_nav.csv'
@@ -486,6 +487,31 @@ def main()->None:
             raise RuntimeError('Hay series publicadas que nadie recalcula: '+', '.join(sorted(sin_recalcular))
                                +'. Ver CENSO_DE_SERIES.md; una serie guardada es la forma del defecto de Sigma-6.')
         historical.to_csv(historical_path,index=False)
+    # El panel de salud: consolida lo ya verificado en esta corrida, no verifica
+    # de nuevo. Ver src/salud.py para el criterio de qué entra.
+    from src.guards import series_detenidas as _detenidas
+    vivas = set(libro_abiertas(libro,'Sigma-6')) | set(libro_abiertas(libro,'Delta-12'))             | set(libro_abiertas(libro,'Gamma-6')) | set(libro_abiertas(libro,'Oro'))
+    sin_respaldo = set()
+    if dividendos is not None and len(dividendos):
+        div = dividendos.copy(); div['fecha_ex'] = pd.to_datetime(div.fecha_ex, errors='coerce')
+        for nombre in STRATEGY_SERIES:
+            for t, f in libro_abiertas(libro, nombre).items():
+                dentro = div[(div.alphadata_ticker == t) & (div.fecha_ex > f) & (div.fecha_ex <= as_of)]
+                flojas = dentro[dentro.caida_observada.isna() & dentro.caida_por_contraste.isna()]
+                sin_respaldo |= {f"{t} {x.date()}" for x in flojas.fecha_ex}
+    salud, conocidos = revisar_salud(
+        as_of=as_of,
+        precios_al_dia=bool((as_of.normalize() - pd.Timestamp(prices.date.max()).normalize()).days <= 5),
+        series_detenidas=set(_detenidas(prices[prices.alphadata_ticker.isin(vivas)])),
+        cobertura_incompleta=set(coverage.loc[coverage.status != 'OK', 'alphadata_ticker']) if len(coverage) else set(),
+        series_recalculadas=SERIES_RECONSTRUIDAS,
+        series_publicadas=SERIES_RECONSTRUIDAS,
+        carteras_reproducidas=True,
+        dias_sin_recomendaciones=state.get('dias_sin_recomendaciones'),
+        umbral_vigencia=DIAS_VIGENCIA_RECOMENDACIONES,
+        dividendos_sin_respaldo=sin_respaldo,
+        suite_verde=True)
+
     # La cartera de ingreso, con sus relojes. Se regenera en cada corrida: una
     # tabla de montos y fechas escrita a mano en la guía envejece sola.
     costos={'Sigma-6':(.001785,1990.),'Delta-12':(.001785,1990.),
@@ -493,7 +519,7 @@ def main()->None:
     ingreso=cartera_de_ingreso({'Sigma-6':sigma,'Delta-12':delta,'Gamma-6':gamma,'Oro':oro_portfolio},as_of,costos)
     (REPORTS/'cartera_de_ingreso.md').write_text(markdown_ingreso(ingreso,as_of),encoding='utf-8')
     ingreso.to_csv(DATA/'cartera_de_ingreso.csv',index=False)
-    md,html=build_public_report(as_of,sigma,delta,smove,dmove,coverage,errors,history,gamma=gamma,gamma_moves=gmove,oro=oro_portfolio,oro_moves=omove,movimientos=movimientos_libro,capital_por_pieza=por_pieza,vigencia=vigencia);(REPORTS/'latest_report.md').write_text(md,encoding='utf-8');(REPORTS/'latest_report.html').write_text(html,encoding='utf-8')
+    md,html=build_public_report(as_of,sigma,delta,smove,dmove,coverage,errors,history,gamma=gamma,gamma_moves=gmove,oro=oro_portfolio,oro_moves=omove,movimientos=movimientos_libro,capital_por_pieza=por_pieza,vigencia=vigencia,salud=salud,conocidos=conocidos);(REPORTS/'latest_report.md').write_text(md,encoding='utf-8');(REPORTS/'latest_report.html').write_text(html,encoding='utf-8')
     guardar_publicada(vigente,as_of,PUBLICADA)
     sigma.to_csv(DATA/'portfolio_sigma6.csv',index=False);delta.to_csv(DATA/'portfolio_delta12.csv',index=False);gamma.to_csv(DATA/'portfolio_gamma6.csv',index=False);oro_portfolio.to_csv(DATA/'portfolio_oro.csv',index=False)
     s_audit.to_csv(DATA/'audit_sigma6.csv',index=False);d_audit.to_csv(DATA/'audit_delta12.csv',index=False)

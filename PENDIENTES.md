@@ -48,6 +48,24 @@ Es el **único** dato sin respaldo de precio que sostiene una cifra publicada.
 Corroborado en magnitud y calendario contra la fuente primaria, que no tiene
 2026. **Se reabre cuando Mallplaza publique su dividendo de 2026.**
 
+## Los tres asuntos que el panel de salud aparta
+
+El panel del informe los deja fuera a propósito: **una alarma que siempre está
+roja por una razón conocida deja de ser una alarma.** Están acá para que
+apartarlos no sea una forma de esconderlos, y hay una prueba que exige que cada
+uno tenga su entrada en este archivo.
+
+**AESANDES**, congelado desde el 14-04-2025 y generando ruido en dos informes.
+Hay que averiguar si está deslistado o renombrado y cerrarlo de una vez. No
+afecta ningún número publicado: está fuera del universo operable.
+
+**MULTIFOODS**, con una rueda de historia tras corregir el símbolo a
+`MULTI-X.SN`. Queda fuera del universo de Sigma-6 hasta acumular 252 ruedas. Se
+puede rellenar desde el archivo de investing.com que ya está validado.
+
+**MALLPLAZA del 03-09-2026**, el dividendo de $30 sin respaldo de precio. Ver
+más arriba.
+
 ## La razón del CDV
 
 El sistema convierte los instrumentos estadounidenses multiplicando por el tipo
