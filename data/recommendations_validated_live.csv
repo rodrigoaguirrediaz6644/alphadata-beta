@@ -9,7 +9,6 @@ published_at,available_at,broker,ticker,recommendation,target_price_min,target_p
 2021-07-14,2021-07-14,Credicorp Capital,CHILE,Comprar,,,,,"Histórico validado, página 20",9,Credicorp Capital,1,2021-07-14,2021-07-14
 2021-07-14,2021-07-14,Credicorp Capital,ITAUCL,Inferior al mercado,,,,,"Histórico validado, página 20",10,Credicorp Capital,-1,2021-07-14,2021-07-14
 2021-07-15,2021-07-15,Credicorp Capital,ITAUCL,Inferior al mercado,,,,,"Histórico validado, página 19",11,Credicorp Capital,-1,2021-07-15,2021-07-15
-2021-07-19,2021-07-19,Credicorp Capital,AESANDES,Comprar,,,,,"Histórico validado, página 19",12,Credicorp Capital,1,2021-07-19,2021-07-19
 2021-07-26,2021-07-26,Credicorp Capital,ITAUCL,Inferior al mercado,,,,,"Histórico validado, página 16",13,Credicorp Capital,-1,2021-07-26,2021-07-26
 2021-07-26,2021-07-26,Credicorp Capital,SONDA,Mantener,,,,,"Histórico validado, página 16",14,Credicorp Capital,0,2021-07-26,2021-07-26
 2021-07-26,2021-07-26,Credicorp Capital,SQM-B,Mantener,,,,,"Histórico validado, página 16",15,Credicorp Capital,0,2021-07-26,2021-07-26
@@ -46,7 +45,6 @@ published_at,available_at,broker,ticker,recommendation,target_price_min,target_p
 2021-08-25,2021-08-25,Credicorp Capital,ILC,Mantener,,,,,"Histórico validado, página 6",46,Credicorp Capital,0,2021-08-25,2021-08-25
 2021-08-27,2021-08-27,Credicorp Capital,AGUAS-A,Mantener,,,,,"Histórico validado, página 5",47,Credicorp Capital,0,2021-08-27,2021-08-27
 2021-08-27,2021-08-27,Credicorp Capital,ILC,Mantener,,,,,"Histórico validado, página 5",48,Credicorp Capital,0,2021-08-27,2021-08-27
-2021-08-30,2021-08-30,Credicorp Capital,AESANDES,Comprar,,,,,"Histórico validado, página 5",49,Credicorp Capital,1,2021-08-30,2021-08-30
 2021-08-30,2021-08-30,Credicorp Capital,RIPLEY,Comprar,,,,,"Histórico validado, página 5",50,Credicorp Capital,1,2021-08-30,2021-08-30
 2021-08-31,2021-08-31,Credicorp Capital,AGUAS-A,Mantener,,,,,"Histórico validado, página 4",51,Credicorp Capital,0,2021-08-31,2021-08-31
 2021-08-31,2021-08-31,Credicorp Capital,SMU,Comprar,,,,,"Histórico validado, página 4",52,Credicorp Capital,1,2021-08-31,2021-08-31
@@ -61,7 +59,6 @@ published_at,available_at,broker,ticker,recommendation,target_price_min,target_p
 2021-09-03,2021-09-03,Credicorp Capital,FALABELLA,Comprar,,,,,"Histórico validado, página 3",61,Credicorp Capital,1,2021-09-03,2021-09-03
 2021-09-06,2021-09-06,Credicorp Capital,CENCOSUD,Comprar,,,,,"Histórico validado, página 2",62,Credicorp Capital,1,2021-09-06,2021-09-06
 2021-09-06,2021-09-06,Credicorp Capital,MALLPLAZA,Comprar,,,,,"Histórico validado, página 2",63,Credicorp Capital,1,2021-09-06,2021-09-06
-2021-09-08,2021-09-08,Credicorp Capital,AESANDES,Comprar,,,,,"Histórico validado, página 1",64,Credicorp Capital,1,2021-09-08,2021-09-08
 2021-09-08,2021-09-08,Credicorp Capital,ECL,Mantener,,,,,"Histórico validado, página 1",65,Credicorp Capital,0,2021-09-08,2021-09-08
 2021-09-08,2021-09-08,Credicorp Capital,ENELCHILE,Mantener,,,,,"Histórico validado, página 1",66,Credicorp Capital,0,2021-09-08,2021-09-08
 2021-09-13,2021-09-13,Credicorp Capital,PARAUCO,Mantener,,,,,"Histórico validado, página 39",67,Credicorp Capital,0,2021-09-13,2021-09-13
@@ -74,7 +71,7 @@ published_at,available_at,broker,ticker,recommendation,target_price_min,target_p
 2021-09-16,2021-09-16,Credicorp Capital,BSANTANDER,Comprar,,,,,"Histórico validado, página 37",74,Credicorp Capital,1,2021-09-16,2021-09-16
 2021-09-16,2021-09-16,Credicorp Capital,CAP,Comprar,,,,,"Histórico validado, página 37",75,Credicorp Capital,1,2021-09-16,2021-09-16
 2021-09-16,2021-09-16,Credicorp Capital,CCU,Inferior al mercado,,,,,"Histórico validado, página 36",76,Credicorp Capital,-1,2021-09-16,2021-09-16
-2021-09-16,2021-09-16,Credicorp Capital,CENCOSHOPP,Comprar,,,,,"Histórico validado, página 37",77,Credicorp Capital,1,2021-09-16,2021-09-16
+2021-09-16,2021-09-16,Credicorp Capital,CENCOMALLS,Comprar,,,,,"Histórico validado, página 37",77,Credicorp Capital,1,2021-09-16,2021-09-16
 2021-09-16,2021-09-16,Credicorp Capital,CENCOSUD,Comprar,,,,,"Histórico validado, página 38",78,Credicorp Capital,1,2021-09-16,2021-09-16
 2021-09-16,2021-09-16,Credicorp Capital,CHILE,Comprar,,,,,"Histórico validado, página 37",79,Credicorp Capital,1,2021-09-16,2021-09-16
 2021-09-16,2021-09-16,Credicorp Capital,CMPC,Comprar,,,,,"Histórico validado, página 38",80,Credicorp Capital,1,2021-09-16,2021-09-16
@@ -102,7 +99,7 @@ published_at,available_at,broker,ticker,recommendation,target_price_min,target_p
 2021-09-27,2021-09-27,Credicorp Capital,CENCOSUD,Comprar,,,,,"Histórico validado, página 33",102,Credicorp Capital,1,2021-09-27,2021-09-27
 2021-09-28,2021-09-28,Credicorp Capital,ILC,Mantener,,,,,"Histórico validado, página 33",103,Credicorp Capital,0,2021-09-28,2021-09-28
 2021-09-30,2021-09-30,Credicorp Capital,ENTEL,Comprar,,,,,"Histórico validado, página 31",104,Credicorp Capital,1,2021-09-30,2021-09-30
-2021-10-01,2021-10-01,Credicorp Capital,CENCOSHOPP,Comprar,,,,,"Histórico validado, página 31",105,Credicorp Capital,1,2021-10-01,2021-10-01
+2021-10-01,2021-10-01,Credicorp Capital,CENCOMALLS,Comprar,,,,,"Histórico validado, página 31",105,Credicorp Capital,1,2021-10-01,2021-10-01
 2021-10-05,2021-10-05,Credicorp Capital,ITAUCL,Inferior al mercado,,,,,"Histórico validado, página 30",106,Credicorp Capital,-1,2021-10-05,2021-10-05
 2021-10-06,2021-10-06,Credicorp Capital,ANDINA-B,Comprar,,,,,"Histórico validado, página 29",107,Credicorp Capital,1,2021-10-06,2021-10-06
 2021-10-06,2021-10-06,Credicorp Capital,BCI,Comprar,,,,,"Histórico validado, página 29",108,Credicorp Capital,1,2021-10-06,2021-10-06
@@ -121,7 +118,7 @@ published_at,available_at,broker,ticker,recommendation,target_price_min,target_p
 2021-10-08,2021-10-08,Credicorp Capital,FALABELLA,Mantener,,,,,"Histórico validado, página 27",121,Credicorp Capital,0,2021-10-08,2021-10-08
 2021-10-08,2021-10-08,Credicorp Capital,MALLPLAZA,Comprar,,,,,"Histórico validado, página 27",122,Credicorp Capital,1,2021-10-08,2021-10-08
 2021-10-12,2021-10-12,Credicorp Capital,CENCOSUD,Comprar,,,,,"Histórico validado, página 26",123,Credicorp Capital,1,2021-10-12,2021-10-12
-2021-10-14,2021-10-14,Credicorp Capital,CENCOSHOPP,Comprar,,,,,"Histórico validado, página 25",124,Credicorp Capital,1,2021-10-14,2021-10-14
+2021-10-14,2021-10-14,Credicorp Capital,CENCOMALLS,Comprar,,,,,"Histórico validado, página 25",124,Credicorp Capital,1,2021-10-14,2021-10-14
 2021-10-15,2021-10-15,Credicorp Capital,BSANTANDER,Comprar,,,,,"Histórico validado, página 25",125,Credicorp Capital,1,2021-10-15,2021-10-15
 2021-10-15,2021-10-15,Credicorp Capital,CCU,Inferior al mercado,,,,,"Histórico validado, página 25",126,Credicorp Capital,-1,2021-10-15,2021-10-15
 2021-10-15,2021-10-15,Credicorp Capital,CHILE,Comprar,,,,,"Histórico validado, página 25",127,Credicorp Capital,1,2021-10-15,2021-10-15
@@ -154,7 +151,7 @@ published_at,available_at,broker,ticker,recommendation,target_price_min,target_p
 2021-11-09,2021-11-09,Credicorp Capital,ENTEL,Comprar,,,,,"Histórico validado, página 57",154,Credicorp Capital,1,2021-11-09,2021-11-09
 2021-11-10,2021-11-10,Credicorp Capital,FALABELLA,Mantener,,,,,"Histórico validado, página 57",155,Credicorp Capital,0,2021-11-10,2021-11-10
 2021-11-10,2021-11-10,Credicorp Capital,MALLPLAZA,Comprar,,,,,"Histórico validado, página 57",156,Credicorp Capital,1,2021-11-10,2021-11-10
-2021-11-12,2021-11-12,Credicorp Capital,CENCOSHOPP,Comprar,,,,,"Histórico validado, página 55",157,Credicorp Capital,1,2021-11-12,2021-11-12
+2021-11-12,2021-11-12,Credicorp Capital,CENCOMALLS,Comprar,,,,,"Histórico validado, página 55",157,Credicorp Capital,1,2021-11-12,2021-11-12
 2021-11-12,2021-11-12,Credicorp Capital,CENCOSUD,Comprar,,,,,"Histórico validado, página 56",158,Credicorp Capital,1,2021-11-12,2021-11-12
 2021-11-12,2021-11-12,Credicorp Capital,HITES,Comprar,,,,,"Histórico validado, página 56",159,Credicorp Capital,1,2021-11-12,2021-11-12
 2021-11-16,2021-11-16,Credicorp Capital,SMU,Comprar,,,,,"Histórico validado, página 55",160,Credicorp Capital,1,2021-11-16,2021-11-16
@@ -166,7 +163,6 @@ published_at,available_at,broker,ticker,recommendation,target_price_min,target_p
 2021-12-01,2021-12-01,Credicorp Capital,ENELAM,Mantener,,,,,"Histórico validado, página 51",166,Credicorp Capital,0,2021-12-01,2021-12-01
 2021-12-02,2021-12-02,Credicorp Capital,COLBUN,Mantener,,,,,"Histórico validado, página 51",167,Credicorp Capital,0,2021-12-02,2021-12-02
 2021-12-06,2021-12-06,Credicorp Capital,CMPC,Comprar,,,,,"Histórico validado, página 50",168,Credicorp Capital,1,2021-12-06,2021-12-06
-2021-12-07,2021-12-07,Credicorp Capital,AESANDES,Mantener,,,,,"Histórico validado, página 49",169,Credicorp Capital,0,2021-12-07,2021-12-07
 2021-12-07,2021-12-07,Credicorp Capital,BESALCO,Comprar,,,,,"Histórico validado, página 50",170,Credicorp Capital,1,2021-12-07,2021-12-07
 2021-12-07,2021-12-07,Credicorp Capital,MALLPLAZA,Comprar,,,,,"Histórico validado, página 49",171,Credicorp Capital,1,2021-12-07,2021-12-07
 2021-12-07,2021-12-07,Credicorp Capital,PARAUCO,Comprar,,,,,"Histórico validado, página 49",172,Credicorp Capital,1,2021-12-07,2021-12-07
@@ -186,11 +182,9 @@ published_at,available_at,broker,ticker,recommendation,target_price_min,target_p
 2021-12-28,2021-12-28,Credicorp Capital,FALABELLA,Mantener,,,,,"Histórico validado, página 44",186,Credicorp Capital,0,2021-12-28,2021-12-28
 2021-12-29,2021-12-29,Credicorp Capital,ENELCHILE,Mantener,,,,,"Histórico validado, página 44",187,Credicorp Capital,0,2021-12-29,2021-12-29
 2021-12-29,2021-12-29,Credicorp Capital,SMU,Comprar,,,,,"Histórico validado, página 44",188,Credicorp Capital,1,2021-12-29,2021-12-29
-2021-12-30,2021-12-30,Credicorp Capital,AESANDES,Mantener,,,,,"Histórico validado, página 43",189,Credicorp Capital,0,2021-12-30,2021-12-30
 2022-01-05,2022-01-05,Credicorp Capital,CAP,Comprar,,,,,"Histórico validado, página 43",190,Credicorp Capital,1,2022-01-05,2022-01-05
-2022-01-05,2022-01-05,Credicorp Capital,CENCOSHOPP,Comprar,,,,,"Histórico validado, página 42",191,Credicorp Capital,1,2022-01-05,2022-01-05
+2022-01-05,2022-01-05,Credicorp Capital,CENCOMALLS,Comprar,,,,,"Histórico validado, página 42",191,Credicorp Capital,1,2022-01-05,2022-01-05
 2022-01-05,2022-01-05,Credicorp Capital,SMU,Comprar,,,,,"Histórico validado, página 43",192,Credicorp Capital,1,2022-01-05,2022-01-05
-2022-01-26,2022-01-26,Credicorp Capital,AESANDES,Mantener,,,,,"Histórico validado, página 79",193,Credicorp Capital,0,2022-01-26,2022-01-26
 2022-01-26,2022-01-26,Credicorp Capital,ENELCHILE,Mantener,,,,,"Histórico validado, página 79",194,Credicorp Capital,0,2022-01-26,2022-01-26
 2022-01-27,2022-01-27,Credicorp Capital,COLBUN,Mantener,,,,,"Histórico validado, página 79",195,Credicorp Capital,0,2022-01-27,2022-01-27
 2022-01-27,2022-01-27,Credicorp Capital,ECL,Comprar,,,,,"Histórico validado, página 79",196,Credicorp Capital,1,2022-01-27,2022-01-27
@@ -202,7 +196,7 @@ published_at,available_at,broker,ticker,recommendation,target_price_min,target_p
 2022-02-02,2022-02-02,Credicorp Capital,BCI,Comprar,,,,,"Histórico validado, página 77",202,Credicorp Capital,1,2022-02-02,2022-02-02
 2022-02-02,2022-02-02,Credicorp Capital,BSANTANDER,Comprar,,,,,"Histórico validado, página 76",203,Credicorp Capital,1,2022-02-02,2022-02-02
 2022-02-02,2022-02-02,Credicorp Capital,CAP,Comprar,,,,,"Histórico validado, página 77",204,Credicorp Capital,1,2022-02-02,2022-02-02
-2022-02-02,2022-02-02,Credicorp Capital,CENCOSHOPP,Comprar,,,,,"Histórico validado, página 77",205,Credicorp Capital,1,2022-02-02,2022-02-02
+2022-02-02,2022-02-02,Credicorp Capital,CENCOMALLS,Comprar,,,,,"Histórico validado, página 77",205,Credicorp Capital,1,2022-02-02,2022-02-02
 2022-02-02,2022-02-02,Credicorp Capital,CENCOSUD,Comprar,,,,,"Histórico validado, página 77",206,Credicorp Capital,1,2022-02-02,2022-02-02
 2022-02-02,2022-02-02,Credicorp Capital,CMPC,Comprar,,,,,"Histórico validado, página 77",207,Credicorp Capital,1,2022-02-02,2022-02-02
 2022-02-02,2022-02-02,Credicorp Capital,CONCHATORO,Comprar,,,,,"Histórico validado, página 77",208,Credicorp Capital,1,2022-02-02,2022-02-02
@@ -228,11 +222,9 @@ published_at,available_at,broker,ticker,recommendation,target_price_min,target_p
 2022-02-23,2022-02-23,Credicorp Capital,ITAUCL,Comprar,,,,,"Histórico validado, página 70",228,Credicorp Capital,1,2022-02-23,2022-02-23
 2022-02-24,2022-02-24,Credicorp Capital,ANDINA-B,Mantener,,,,,"Histórico validado, página 70",229,Credicorp Capital,0,2022-02-24,2022-02-24
 2022-02-24,2022-02-24,Credicorp Capital,CCU,Comprar,,,,,"Histórico validado, página 70",230,Credicorp Capital,1,2022-02-24,2022-02-24
-2022-02-25,2022-02-25,Credicorp Capital,AESANDES,Mantener,,,,,"Histórico validado, página 69",231,Credicorp Capital,0,2022-02-25,2022-02-25
 2022-02-25,2022-02-25,Credicorp Capital,SALFACORP,Mantener,,,,,"Histórico validado, página 70",232,Credicorp Capital,0,2022-02-25,2022-02-25
 2022-02-28,2022-02-28,Credicorp Capital,ENELAM,Mantener,,,,,"Histórico validado, página 69",233,Credicorp Capital,0,2022-02-28,2022-02-28
 2022-03-01,2022-03-01,Credicorp Capital,ENELCHILE,Mantener,,,,,"Histórico validado, página 69",234,Credicorp Capital,0,2022-03-01,2022-03-01
-2022-03-02,2022-03-02,Credicorp Capital,AESANDES,Mantener,,,,,"Histórico validado, página 68",235,Credicorp Capital,0,2022-03-02,2022-03-02
 2022-03-02,2022-03-02,Credicorp Capital,FALABELLA,Mantener,,,,,"Histórico validado, página 68",236,Credicorp Capital,0,2022-03-02,2022-03-02
 2022-03-02,2022-03-02,Credicorp Capital,ITAUCL,Comprar,,,,,"Histórico validado, página 68",237,Credicorp Capital,1,2022-03-02,2022-03-02
 2022-03-02,2022-03-02,Credicorp Capital,MALLPLAZA,Comprar,,,,,"Histórico validado, página 68",238,Credicorp Capital,1,2022-03-02,2022-03-02
@@ -294,7 +286,7 @@ published_at,available_at,broker,ticker,recommendation,target_price_min,target_p
 2022-05-05,2022-05-05,Credicorp Capital,PARAUCO,Mantener,,,,,"Histórico validado, página 88",294,Credicorp Capital,0,2022-05-05,2022-05-05
 2022-05-06,2022-05-06,Credicorp Capital,CMPC,Comprar,,,,,"Histórico validado, página 88",295,Credicorp Capital,1,2022-05-06,2022-05-06
 2022-05-09,2022-05-09,Credicorp Capital,CAP,Comprar,,,,,"Histórico validado, página 87",296,Credicorp Capital,1,2022-05-09,2022-05-09
-2022-05-10,2022-05-10,Credicorp Capital,CENCOSHOPP,Comprar,,,,,"Histórico validado, página 87",297,Credicorp Capital,1,2022-05-10,2022-05-10
+2022-05-10,2022-05-10,Credicorp Capital,CENCOMALLS,Comprar,,,,,"Histórico validado, página 87",297,Credicorp Capital,1,2022-05-10,2022-05-10
 2022-05-10,2022-05-10,Credicorp Capital,SMSAAM,Comprar,,,,,"Histórico validado, página 87",298,Credicorp Capital,1,2022-05-10,2022-05-10
 2022-05-11,2022-05-11,Credicorp Capital,CENCOSUD,Comprar,,,,,"Histórico validado, página 86",299,Credicorp Capital,1,2022-05-11,2022-05-11
 2022-05-11,2022-05-11,Credicorp Capital,MALLPLAZA,Comprar,,,,,"Histórico validado, página 86",300,Credicorp Capital,1,2022-05-11,2022-05-11
@@ -379,7 +371,7 @@ published_at,available_at,broker,ticker,recommendation,target_price_min,target_p
 2022-09-20,2022-09-20,Credicorp Capital,BSANTANDER,Mantener,,,,,"Histórico validado, página 130",379,Credicorp Capital,0,2022-09-20,2022-09-20
 2022-09-20,2022-09-20,Credicorp Capital,CAP,Comprar,,,,,"Histórico validado, página 130",380,Credicorp Capital,1,2022-09-20,2022-09-20
 2022-09-20,2022-09-20,Credicorp Capital,CCU,Comprar,,,,,"Histórico validado, página 130",381,Credicorp Capital,1,2022-09-20,2022-09-20
-2022-09-20,2022-09-20,Credicorp Capital,CENCOSHOPP,Mantener,,,,,"Histórico validado, página 130",382,Credicorp Capital,0,2022-09-20,2022-09-20
+2022-09-20,2022-09-20,Credicorp Capital,CENCOMALLS,Mantener,,,,,"Histórico validado, página 130",382,Credicorp Capital,0,2022-09-20,2022-09-20
 2022-09-20,2022-09-20,Credicorp Capital,CENCOSUD,Comprar,,,,,"Histórico validado, página 130",383,Credicorp Capital,1,2022-09-20,2022-09-20
 2022-09-20,2022-09-20,Credicorp Capital,CHILE,Mantener,,,,,"Histórico validado, página 130",384,Credicorp Capital,0,2022-09-20,2022-09-20
 2022-09-20,2022-09-20,Credicorp Capital,CMPC,Mantener,,,,,"Histórico validado, página 130",385,Credicorp Capital,0,2022-09-20,2022-09-20
@@ -427,7 +419,7 @@ published_at,available_at,broker,ticker,recommendation,target_price_min,target_p
 2022-11-04,2022-11-04,Credicorp Capital,SMU,Comprar,,,,,"Histórico validado, página 155",427,Credicorp Capital,1,2022-11-04,2022-11-04
 2022-11-04,2022-11-04,Credicorp Capital,SQM-B,Mantener,,,,,"Histórico validado, página 155",428,Credicorp Capital,0,2022-11-04,2022-11-04
 2022-11-08,2022-11-08,Credicorp Capital,ENTEL,Comprar,,,,,"Histórico validado, página 154",429,Credicorp Capital,1,2022-11-08,2022-11-08
-2022-11-10,2022-11-10,Credicorp Capital,CENCOSHOPP,Mantener,,,,,"Histórico validado, página 153",430,Credicorp Capital,0,2022-11-10,2022-11-10
+2022-11-10,2022-11-10,Credicorp Capital,CENCOMALLS,Mantener,,,,,"Histórico validado, página 153",430,Credicorp Capital,0,2022-11-10,2022-11-10
 2022-11-11,2022-11-11,Credicorp Capital,ECL,Comprar,,,,,"Histórico validado, página 153",431,Credicorp Capital,1,2022-11-11,2022-11-11
 2022-11-14,2022-11-14,Credicorp Capital,COPEC,Inferior al mercado,,,,,"Histórico validado, página 152",432,Credicorp Capital,-1,2022-11-14,2022-11-14
 2022-11-14,2022-11-14,Credicorp Capital,SALFACORP,Mantener,,,,,"Histórico validado, página 152",433,Credicorp Capital,0,2022-11-14,2022-11-14
@@ -515,7 +507,7 @@ published_at,available_at,broker,ticker,recommendation,target_price_min,target_p
 2023-03-14,2023-03-14,Credicorp Capital,SALFACORP,Mantener,,,,,"Histórico validado, página 200",515,Credicorp Capital,0,2023-03-14,2023-03-14
 2023-03-17,2023-03-17,Credicorp Capital,CCU,Comprar,,,,,"Histórico validado, página 199",516,Credicorp Capital,1,2023-03-17,2023-03-17
 2023-03-19,2023-03-19,Credicorp Capital,BSANTANDER,Comprar,,,,,"Histórico validado, página 199",517,Credicorp Capital,1,2023-03-19,2023-03-19
-2023-03-21,2023-03-21,Credicorp Capital,CENCOSHOPP,Mantener,,,,,"Histórico validado, página 198",518,Credicorp Capital,0,2023-03-21,2023-03-21
+2023-03-21,2023-03-21,Credicorp Capital,CENCOMALLS,Mantener,,,,,"Histórico validado, página 198",518,Credicorp Capital,0,2023-03-21,2023-03-21
 2023-03-21,2023-03-21,Credicorp Capital,CENCOSUD,Comprar,,,,,"Histórico validado, página 198",519,Credicorp Capital,1,2023-03-21,2023-03-21
 2023-03-21,2023-03-21,Credicorp Capital,SMU,Comprar,,,,,"Histórico validado, página 198",520,Credicorp Capital,1,2023-03-21,2023-03-21
 2023-03-22,2023-03-22,Credicorp Capital,INDISA,Comprar,,,,,"Histórico validado, página 198",521,Credicorp Capital,1,2023-03-22,2023-03-22
@@ -528,7 +520,7 @@ published_at,available_at,broker,ticker,recommendation,target_price_min,target_p
 2023-03-29,2023-03-29,Credicorp Capital,EMBONOR-B,Comprar,,,,,"Histórico validado, página 197",528,Credicorp Capital,1,2023-03-29,2023-03-29
 2023-03-29,2023-03-29,Credicorp Capital,ILC,Comprar,,,,,"Histórico validado, página 197",529,Credicorp Capital,1,2023-03-29,2023-03-29
 2023-03-29,2023-03-29,Credicorp Capital,ITAUCL,Comprar,,,,,"Histórico validado, página 197",530,Credicorp Capital,1,2023-03-29,2023-03-29
-2023-03-31,2023-03-31,Credicorp Capital,CENCOSHOPP,Mantener,,,,,"Histórico validado, página 196",531,Credicorp Capital,0,2023-03-31,2023-03-31
+2023-03-31,2023-03-31,Credicorp Capital,CENCOMALLS,Mantener,,,,,"Histórico validado, página 196",531,Credicorp Capital,0,2023-03-31,2023-03-31
 2023-03-31,2023-03-31,Credicorp Capital,COPEC,Mantener,,,,,"Histórico validado, página 196",532,Credicorp Capital,0,2023-03-31,2023-03-31
 2023-03-31,2023-03-31,Credicorp Capital,HITES,Comprar,,,,,"Histórico validado, página 196",533,Credicorp Capital,1,2023-03-31,2023-03-31
 2023-03-31,2023-03-31,Credicorp Capital,SMU,Comprar,,,,,"Histórico validado, página 196",534,Credicorp Capital,1,2023-03-31,2023-03-31
@@ -552,7 +544,7 @@ published_at,available_at,broker,ticker,recommendation,target_price_min,target_p
 2023-04-25,2023-04-25,Credicorp Capital,CONCHATORO,Comprar,,,,,"Histórico validado, página 192",552,Credicorp Capital,1,2023-04-25,2023-04-25
 2023-04-25,2023-04-25,Credicorp Capital,EMBONOR-B,Mantener,,,,,"Histórico validado, página 192",553,Credicorp Capital,0,2023-04-25,2023-04-25
 2023-04-25,2023-04-25,Credicorp Capital,SQM-B,Mantener,,,,,"Histórico validado, página 192",554,Credicorp Capital,0,2023-04-25,2023-04-25
-2023-04-27,2023-04-27,Credicorp Capital,CENCOSHOPP,Mantener,,,,,"Histórico validado, página 192",555,Credicorp Capital,0,2023-04-27,2023-04-27
+2023-04-27,2023-04-27,Credicorp Capital,CENCOMALLS,Mantener,,,,,"Histórico validado, página 192",555,Credicorp Capital,0,2023-04-27,2023-04-27
 2023-04-27,2023-04-27,Credicorp Capital,CONCHATORO,Comprar,,,,,"Histórico validado, página 191",556,Credicorp Capital,1,2023-04-27,2023-04-27
 2023-04-27,2023-04-27,Credicorp Capital,PARAUCO,Mantener,,,,,"Histórico validado, página 192",557,Credicorp Capital,0,2023-04-27,2023-04-27
 2023-04-28,2023-04-28,Credicorp Capital,BESALCO,Comprar,,,,,"Histórico validado, página 191",558,Credicorp Capital,1,2023-04-28,2023-04-28
@@ -565,12 +557,12 @@ published_at,available_at,broker,ticker,recommendation,target_price_min,target_p
 2023-05-02,2023-05-02,Credicorp Capital,RIPLEY,Comprar,,,,,"Histórico validado, página 191",565,Credicorp Capital,1,2023-05-02,2023-05-02
 2023-05-04,2023-05-04,Credicorp Capital,BSANTANDER,Comprar,,,,,"Histórico validado, página 190",566,Credicorp Capital,1,2023-05-04,2023-05-04
 2023-05-04,2023-05-04,Credicorp Capital,CCU,Comprar,,,,,"Histórico validado, página 190",567,Credicorp Capital,1,2023-05-04,2023-05-04
-2023-05-04,2023-05-04,Credicorp Capital,CENCOSHOPP,Mantener,,,,,"Histórico validado, página 190",568,Credicorp Capital,0,2023-05-04,2023-05-04
+2023-05-04,2023-05-04,Credicorp Capital,CENCOMALLS,Mantener,,,,,"Histórico validado, página 190",568,Credicorp Capital,0,2023-05-04,2023-05-04
 2023-05-04,2023-05-04,Credicorp Capital,ENELAM,Mantener,,,,,"Histórico validado, página 190",569,Credicorp Capital,0,2023-05-04,2023-05-04
 2023-05-05,2023-05-05,Credicorp Capital,CAP,Comprar,,,,,"Histórico validado, página 190",570,Credicorp Capital,1,2023-05-05,2023-05-05
 2023-05-05,2023-05-05,Credicorp Capital,CMPC,Mantener,,,,,"Histórico validado, página 190",571,Credicorp Capital,0,2023-05-05,2023-05-05
 2023-05-09,2023-05-09,Credicorp Capital,BSANTANDER,Mantener,,,,,"Histórico validado, página 190",572,Credicorp Capital,0,2023-05-09,2023-05-09
-2023-05-09,2023-05-09,Credicorp Capital,CENCOSHOPP,Mantener,,,,,"Histórico validado, página 190",573,Credicorp Capital,0,2023-05-09,2023-05-09
+2023-05-09,2023-05-09,Credicorp Capital,CENCOMALLS,Mantener,,,,,"Histórico validado, página 190",573,Credicorp Capital,0,2023-05-09,2023-05-09
 2023-05-09,2023-05-09,Credicorp Capital,ENTEL,Comprar,,,,,"Histórico validado, página 190",574,Credicorp Capital,1,2023-05-09,2023-05-09
 2023-05-11,2023-05-11,Credicorp Capital,CCU,Comprar,,,,,"Histórico validado, página 189",575,Credicorp Capital,1,2023-05-11,2023-05-11
 2023-05-15,2023-05-15,Credicorp Capital,COPEC,Mantener,,,,,"Histórico validado, página 188",576,Credicorp Capital,0,2023-05-15,2023-05-15
@@ -655,14 +647,14 @@ published_at,available_at,broker,ticker,recommendation,target_price_min,target_p
 2023-11-14,2023-11-14,Credicorp Capital,COPEC,Comprar,,,,,"Histórico validado, página 231",655,Credicorp Capital,1,2023-11-14,2023-11-14
 2023-11-14,2023-11-14,Credicorp Capital,LTM,Comprar,,,,,"Histórico validado, página 231",656,Credicorp Capital,1,2023-11-14,2023-11-14
 2023-11-15,2023-11-15,Credicorp Capital,FALABELLA,Mantener,,,,,"Histórico validado, página 231",657,Credicorp Capital,0,2023-11-15,2023-11-15
-2023-11-16,2023-11-16,Credicorp Capital,CENCOSHOPP,Comprar,,,,,"Histórico validado, página 230",658,Credicorp Capital,1,2023-11-16,2023-11-16
+2023-11-16,2023-11-16,Credicorp Capital,CENCOMALLS,Comprar,,,,,"Histórico validado, página 230",658,Credicorp Capital,1,2023-11-16,2023-11-16
 2023-11-16,2023-11-16,Credicorp Capital,SALFACORP,Comprar,,,,,"Histórico validado, página 230",659,Credicorp Capital,1,2023-11-16,2023-11-16
 2023-11-16,2023-11-16,Credicorp Capital,SQM-B,Mantener,,,,,"Histórico validado, página 230",660,Credicorp Capital,0,2023-11-16,2023-11-16
 2023-11-17,2023-11-17,Credicorp Capital,CENCOSUD,Comprar,,,,,"Histórico validado, página 230",661,Credicorp Capital,1,2023-11-17,2023-11-17
 2023-11-21,2023-11-21,Credicorp Capital,MALLPLAZA,Mantener,,,,,"Histórico validado, página 230",662,Credicorp Capital,0,2023-11-21,2023-11-21
 2023-11-24,2023-11-24,Credicorp Capital,AGUAS-A,Mantener,,,,,"Histórico validado, página 229",663,Credicorp Capital,0,2023-11-24,2023-11-24
 2023-11-28,2023-11-28,Credicorp Capital,SMU,Comprar,,,,,"Histórico validado, página 228",664,Credicorp Capital,1,2023-11-28,2023-11-28
-2023-12-05,2023-12-05,Credicorp Capital,CENCOSHOPP,Comprar,,,,,"Histórico validado, página 227",665,Credicorp Capital,1,2023-12-05,2023-12-05
+2023-12-05,2023-12-05,Credicorp Capital,CENCOMALLS,Comprar,,,,,"Histórico validado, página 227",665,Credicorp Capital,1,2023-12-05,2023-12-05
 2023-12-07,2023-12-07,Credicorp Capital,BSANTANDER,Comprar,,,,,"Histórico validado, página 227",666,Credicorp Capital,1,2023-12-07,2023-12-07
 2023-12-07,2023-12-07,Credicorp Capital,CCU,Mantener,,,,,"Histórico validado, página 226",667,Credicorp Capital,0,2023-12-07,2023-12-07
 2023-12-07,2023-12-07,Credicorp Capital,CENCOSUD,Mantener,,,,,"Histórico validado, página 226",668,Credicorp Capital,0,2023-12-07,2023-12-07
@@ -694,7 +686,7 @@ published_at,available_at,broker,ticker,recommendation,target_price_min,target_p
 2024-02-28,2024-02-28,Credicorp Capital,MALLPLAZA,Mantener,,,,,"Histórico validado, página 251",694,Credicorp Capital,0,2024-02-28,2024-02-28
 2024-03-06,2024-03-06,Credicorp Capital,CENCOSUD,Mantener,,,,,"Histórico validado, página 250",695,Credicorp Capital,0,2024-03-06,2024-03-06
 2024-03-07,2024-03-07,Credicorp Capital,BSANTANDER,Comprar,,,,,"Histórico validado, página 249",696,Credicorp Capital,1,2024-03-07,2024-03-07
-2024-03-07,2024-03-07,Credicorp Capital,CENCOSHOPP,Comprar,,,,,"Histórico validado, página 249",697,Credicorp Capital,1,2024-03-07,2024-03-07
+2024-03-07,2024-03-07,Credicorp Capital,CENCOMALLS,Comprar,,,,,"Histórico validado, página 249",697,Credicorp Capital,1,2024-03-07,2024-03-07
 2024-03-07,2024-03-07,Credicorp Capital,CENCOSUD,Comprar,,,,,"Histórico validado, página 249",698,Credicorp Capital,1,2024-03-07,2024-03-07
 2024-03-07,2024-03-07,Credicorp Capital,CHILE,Mantener,,,,,"Histórico validado, página 249",699,Credicorp Capital,0,2024-03-07,2024-03-07
 2024-03-07,2024-03-07,Credicorp Capital,COLBUN,Mantener,,,,,"Histórico validado, página 249",700,Credicorp Capital,0,2024-03-07,2024-03-07
@@ -712,7 +704,7 @@ published_at,available_at,broker,ticker,recommendation,target_price_min,target_p
 2024-03-26,2024-03-26,Credicorp Capital,SMU,Comprar,,,,,"Histórico validado, página 246",712,Credicorp Capital,1,2024-03-26,2024-03-26
 2024-03-27,2024-03-27,Credicorp Capital,FALABELLA,Mantener,,,,,"Histórico validado, página 245",713,Credicorp Capital,0,2024-03-27,2024-03-27
 2024-03-27,2024-03-27,Credicorp Capital,SALFACORP,Comprar,,,,,"Histórico validado, página 246",714,Credicorp Capital,1,2024-03-27,2024-03-27
-2024-04-02,2024-04-02,Credicorp Capital,CENCOSHOPP,Comprar,,,,,"Histórico validado, página 245",715,Credicorp Capital,1,2024-04-02,2024-04-02
+2024-04-02,2024-04-02,Credicorp Capital,CENCOMALLS,Comprar,,,,,"Histórico validado, página 245",715,Credicorp Capital,1,2024-04-02,2024-04-02
 2024-04-02,2024-04-02,Credicorp Capital,ENTEL,Mantener,,,,,"Histórico validado, página 245",716,Credicorp Capital,0,2024-04-02,2024-04-02
 2024-04-02,2024-04-02,Credicorp Capital,SQM-B,Mantener,,,,,"Histórico validado, página 245",717,Credicorp Capital,0,2024-04-02,2024-04-02
 2024-04-05,2024-04-05,Credicorp Capital,BSANTANDER,Comprar,,,,,"Histórico validado, página 244",718,Credicorp Capital,1,2024-04-05,2024-04-05
@@ -733,7 +725,7 @@ published_at,available_at,broker,ticker,recommendation,target_price_min,target_p
 2024-04-23,2024-04-23,Credicorp Capital,CHILE,Mantener,,,,,"Histórico validado, página 280",733,Credicorp Capital,0,2024-04-23,2024-04-23
 2024-04-23,2024-04-23,Credicorp Capital,COPEC,Comprar,,,,,"Histórico validado, página 280",734,Credicorp Capital,1,2024-04-23,2024-04-23
 2024-04-23,2024-04-23,Credicorp Capital,MALLPLAZA,Comprar,,,,,"Histórico validado, página 280",735,Credicorp Capital,1,2024-04-23,2024-04-23
-2024-04-26,2024-04-26,Credicorp Capital,CENCOSHOPP,Comprar,,,,,"Histórico validado, página 280",736,Credicorp Capital,1,2024-04-26,2024-04-26
+2024-04-26,2024-04-26,Credicorp Capital,CENCOMALLS,Comprar,,,,,"Histórico validado, página 280",736,Credicorp Capital,1,2024-04-26,2024-04-26
 2024-04-26,2024-04-26,Credicorp Capital,CENCOSUD,Mantener,,,,,"Histórico validado, página 280",737,Credicorp Capital,0,2024-04-26,2024-04-26
 2024-04-26,2024-04-26,Credicorp Capital,FALABELLA,Mantener,,,,,"Histórico validado, página 280",738,Credicorp Capital,0,2024-04-26,2024-04-26
 2024-04-26,2024-04-26,Credicorp Capital,SMU,Comprar,,,,,"Histórico validado, página 280",739,Credicorp Capital,1,2024-04-26,2024-04-26
@@ -742,11 +734,11 @@ published_at,available_at,broker,ticker,recommendation,target_price_min,target_p
 2024-04-30,2024-04-30,Credicorp Capital,ENELCHILE,Mantener,,,,,"Histórico validado, página 279",742,Credicorp Capital,0,2024-04-30,2024-04-30
 2024-05-02,2024-05-02,Credicorp Capital,ANDINA-B,Mantener,,,,,"Histórico validado, página 279",743,Credicorp Capital,0,2024-05-02,2024-05-02
 2024-05-02,2024-05-02,Credicorp Capital,BSANTANDER,Mantener,,,,,"Histórico validado, página 279",744,Credicorp Capital,0,2024-05-02,2024-05-02
-2024-05-02,2024-05-02,Credicorp Capital,CENCOSHOPP,Comprar,,,,,"Histórico validado, página 279",745,Credicorp Capital,1,2024-05-02,2024-05-02
+2024-05-02,2024-05-02,Credicorp Capital,CENCOMALLS,Comprar,,,,,"Histórico validado, página 279",745,Credicorp Capital,1,2024-05-02,2024-05-02
 2024-05-03,2024-05-03,Credicorp Capital,CENCOSUD,Mantener,,,,,"Histórico validado, página 279",746,Credicorp Capital,0,2024-05-03,2024-05-03
 2024-05-03,2024-05-03,Credicorp Capital,ITAUCL,Comprar,,,,,"Histórico validado, página 279",747,Credicorp Capital,1,2024-05-03,2024-05-03
 2024-05-03,2024-05-03,Credicorp Capital,LTM,Comprar,,,,,"Histórico validado, página 279",748,Credicorp Capital,1,2024-05-03,2024-05-03
-2024-05-06,2024-05-06,Credicorp Capital,CENCOSHOPP,Comprar,,,,,"Histórico validado, página 278",749,Credicorp Capital,1,2024-05-06,2024-05-06
+2024-05-06,2024-05-06,Credicorp Capital,CENCOMALLS,Comprar,,,,,"Histórico validado, página 278",749,Credicorp Capital,1,2024-05-06,2024-05-06
 2024-05-06,2024-05-06,Credicorp Capital,CHILE,Mantener,,,,,"Histórico validado, página 279",750,Credicorp Capital,0,2024-05-06,2024-05-06
 2024-05-07,2024-05-07,Credicorp Capital,ENTEL,Mantener,,,,,"Histórico validado, página 278",751,Credicorp Capital,0,2024-05-07,2024-05-07
 2024-05-08,2024-05-08,Credicorp Capital,FALABELLA,Mantener,,,,,"Histórico validado, página 278",752,Credicorp Capital,0,2024-05-08,2024-05-08
@@ -771,7 +763,7 @@ published_at,available_at,broker,ticker,recommendation,target_price_min,target_p
 2024-07-10,2024-07-10,Credicorp Capital,SALFACORP,Comprar,,,,,"Histórico validado, página 267",771,Credicorp Capital,1,2024-07-10,2024-07-10
 2024-07-12,2024-07-12,Credicorp Capital,ANTARCHILE,Mantener,,,,,"Histórico validado, página 20",772,Credicorp Capital,0,2024-07-12,2024-07-12
 2024-07-15,2024-07-15,Credicorp Capital,CENCOSUD,Comprar,,,,,"Histórico validado, página 266",773,Credicorp Capital,1,2024-07-15,2024-07-15
-2024-07-18,2024-07-18,Credicorp Capital,CENCOSHOPP,Comprar,,,,,"Histórico validado, página 266",774,Credicorp Capital,1,2024-07-18,2024-07-18
+2024-07-18,2024-07-18,Credicorp Capital,CENCOMALLS,Comprar,,,,,"Histórico validado, página 266",774,Credicorp Capital,1,2024-07-18,2024-07-18
 2024-07-19,2024-07-19,Credicorp Capital,LTM,Comprar,,,,,"Histórico validado, página 266",775,Credicorp Capital,1,2024-07-19,2024-07-19
 2024-07-25,2024-07-25,Credicorp Capital,ENELCHILE,Mantener,,,,,"Histórico validado, página 265",776,Credicorp Capital,0,2024-07-25,2024-07-25
 2024-07-25,2024-07-25,Credicorp Capital,LTM,Comprar,,,,,"Histórico validado, página 265",777,Credicorp Capital,1,2024-07-25,2024-07-25

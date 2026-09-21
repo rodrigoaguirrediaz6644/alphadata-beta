@@ -48,10 +48,17 @@ CLAVES_A_LIMPIAR = ["sigma_entries", "delta_entries", "gamma_entries", "oro_entr
 
 
 def fecha_de_reinicio(precios: pd.DataFrame, universo: pd.DataFrame) -> pd.Timestamp:
-    """La última rueda chilena con dato, que es el primer día confiable."""
+    """La rueda chilena anterior a la última con dato.
+
+    No es la última, y la razón es práctica: la corrida reemplaza la fila de su
+    propia fecha de corte, así que si la base cayera en esa misma rueda quedaría
+    pisada por los costos de entrada y las cuatro piezas no arrancarían en 100.
+    Poniendo la base una rueda antes, la primera corrida **agrega** su fila en
+    vez de sobrescribir la base.
+    """
     locales = set(universo.loc[universo.tipo.isin({"accion_local", "accion_sigma"}), "alphadata_ticker"])
-    fechas = precios.loc[precios.alphadata_ticker.isin(locales), "date"]
-    return pd.Timestamp(fechas.max()).normalize()
+    fechas = sorted(pd.to_datetime(precios.loc[precios.alphadata_ticker.isin(locales), "date"]).unique())
+    return pd.Timestamp(fechas[-2] if len(fechas) > 1 else fechas[-1]).normalize()
 
 
 def main(confirmar: bool = False) -> int:

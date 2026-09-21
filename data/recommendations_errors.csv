@@ -1,1 +1,9 @@
 published_at,available_at,broker,ticker,recommendation,target_price_min,target_price_max,currency,source_url,notes,row_number,broker_normalized,signal,published_at_parsed,available_at_parsed,errors
+2021-07-19,2021-07-19,Credicorp Capital,AESANDES,Comprar,,,,,"Histórico validado, página 19",12,Credicorp Capital,1,2021-07-19,2021-07-19,ticker fuera del catálogo
+2021-08-30,2021-08-30,Credicorp Capital,AESANDES,Comprar,,,,,"Histórico validado, página 5",49,Credicorp Capital,1,2021-08-30,2021-08-30,ticker fuera del catálogo
+2021-09-08,2021-09-08,Credicorp Capital,AESANDES,Comprar,,,,,"Histórico validado, página 1",64,Credicorp Capital,1,2021-09-08,2021-09-08,ticker fuera del catálogo
+2021-12-07,2021-12-07,Credicorp Capital,AESANDES,Mantener,,,,,"Histórico validado, página 49",169,Credicorp Capital,0,2021-12-07,2021-12-07,ticker fuera del catálogo
+2021-12-30,2021-12-30,Credicorp Capital,AESANDES,Mantener,,,,,"Histórico validado, página 43",189,Credicorp Capital,0,2021-12-30,2021-12-30,ticker fuera del catálogo
+2022-01-26,2022-01-26,Credicorp Capital,AESANDES,Mantener,,,,,"Histórico validado, página 79",193,Credicorp Capital,0,2022-01-26,2022-01-26,ticker fuera del catálogo
+2022-02-25,2022-02-25,Credicorp Capital,AESANDES,Mantener,,,,,"Histórico validado, página 69",231,Credicorp Capital,0,2022-02-25,2022-02-25,ticker fuera del catálogo
+2022-03-02,2022-03-02,Credicorp Capital,AESANDES,Mantener,,,,,"Histórico validado, página 68",235,Credicorp Capital,0,2022-03-02,2022-03-02,ticker fuera del catálogo

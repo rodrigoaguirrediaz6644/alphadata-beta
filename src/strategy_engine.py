@@ -16,6 +16,11 @@ SIGNALS = {
     "mantener": 0, "neutral": 0, "market perform": 0, "igual al mercado": 0,
     "vender": -1, "venta": -1, "subponderar": -1, "underperform": -1, "inferior al mercado": -1,
 }
+# Cencosud Shopping se renombró Cenco Malls. Las recomendaciones históricas de
+# Credicorp vienen bajo el nombre viejo y son de la misma empresa: sin este
+# alias, veintidós señales reales quedaban rechazadas como "fuera del catálogo"
+# y Sigma-6 perdía un instrumento que sí puede operar.
+ALIAS_TICKERS = {"CENCOSHOPP": "CENCOMALLS"}
 RECOMMENDATION_COLUMNS = ["published_at", "available_at", "broker", "ticker", "recommendation", "target_price_min", "target_price_max", "currency", "source_url", "notes"]
 
 
@@ -45,7 +50,7 @@ def validate_recommendations(raw: pd.DataFrame, allowed_tickers: set[str]) -> tu
     valid, errors = [], []
     for idx, row in raw.fillna("").iterrows():
         if not any(str(row[c]).strip() for c in RECOMMENDATION_COLUMNS): continue
-        broker = normalize_broker(row["broker"]); signal = normalize_signal(row["recommendation"]); ticker = str(row["ticker"]).strip().upper()
+        broker = normalize_broker(row["broker"]); signal = normalize_signal(row["recommendation"]); ticker = str(row["ticker"]).strip().upper(); ticker = ALIAS_TICKERS.get(ticker, ticker)
         published = pd.to_datetime(row["published_at"], errors="coerce"); available = pd.to_datetime(row["available_at"], errors="coerce")
         reasons=[]
         if broker is None: reasons.append("corredora no permitida o mal escrita")

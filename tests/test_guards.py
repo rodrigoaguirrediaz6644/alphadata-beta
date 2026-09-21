@@ -77,6 +77,17 @@ def test_el_mercado_entero_quieto_frena_la_corrida():
     assert len(caidas) == 1
 
 
+def test_una_rueda_plana_antigua_no_bloquea_la_corrida_de_hoy():
+    # La guardia pregunta por ahora, no por la historia. Hay cinco ruedas
+    # antiguas con el mercado entero quieto —feriados y huecos del dato viejo—
+    # y con ellas dentro la corrida quedaba bloqueada para siempre.
+    sube = list(np.arange(100, 112.0))
+    con_hueco = [100.0, 100.0, 100.0] + list(np.arange(101, 110.0))
+    panel = _panel({"A": con_hueco, "B": con_hueco, "C": con_hueco})
+    assert len(feed_detenido(panel)) == 0          # la última rueda está viva
+    assert len(feed_detenido(panel, ruedas=0)) > 0  # revisando todo, sí aparece
+
+
 def test_el_incidente_se_habria_detectado_la_primera_rueda():
     # El 20-07-2026, primera rueda tras el congelamiento, el 100% de las
     # acciones chilenas no movió su precio. La guardia lo dice ese día, no dos

@@ -194,11 +194,23 @@ def main()->None:
     prices_oro=prices[prices.alphadata_ticker.isin(etf_tickers)].copy()
     prices_oro_clp=to_clp(prices_oro,universe,fx)
     prices=prices[~prices.alphadata_ticker.isin(us_tickers|etf_tickers|{'USDCLP'})].copy()
-    as_of=prices.loc[prices.alphadata_ticker!='IPSA_TR','date'].max().normalize(); state=load_state()
+    # Los ADR cotizan en Nueva York y operan en feriados chilenos: si fijaran
+    # la fecha de corte, la corrida marcaría NAV y fecharía compras en un día
+    # en que la bolsa de Santiago estuvo cerrada.
+    adr_tickers=set(universe.loc[universe.tipo=='adr','alphadata_ticker'])
+    as_of=prices.loc[~prices.alphadata_ticker.isin(adr_tickers|{'IPSA_TR'}),'date'].max().normalize(); state=load_state()
     input_path=DATA/'recommendations_input.csv'; raw=pd.read_csv(input_path,dtype=str).fillna('') if input_path.exists() else pd.DataFrame(columns=RECOMMENDATION_COLUMNS)
     valid,errors=validate_recommendations(raw,set(operables(universe).alphadata_ticker)); valid.to_csv(DATA/'recommendations_validated_live.csv',index=False,date_format='%Y-%m-%d');errors.to_csv(DATA/'recommendations_errors.csv',index=False,date_format='%Y-%m-%d')
     old_sigma=state.get('sigma_portfolio',[]); old_delta=state.get('delta_portfolio',[]); old_gamma=state.get('gamma_portfolio',[]); old_oro=state.get('oro_portfolio',[])
-    if state.get('entry_dates_version') != 3:
+    # Tras un reinicio no se reconstruyen fechas de entrada: el seguimiento
+    # empieza de cero y cada posición se abre el día de la corrida. Reconstruir
+    # el calendario histórico tendría sentido si la serie fuera continua, pero
+    # acá publicaría que una posición "va ganando 43%" desde el año pasado en el
+    # mismo informe que dice "comprar".
+    if state.get('reinicio'):
+        state.setdefault('sigma_entries', {}); state.setdefault('delta_entries', {})
+        state['entry_dates_version'] = 3
+    elif state.get('entry_dates_version') != 3:
         sigma_entries, delta_entries = reconstruct_entry_dates(valid, prices, universe, as_of)
         state['sigma_entries'] = sigma_entries
         state['delta_entries'] = delta_entries
@@ -244,6 +256,24 @@ def main()->None:
         entradas_oro=state.get('oro_entries',{})
         state['oro_entries']={t:entradas_oro.get(t,as_of.date().isoformat()) for t in oro_portfolio.ticker}
         oro_portfolio['opened_at']=oro_portfolio.ticker.map(state['oro_entries'])
+    # Tras un reinicio del seguimiento, ninguna posición puede tener fecha de
+    # apertura anterior a esa fecha. Las carteras se heredan pero los precios de
+    # entrada no: quien empieza hoy compra hoy. Publicar que una posición "va
+    # ganando 43%" desde octubre del año pasado, en el mismo informe que dice
+    # "comprar", es la misma clase de error que fechó el oro en 2015.
+    reinicio=state.get('reinicio')
+    if reinicio:
+        # En la primera corrida tras el reinicio el piso es la fecha de esa
+        # corrida: nada se tenía antes, así que todo se abre ese día. Después
+        # el piso queda fijo en el pasado y las fechas reales se conservan a
+        # medida que las carteras rotan.
+        piso=reinicio.get('primera_corrida') or as_of.date().isoformat()
+        reinicio['primera_corrida']=piso; state['reinicio']=reinicio
+        for clave in ('sigma_entries','delta_entries','gamma_entries','oro_entries'):
+            state[clave]={t:max(f,piso) for t,f in state.get(clave,{}).items()}
+        for cartera in (sigma,delta,gamma,oro_portfolio):
+            if len(cartera) and 'opened_at' in cartera:
+                cartera['opened_at']=cartera['opened_at'].map(lambda f: max(str(f),piso) if pd.notna(f) else f)
     sigma=enrich_open_positions(sigma,prices,as_of)
     delta=enrich_open_positions(delta,prices,as_of)
     gamma=enrich_open_positions(gamma,prices_us_clp,as_of,buy_cost=US_COST_RATE)

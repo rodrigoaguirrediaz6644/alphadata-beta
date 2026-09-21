@@ -14,6 +14,14 @@ def test_metrics_do_not_invent_history_with_one_observation():
     assert result["mdd"] is None
 
 
+@pytest.fixture(autouse=True)
+def _graficos_en_temporal(tmp_path, monkeypatch):
+    """Ninguna prueba escribe en reports/: publicaría curvas de fixture."""
+    import src.reporting_public as rp
+    monkeypatch.setattr(rp, "DIRECTORIO_GRAFICOS", tmp_path)
+    yield tmp_path
+
+
 def _report(**kwargs):
     portfolio = pd.DataFrame([{"ticker": "BCI", "target_weight": .1, "opened_at": "2026-07-06", "current_price": 31000.0, "open_return": .08}])
     moves = pd.DataFrame([{"ticker": "BCI", "action": "ENTRA", "previous_weight": 0.0, "target_weight": .1, "change": .1}])
@@ -103,7 +111,7 @@ def test_report_refuses_to_compare_against_a_broken_benchmark():
     assert "IPSA TR" in healthy_markdown
 
 
-def test_el_informe_dibuja_dos_graficos_separados():
+def test_el_informe_dibuja_dos_graficos_separados(_graficos_en_temporal):
     """La separación es estructural, no visual.
 
     El seguimiento en vivo y la reconstrucción son dos archivos distintos y se
@@ -115,7 +123,7 @@ def test_el_informe_dibuja_dos_graficos_separados():
     assert 'cid:seguimiento_vivo' in html
     assert 'cid:reconstruccion' in html
     assert "Reconstrucción" in html
-    assert (ROOT / "reports" / "seguimiento_vivo.png").exists()
+    assert (_graficos_en_temporal / "seguimiento_vivo.png").exists()
 
 
 def test_la_serie_viva_no_se_reescala_con_la_reconstruccion():

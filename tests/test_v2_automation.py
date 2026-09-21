@@ -83,3 +83,19 @@ def test_la_corrida_semanal_sigue_suspendida():
     activas = [l for l in workflow.read_text(encoding="utf-8").splitlines() if l.strip().startswith(("schedule:", "- cron:"))]
     assert not activas, f"la corrida semanal volvió a quedar programada: {activas}"
     assert "workflow_dispatch:" in workflow.read_text(encoding="utf-8")
+
+
+def test_las_recomendaciones_del_nombre_viejo_siguen_valiendo():
+    """Cencosud Shopping se renombró Cenco Malls: es la misma empresa.
+
+    Sin el alias, veintidós recomendaciones reales de Credicorp quedaban
+    rechazadas como "fuera del catálogo" y Sigma-6 perdía un instrumento que sí
+    puede operar.
+    """
+    from src.strategy_engine import validate_recommendations
+    fila = {"published_at": "2026-09-01", "available_at": "2026-09-01", "broker": "Credicorp Capital",
+            "ticker": "CENCOSHOPP", "recommendation": "Comprar", "target_price_min": "", "target_price_max": "",
+            "currency": "", "source_url": "", "notes": ""}
+    validas, errores = validate_recommendations(pd.DataFrame([fila]), {"CENCOMALLS"})
+    assert len(errores) == 0
+    assert validas.iloc[0].ticker == "CENCOMALLS"

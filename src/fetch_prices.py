@@ -45,6 +45,23 @@ def _ajustar_chilenos(precios: pd.DataFrame, universe: pd.DataFrame) -> pd.DataF
     return aplicar_ajuste(precios, dividendos, locales)
 
 
+# El historial de Yahoo para los tickers .SN sigue congelado desde el
+# 17-07-2026: devuelve el mismo cierre repetido. Los precios chilenos vienen
+# ahora de la captura diaria, que los lee de la cotización viva.
+#
+# Descargarlos acá sería activamente dañino, no sólo inútil: el almacén de sólo
+# agregar protege lo ya grabado, así que si esta corrida agregara primero una
+# fila congelada para una rueda nueva, la captura diaria traería después el
+# valor correcto y el almacén lo **rechazaría** por inmutable. El valor malo
+# quedaría fijo para siempre.
+TIPOS_DE_CAPTURA_DIARIA = {"accion_local", "accion_sigma"}
+
+
+def se_descargan(universe: pd.DataFrame) -> pd.DataFrame:
+    """Los instrumentos que esta corrida sí baja del proveedor."""
+    return operables(universe).loc[lambda u: ~u.tipo.isin(TIPOS_DE_CAPTURA_DIARIA)]
+
+
 def operables(universe: pd.DataFrame) -> pd.DataFrame:
     """Los instrumentos que el sistema puede usar hoy.
 
@@ -219,7 +236,8 @@ def build_coverage(
 
 def main() -> None:
     import yfinance as yf
-    universe = load_universe(); tickers = operables(universe)["yahoo_ticker"].tolist()
+    universe = load_universe(); tickers = se_descargan(universe)["yahoo_ticker"].tolist()
+    print(f"Se descargan {len(tickers)} instrumentos. Los chilenos vienen de la captura diaria.")
     last_error = None
     for attempt in range(3):
         try:
@@ -238,7 +256,7 @@ def main() -> None:
 
     # Una respuesta no vacía de Yahoo puede omitir algunos instrumentos por
     # rate limiting. Se reintentan sólo los ausentes para no repetir todo el lote.
-    missing = operables(universe).loc[~operables(universe)["alphadata_ticker"].isin(fresh_tickers)]
+    missing = se_descargan(universe).loc[~se_descargan(universe)["alphadata_ticker"].isin(fresh_tickers)]
     for item in missing.itertuples(index=False):
         try:
             individual_raw = yf.download(

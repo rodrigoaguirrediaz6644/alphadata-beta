@@ -1,20 +1,14 @@
 {
-  "ejecutada_utc": "2026-09-21T00:33:42+00:00",
+  "ejecutada_utc": "2026-09-21T05:08:03+00:00",
   "ruedas": [
     "2026-09-10",
     "2026-09-16",
     "2026-09-17"
   ],
-  "leidos": 39,
-  "agregados": 27,
-  "incidencias": [
-    {
-      "alphadata_ticker": "AESANDES",
-      "motivo": "descarga falló: HTTPError"
-    },
-    {
-      "alphadata_ticker": "MULTIFOODS",
-      "motivo": "descarga falló: HTTPError"
-    }
+  "leidos": 40,
+  "agregados": 1,
+  "incidencias": [],
+  "ruedas_sin_cierre_local": [
+    "2026-09-18"
   ]
 }

@@ -21,6 +21,10 @@ QUE_INVIERTE = {
     BENCHMARK: "La bolsa chilena completa",
 }
 HISTORICAL = ROOT / "data" / "reconstruccion_historica.csv"
+# Las pruebas lo redirigen a un directorio temporal. Sin eso, correr la suite
+# sobrescribe los gráficos publicados con los de un fixture sintético, y lo que
+# queda commiteado es una curva que no existió.
+DIRECTORIO_GRAFICOS = ROOT / "reports"
 
 
 def pct(value: float | None, digits: int = 1) -> str:
@@ -90,7 +94,7 @@ def _dibujar(data: pd.DataFrame, nombres: list[str], titulo: str, archivo: str,
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
-    salida = ROOT / "reports" / archivo
+    salida = DIRECTORIO_GRAFICOS / archivo
     salida.parent.mkdir(parents=True, exist_ok=True)
     figura, eje = plt.subplots(figsize=(10, 4.6), dpi=150)
     for nombre in nombres:

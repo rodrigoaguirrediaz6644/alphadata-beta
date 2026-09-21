@@ -126,8 +126,15 @@ def feed_detenido(precios: pd.DataFrame, instrumentos: set[str] | None = None,
     fraccion = fraccion_sin_variacion(precios, instrumentos)
     if fraccion.empty:
         return pd.DatetimeIndex([])
-    sospechosas = fraccion[fraccion > umbral]
-    return pd.DatetimeIndex(sospechosas.index[-ruedas:] if ruedas and len(sospechosas) >= ruedas else sospechosas.index)
+    # La guardia pregunta si el feed está caído **ahora**, así que mira sólo las
+    # últimas `ruedas` jornadas. Escanear toda la historia la vuelve inútil: hay
+    # cinco ruedas antiguas con el mercado entero quieto —31-12-2015,
+    # 19-04-2017 y tres días de octubre de 2024, feriados o huecos del dato
+    # viejo— y con ellas dentro la corrida quedaba bloqueada para siempre por
+    # algo ocurrido hace dos años. Con `ruedas=0` se revisa todo, que es lo que
+    # hacen las pruebas de regresión sobre el incidente.
+    ventana = fraccion if not ruedas else fraccion.tail(ruedas)
+    return pd.DatetimeIndex(ventana.index[ventana > umbral])
 
 
 def contraste_entre_fuentes(principal: pd.DataFrame, contraste: pd.DataFrame,
