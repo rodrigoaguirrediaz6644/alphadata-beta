@@ -174,19 +174,36 @@ def _orders(moves: pd.DataFrame, strategy: str) -> list[str]:
     return rows
 
 
+def _precio(valor, moneda: str) -> str:
+    if valor is None or pd.isna(valor):
+        return "—"
+    return f"{moneda} {float(valor):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+
 def _positions(portfolio: pd.DataFrame, currency: str = "$") -> str:
+    """Qué hay comprado, desde cuándo, a qué precio entró y cómo va.
+
+    El precio de entrada va al lado del de hoy a propósito: sin él, «va
+    ganando 22,9%» es un número que el lector tiene que creer. Con los dos
+    precios a la vista, lo puede verificar de memoria.
+    """
     if portfolio is None or portfolio.empty:
         return '<p class="muted">Sin posiciones abiertas.</p>'
     rows = []
     for record in portfolio.to_dict("records"):
         entry = pd.to_datetime(record.get("opened_at"), errors="coerce")
+        fecha = f"{entry:%d-%m-%Y}" if pd.notna(entry) else "—"
         gain = record.get("open_return")
         gain_text = _signed(float(gain)) if pd.notna(gain) else "—"
         color = "" if gain_text == "—" else ' class="up"' if float(gain) >= 0 else ' class="down"'
-        price = record.get("current_price")
-        price_text = f"{currency} {float(price):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".") if pd.notna(price) else "—"
-        rows.append(f'<tr><td>{escape(str(record["ticker"]))}</td><td>{pct(float(record["target_weight"]))}</td><td>{entry:%d-%m-%Y}</td><td>{price_text}</td><td{color}>{gain_text}</td></tr>' if pd.notna(entry) else f'<tr><td>{escape(str(record["ticker"]))}</td><td>{pct(float(record["target_weight"]))}</td><td>—</td><td>{price_text}</td><td{color}>{gain_text}</td></tr>')
-    return f'<table><thead><tr><th>Acción</th><th>Cuánto pesa</th><th>Comprada el</th><th>Precio hoy</th><th>Va ganando</th></tr></thead><tbody>{"".join(rows)}</tbody></table>'
+        rows.append(f'<tr><td>{escape(str(record["ticker"]))}</td>'
+                    f'<td>{pct(float(record["target_weight"]))}</td><td>{fecha}</td>'
+                    f'<td>{_precio(record.get("entry_price"), currency)}</td>'
+                    f'<td>{_precio(record.get("current_price"), currency)}</td>'
+                    f'<td{color}>{gain_text}</td></tr>')
+    return ('<table><thead><tr><th>Acción</th><th>Cuánto pesa</th><th>Comprada el</th>'
+            '<th>Precio de entrada</th><th>Precio hoy</th><th>Va ganando</th></tr></thead>'
+            f'<tbody>{"".join(rows)}</tbody></table>')
 
 
 def build_public_report(
@@ -249,6 +266,8 @@ def build_public_report(
         problems.append(f"{int((coverage.status != 'OK').sum())} instrumentos sin datos suficientes esta semana.")
     problems_block = f'<div class="warn"><strong>Revisar:</strong> {" ".join(problems)}</div>' if problems else '<p class="calm">Todos los datos llegaron completos.</p>'
 
+    inicio = pd.to_datetime(history["date"]).min()
+
     positions_blocks = "".join(
         f'<h3>{name} · {QUE_INVIERTE[name]}</h3>{_positions(portfolios[name])}'
         for name in STRATEGIES if name in portfolios
@@ -288,17 +307,18 @@ def build_public_report(
     </section>
 
     <section><h2>Cada estrategia por separado</h2>
-    <table><thead><tr><th>Estrategia</th><th>En qué invierte</th><th>Desde el inicio</th><th>Último año</th><th>Peor caída</th><th>Acciones</th></tr></thead>
+    <table><thead><tr><th>Estrategia</th><th>En qué invierte</th><th>Desde el {inicio:%d-%m-%Y}</th><th>Último año</th><th>Peor caída</th><th>Acciones</th></tr></thead>
     <tbody>{''.join(summary_rows)}</tbody></table>
     <p class="muted"><strong>Peor caída:</strong> lo máximo que llegó a bajar desde su punto más alto antes de recuperarse. Mientras más chica, más tranquilo el camino.</p>
     </section>
 
     <section><h2>Evolución</h2>
-    <p class="lead">El seguimiento en vivo corre desde el {pd.to_datetime(history["date"]).min():%d-%m-%Y}.</p>
+    <p class="lead">El seguimiento en vivo corre desde el {inicio:%d-%m-%Y}.</p>
     {_chart(history, benchmark_usable)}</section>
 
     <section><h2>Qué tienes comprado hoy</h2>
     {positions_blocks}
+    <p class="muted"><strong>Va ganando</strong> es cuánto se movió el precio de esa acción desde el día en que se compró, que es distinto del rendimiento de la estrategia desde el {inicio:%d-%m-%Y}: una acción comprada hace ocho meses puede ir muy arriba aunque la estrategia lleve poco medida. Los dos números son correctos y no tienen por qué calzar.</p>
     <p class="muted">Todos los precios están en pesos. Gamma-6 y el oro se compran en Chile como CDV, así que su resultado ya incluye el efecto del tipo de cambio. El oro no se compra ni se vende por señales: es una posición fija que está para amortiguar las caídas del resto.</p>
     </section>
 
@@ -311,7 +331,7 @@ def build_public_report(
         "",
         f"**Fecha:** {as_of:%d-%m-%Y}",
         "",
-        f"**Conjunto (partes iguales en las cuatro piezas): {headline} desde el inicio.**",
+        f"**Conjunto (partes iguales en las cuatro piezas): {headline} desde el {inicio:%d-%m-%Y}.**",
         "",
         "## Qué hacer esta semana",
         "",
@@ -330,7 +350,7 @@ def build_public_report(
         lines.append("- Sin cambios: las carteras siguen igual.")
     lines += ["", "## Cada estrategia", ""]
     for name in resumen:
-        lines.append(f"- {name}: {_signed(metrics[name]['return'])} desde el inicio; peor caída {pct(metrics[name]['mdd'])}.")
+        lines.append(f"- {name}: {_signed(metrics[name]['return'])} desde el {inicio:%d-%m-%Y}; peor caída {pct(metrics[name]['mdd'])}.")
     if not benchmark_usable:
         lines.append("- La comparación con la bolsa chilena no está disponible: la serie del IPSA tiene un salto y quedó fuera hasta corregirla.")
     lines += ["", "El informe HTML incluye el gráfico y las carteras. La metodología y sus parámetros son información reservada.", ""]
