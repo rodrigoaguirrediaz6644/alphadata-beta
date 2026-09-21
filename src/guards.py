@@ -60,6 +60,32 @@ def series_detenidas(precios: pd.DataFrame, maximo: int = MAX_RUEDAS_SIN_VARIACI
     return cuenta[cuenta > maximo].index
 
 
+def ruedas_faltantes(precios: pd.DataFrame, locales: set[str], referencia: str = "LTM-ADR",
+                     desde: pd.Timestamp | None = None) -> pd.DatetimeIndex:
+    """Ruedas en que el testigo operó y ninguna acción local quedó grabada.
+
+    Desde que el cierre chileno se toma de la cotización viva, un día perdido
+    es irrecuperable: el arreglo histórico está congelado y `meta` sólo guarda
+    el último. Antes esto no importaba, porque cada descarga traía la historia
+    completa.
+
+    El testigo por defecto es un ADR, que cotiza en Nueva York y cuyo historial
+    sí funciona. Los calendarios no coinciden, así que los feriados chilenos
+    aparecen como falsos positivos: son pocos al año y se revisan a mano, que
+    es mejor que no enterarse de un día perdido.
+    """
+    panel = _panel(precios)
+    if panel.empty or referencia not in panel:
+        return pd.DatetimeIndex([])
+    testigo = panel[referencia].dropna()
+    presentes = panel[[c for c in panel.columns if c in locales]]
+    if presentes.empty:
+        return pd.DatetimeIndex([])
+    con_dato = presentes.dropna(how="all").index
+    faltan = testigo.index.difference(con_dato)
+    return faltan[faltan >= desde] if desde is not None else faltan
+
+
 def contraste_entre_fuentes(principal: pd.DataFrame, contraste: pd.DataFrame,
                             umbral: float = UMBRAL_CONTRASTE, columna: str = "close") -> pd.DataFrame:
     """Fechas en que las dos fuentes no dicen lo mismo del mismo cierre."""

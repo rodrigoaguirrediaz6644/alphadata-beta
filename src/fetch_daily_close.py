@@ -32,6 +32,7 @@ from typing import Callable
 import pandas as pd
 
 from src.fetch_prices import PRICE_COLUMNS, load_universe
+from src.guards import ruedas_faltantes
 from src.price_store import agregar
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -152,12 +153,17 @@ def capturar(universe: pd.DataFrame, descargar: Callable[[str], dict] = _descarg
 
 def main() -> None:
     universe = load_universe()
+    esperados = int(universe.tipo.isin(TIPOS_LOCALES).sum())
     capturadas, incidencias = capturar(universe)
+    # Ruidosamente y no en silencio: un cierre que no se captura hoy no se
+    # puede recuperar mañana, así que un día en blanco tiene que romper el job
+    # y avisar, no terminar con un mensaje amable y código cero.
     if capturadas.empty:
-        print("Sin cierres nuevos que grabar.")
-        if len(incidencias):
-            print("Incidencias: " + "; ".join(f"{r.alphadata_ticker} ({r.motivo})" for r in incidencias.itertuples()))
-        return
+        detalle = "; ".join(f"{r.alphadata_ticker} ({r.motivo})" for r in incidencias.itertuples())
+        raise SystemExit(f"Ningún cierre capturado de {esperados} instrumentos. {detalle}")
+    if len(capturadas) < esperados * .75:
+        detalle = "; ".join(f"{r.alphadata_ticker} ({r.motivo})" for r in incidencias.itertuples())
+        raise SystemExit(f"Sólo se capturaron {len(capturadas)} cierres de {esperados}. {detalle}")
     ruta = DATA / "market_prices_daily.csv"
     guardado = pd.read_csv(ruta, parse_dates=["date"]) if ruta.exists() else pd.DataFrame(columns=PRICE_COLUMNS)
     antes = len(guardado)
@@ -173,10 +179,17 @@ def main() -> None:
               "revisar data/revisiones_precios.csv")
     if len(incidencias):
         print("Sin capturar: " + "; ".join(f"{r.alphadata_ticker} ({r.motivo})" for r in incidencias.itertuples()))
+    locales = set(universe.loc[universe.tipo.isin(TIPOS_LOCALES), "alphadata_ticker"])
+    faltantes = ruedas_faltantes(resultado, locales, desde=pd.Timestamp("2026-09-18"))
+    if len(faltantes):
+        print("ADVERTENCIA: ruedas en que el ADR testigo operó y no hay cierre local grabado: "
+              + ", ".join(f"{d:%d-%m-%Y}" for d in faltantes)
+              + ". Si no son feriados chilenos, hay que rellenarlas a mano.")
     (DATA / "ultima_captura_diaria.json").write_text(json.dumps({
         "ejecutada_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "ruedas": fechas, "leidos": int(len(capturadas)), "agregados": int(agregadas),
         "incidencias": incidencias.to_dict("records"),
+        "ruedas_sin_cierre_local": [d.date().isoformat() for d in faltantes],
     }, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
