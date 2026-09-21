@@ -58,3 +58,22 @@ una acción manual que no ha vuelto a ocurrir en dos meses.
 La decisión que sigue —arreglar el insumo, suspender la pieza y repartir su
 cuarto entre las otras tres, o aceptar la caja— ya no depende de ninguna
 medición pendiente. Depende de si esa carga manual va a existir.
+
+## Lo que se hizo con esto
+
+Sigma-6 se queda. No hay nada que reparar ni fuente que buscar; lo que faltaba
+era volver sostenible esa decisión, y son tres cosas:
+
+1. **La guardia de vigencia.** Si la recomendación más reciente pasa de 90
+   días, Sigma-6 conserva la cartera, no abre nada y no vende, y el informe lo
+   dice. Un mes saltado deja de ser silencioso. Con la última carga del
+   22-07-2026, dispara el **21-10-2026**.
+2. **El informe avisa por nombre.** Dice qué necesita recomendación nueva y
+   antes de cuándo, así que el compromiso lo sostiene el sistema y no la
+   memoria de nadie.
+3. **El procedimiento está escrito**, en `GUIA_INBOX_RECOMENDACIONES.md`,
+   empezando por lo único que de verdad se puede hacer mal: qué significa cada
+   una de las dos fechas.
+
+Y queda definido de antemano cuándo se vuelve a abrir la pregunta: **si la
+guardia dispara dos veces seguidas.**
