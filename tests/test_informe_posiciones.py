@@ -75,3 +75,33 @@ def test_sin_ninguna_fila_marcada_no_se_imprime_la_nota(tmp_path, monkeypatch):
     _, html = rp.build_public_report(pd.Timestamp("2026-09-18"), limpia, limpia, vacio, vacio,
                                      pd.DataFrame([{"status": "OK"}]), pd.DataFrame(), historia)
     assert "repartió dividendos" not in html
+
+
+def test_la_tabla_dice_cuantos_pesos_va_en_cada_accion():
+    """En porcentajes, la caja de Sigma-6 pasaba inadvertida; en pesos, no."""
+    from src.reporting_public import _caja
+    con_monto = CARTERA.assign(monto_clp=[625000.])
+    html = _positions(con_monto)
+    assert "<th>Cuánto invertir</th>" in html and "$ 625.000" in html
+    # Cinco posiciones al 10% dejan la mitad de la pieza sin invertir.
+    sigma = pd.DataFrame({"ticker": list("ABCDE"), "target_weight": [.1] * 5})
+    assert "$ 2.500.000" in _caja(sigma, 5_000_000)
+    assert _caja(pd.DataFrame({"ticker": ["A"], "target_weight": [1.]}), 5_000_000) == ""
+
+
+def test_los_dividendos_van_en_pesos_y_no_como_nota_al_pie():
+    """Nueve de veinte filas marcadas es demasiado para un asterisco.
+
+    Con el monto a la vista, la aritmética se sigue de la fila: VAPORES entró a
+    $48,89, hoy vale $48,30 y cobró $6,71.
+    """
+    con = CARTERA.assign(entry_price=[48.89], current_price=[48.30], open_return=[.129],
+                         dividendos_clp=[6.705327], con_dividendo=[False])
+    html = _positions(con)
+    assert "<th>Dividendos cobrados</th>" in html and "$ 6,71" in html
+    assert "+12,9% *" not in html
+    # Sin monto itemizado —las estadounidenses— la fila conserva la marca.
+    sin = CARTERA.assign(dividendos_clp=[pd.NA], con_dividendo=[True])
+    html = _positions(sin)
+    assert "<th>Dividendos cobrados</th>" not in html
+    assert "*" in html

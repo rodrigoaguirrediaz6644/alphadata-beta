@@ -160,20 +160,6 @@ def _chart(frame: pd.DataFrame, benchmark_usable: bool = True) -> str:
     return "".join(bloques)
 
 
-def _orders(moves: pd.DataFrame, strategy: str) -> list[str]:
-    if moves is None or moves.empty:
-        return []
-    labels = {"ENTRA": "Comprar", "SALE": "Vender", "AUMENTA": "Aumentar", "REDUCE": "Reducir"}
-    rows = []
-    for record in moves.to_dict("records"):
-        action = str(record.get("action", ""))
-        if action not in labels:
-            continue
-        weight = "toda la posición" if action == "SALE" else pct(float(record.get("target_weight") or 0))
-        rows.append(f'<tr><td><strong>{labels[action]}</strong></td><td>{escape(str(record["ticker"]))}</td><td>{escape(strategy)}</td><td>{weight}</td></tr>')
-    return rows
-
-
 def _precio(valor, moneda: str) -> str:
     if valor is None or pd.isna(valor):
         return "—"
@@ -181,19 +167,23 @@ def _precio(valor, moneda: str) -> str:
 
 
 def _positions(portfolio: pd.DataFrame, currency: str = "$") -> str:
-    """Qué hay comprado, desde cuándo, a qué precio entró y cómo va.
+    """Qué hay comprado, cuántos pesos es, desde cuándo y cómo va.
 
     El precio de entrada va al lado del de hoy a propósito: sin él, «va
     ganando 22,9%» es un número que el lector tiene que creer. Con los dos
     precios a la vista, lo puede verificar de memoria.
 
-    Salvo cuando hubo dividendo de por medio, y ahí la marca es obligatoria:
-    VAPORES muestra $48,89 de entrada, $48,30 hoy y +12,9%, porque la
-    variación incluye lo que se cobró. Sin decirlo, poner los dos precios al
-    lado convierte un número correcto en uno que se lee como error.
+    Y cuando hubo dividendo de por medio, la columna dice cuántos pesos por
+    acción llegaron a la cuenta. Nueve de veinte filas lo tienen: son
+    demasiadas para una nota al pie, y el monto es información que igual se
+    quiere. La variación queda algo por encima de sumarlo a mano porque
+    reinvierte el dividendo el día en que se pagó; eso va dicho en una línea
+    bajo la tabla, no fila por fila.
     """
     if portfolio is None or portfolio.empty:
         return '<p class="muted">Sin posiciones abiertas.</p>'
+    hay_montos = "monto_clp" in portfolio and portfolio["monto_clp"].notna().any()
+    hay_dividendos = "dividendos_clp" in portfolio and portfolio["dividendos_clp"].notna().any()
     rows = []
     for record in portfolio.to_dict("records"):
         entry = pd.to_datetime(record.get("opened_at"), errors="coerce")
@@ -203,14 +193,60 @@ def _positions(portfolio: pd.DataFrame, currency: str = "$") -> str:
         color = "" if gain_text == "—" else ' class="up"' if float(gain) >= 0 else ' class="down"'
         if gain_text != "—" and record.get("con_dividendo"):
             gain_text += " *"
-        rows.append(f'<tr><td>{escape(str(record["ticker"]))}</td>'
-                    f'<td>{pct(float(record["target_weight"]))}</td><td>{fecha}</td>'
-                    f'<td>{_precio(record.get("entry_price"), currency)}</td>'
-                    f'<td>{_precio(record.get("current_price"), currency)}</td>'
-                    f'<td{color}>{gain_text}</td></tr>')
-    return ('<table><thead><tr><th>Acción</th><th>Cuánto pesa</th><th>Comprada el</th>'
-            '<th>Precio de entrada</th><th>Precio hoy</th><th>Va ganando</th></tr></thead>'
-            f'<tbody>{"".join(rows)}</tbody></table>')
+        celdas = [escape(str(record["ticker"]))]
+        if hay_montos:
+            celdas.append(_pesos(record.get("monto_clp"), currency))
+        celdas += [pct(float(record["target_weight"])), fecha,
+                   _precio(record.get("entry_price"), currency),
+                   _precio(record.get("current_price"), currency)]
+        if hay_dividendos:
+            celdas.append(_precio(record.get("dividendos_clp"), currency))
+        rows.append("<tr>" + "".join(f"<td>{c}</td>" for c in celdas)
+                    + f'<td{color}>{gain_text}</td></tr>')
+    cabecera = ["Acción"] + (["Cuánto invertir"] if hay_montos else []) +                ["Cuánto pesa", "Comprada el", "Precio de entrada", "Precio hoy"] +                (["Dividendos cobrados"] if hay_dividendos else []) + ["Va ganando"]
+    return ("<table><thead><tr>" + "".join(f"<th>{c}</th>" for c in cabecera)
+            + f'</tr></thead><tbody>{"".join(rows)}</tbody></table>')
+
+
+def _pesos(valor, moneda: str) -> str:
+    if valor is None or pd.isna(valor):
+        return "—"
+    return f"{moneda} {float(valor):,.0f}".replace(",", ".")
+
+
+def _caja(portfolio: pd.DataFrame, capital_por_pieza: float | None) -> str:
+    """Lo que queda sin invertir en una pieza.
+
+    Sigma-6 sólo compra lo que Credicorp recomienda y el momentum confirma, y
+    topa cada nombre en 10%: con cinco posiciones deja la mitad en caja. En
+    porcentajes eso pasaba inadvertido; en pesos son $2.500.000 quietos y hay
+    que decirlo.
+    """
+    if portfolio is None or portfolio.empty or not capital_por_pieza:
+        return ""
+    libre = 1 - float(portfolio.target_weight.sum())
+    if libre <= .005:
+        return ""
+    return (f'<p class="muted">En caja: {_pesos(libre * capital_por_pieza, "$")} '
+            f'({pct(libre)} de la pieza), porque no hay más nombres que cumplan las condiciones.</p>')
+
+
+def _movimientos(movimientos: pd.DataFrame | None) -> str:
+    """Lo que cambió en la fecha de señal de cada estrategia, salido del libro.
+
+    Tres de las cuatro piezas son mensuales, así que la mayoría de las semanas
+    esto viene vacío. Un bloque vacío se lee como informe roto: cuando no hay
+    nada, hay que decirlo con todas sus letras.
+    """
+    if movimientos is None or movimientos.empty:
+        return ('<p class="calm"><strong>Sin movimientos.</strong> Ninguna estrategia compró ni vendió '
+                'en su última revisión: las carteras de abajo siguen tal cual.</p>')
+    filas = [f'<tr><td><strong>{escape(str(r["accion"]).capitalize())}</strong></td>'
+             f'<td>{escape(str(r["instrumento"]))}</td><td>{escape(str(r["estrategia"]))}</td>'
+             f'<td>{pd.Timestamp(r["fecha"]):%d-%m-%Y}</td></tr>'
+             for r in movimientos.to_dict("records")]
+    return ('<table><thead><tr><th>Qué hacer</th><th>Acción</th><th>Estrategia</th>'
+            f'<th>Fecha de la señal</th></tr></thead><tbody>{"".join(filas)}</tbody></table>')
 
 
 def build_public_report(
@@ -226,6 +262,8 @@ def build_public_report(
     gamma_moves: pd.DataFrame | None = None,
     oro: pd.DataFrame | None = None,
     oro_moves: pd.DataFrame | None = None,
+    movimientos: pd.DataFrame | None = None,
+    capital_por_pieza: float | None = None,
 ) -> tuple[str, str]:
     vacio_cartera = pd.DataFrame(columns=["ticker", "target_weight"])
     vacio_movs = pd.DataFrame(columns=["ticker", "action", "target_weight"])
@@ -239,12 +277,16 @@ def build_public_report(
     portfolios = {"Sigma-6": sigma, "Delta-12": delta, "Gamma-6": gamma, "Oro": oro}
     moves = {"Sigma-6": sigma_moves, "Delta-12": delta_moves, "Gamma-6": gamma_moves, "Oro": oro_moves}
 
-    orders = [row for name in STRATEGIES for row in _orders(moves[name], name)]
-    orders_block = (
-        f'<table><thead><tr><th>Qué hacer</th><th>Acción</th><th>Estrategia</th><th>Cuánto</th></tr></thead><tbody>{"".join(orders)}</tbody></table>'
-        f'<p class="muted">El porcentaje es dentro de su propia pieza, y cada pieza es un cuarto del total. Un 100% en la pieza de oro equivale a un 25% de todo.</p>'
-        if orders else '<p class="calm">No hay nada que comprar ni vender esta semana. Las carteras siguen igual.</p>'
-    )
+    # Dos bloques separados, que el informe mezcló desde siempre bajo un mismo
+    # título: lo que cambió esta semana no es lo mismo que lo que hay que
+    # comprar para entrar hoy. Confundirlos es lo que produjo un «Comprar INTC»
+    # en la misma página en que la tabla decía «comprada el 30-09-2025».
+    orders_block = _movimientos(movimientos)
+    reparto = (f"Con un capital de {_pesos(capital_por_pieza * len(STRATEGIES), '$')} repartido en cuartos, "
+               f"a cada pieza le tocan {_pesos(capital_por_pieza, '$')}. La columna dice cuántos pesos va "
+               "en cada acción."
+               if capital_por_pieza else
+               "La columna «cuánto pesa» es dentro de su propia pieza, y cada pieza es un cuarto del total.")
 
     conjunto = metrics[CONJUNTO]
     headline = _signed(conjunto["return"])
@@ -277,14 +319,21 @@ def build_public_report(
     # La nota del asterisco sólo se imprime si alguna fila lo lleva.
     con_dividendo = any(bool(frame["con_dividendo"].any()) for frame in portfolios.values()
                         if frame is not None and "con_dividendo" in frame and len(frame))
-    nota_dividendos = ('<p class="muted"><strong>*</strong> Esa acción repartió dividendos desde que se compró'
-                       ' y la variación los incluye, así que no cuadra con los dos precios de la fila.'
-                       ' Una acción puede valer hoy menos que cuando se compró y aun así ir ganando,'
-                       ' porque además pagó.</p>'
-                       ) if con_dividendo else ""
+    con_monto = any(bool(frame["dividendos_clp"].notna().any()) for frame in portfolios.values()
+                    if frame is not None and "dividendos_clp" in frame and len(frame))
+    notas = []
+    if con_monto:
+        notas.append('<p class="muted"><strong>Dividendos cobrados</strong> son pesos por acción que ya'
+                     ' llegaron a la cuenta. Sumarlos al precio de hoy da algo menos que «va ganando»,'
+                     ' porque la variación los reinvierte el día en que se pagaron.</p>')
+    if con_dividendo:
+        notas.append('<p class="muted"><strong>*</strong> Esa acción repartió dividendos que la variación'
+                     ' incluye, pero que no están itemizados: la tabla de dividendos sólo cubre el'
+                     ' mercado chileno.</p>')
+    nota_dividendos = "".join(notas)
 
     positions_blocks = "".join(
-        f'<h3>{name} · {QUE_INVIERTE[name]}</h3>{_positions(portfolios[name])}'
+        f'<h3>{name} · {QUE_INVIERTE[name]}</h3>{_positions(portfolios[name])}{_caja(portfolios[name], capital_por_pieza)}'
         for name in STRATEGIES if name in portfolios
     )
 
@@ -317,7 +366,7 @@ def build_public_report(
     <p class="lead">{'Eso es ' + _signed(versus) + ' comparado con haber invertido en la bolsa chilena completa.' if versus is not None else 'La comparación con la bolsa chilena aparecerá cuando su serie esté completa.'}</p>
     </section>
 
-    <section><h2>Qué hay que hacer esta semana</h2>
+    <section><h2>Qué cambió en la última revisión</h2>
     {orders_block}
     </section>
 
@@ -331,7 +380,8 @@ def build_public_report(
     <p class="lead">El seguimiento en vivo corre desde el {inicio:%d-%m-%Y}.</p>
     {_chart(history, benchmark_usable)}</section>
 
-    <section><h2>Qué tienes comprado hoy</h2>
+    <section><h2>La cartera completa</h2>
+    <p class="lead">{reparto}</p>
     {positions_blocks}
     {nota_dividendos}
     <p class="muted"><strong>Va ganando</strong> es cuánto se movió el precio de esa acción desde el día en que se compró, que es distinto del rendimiento de la estrategia desde el {inicio:%d-%m-%Y}: una acción comprada hace ocho meses puede ir muy arriba aunque la estrategia lleve poco medida. Los dos números son correctos y no tienen por qué calzar.</p>
@@ -349,21 +399,15 @@ def build_public_report(
         "",
         f"**Conjunto (partes iguales en las cuatro piezas): {headline} desde el {inicio:%d-%m-%Y}.**",
         "",
-        "## Qué hacer esta semana",
+        "## Qué cambió en la última revisión",
         "",
     ]
-    if orders:
-        labels = {"ENTRA": "Comprar", "SALE": "Vender", "AUMENTA": "Aumentar", "REDUCE": "Reducir"}
-        for name in STRATEGIES:
-            frame = moves[name]
-            if frame is None or frame.empty:
-                continue
-            for record in frame.to_dict("records"):
-                if str(record.get("action")) in labels:
-                    detail = "toda la posición" if str(record["action"]) == "SALE" else pct(float(record.get("target_weight") or 0))
-                    lines.append(f"- {labels[str(record['action'])]} {record['ticker']} ({name}) — {detail}")
+    if movimientos is not None and len(movimientos):
+        for record in movimientos.to_dict("records"):
+            lines.append(f"- {str(record['accion']).capitalize()} {record['instrumento']} "
+                         f"({record['estrategia']}) — señal del {pd.Timestamp(record['fecha']):%d-%m-%Y}")
     else:
-        lines.append("- Sin cambios: las carteras siguen igual.")
+        lines.append("- Sin movimientos. Ninguna estrategia compró ni vendió en su última revisión.")
     lines += ["", "## Cada estrategia", ""]
     for name in resumen:
         lines.append(f"- {name}: {_signed(metrics[name]['return'])} desde el {inicio:%d-%m-%Y}; peor caída {pct(metrics[name]['mdd'])}.")

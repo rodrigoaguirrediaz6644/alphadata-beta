@@ -4,28 +4,16 @@
 
 **Conjunto (partes iguales en las cuatro piezas): -0,1% desde el 16-09-2026.**
 
-## Qué hacer esta semana
+## Qué cambió en la última revisión
 
-- Comprar BCI (Sigma-6) — 10,0%
-- Comprar CENCOMALLS (Sigma-6) — 10,0%
-- Comprar LTM (Sigma-6) — 10,0%
-- Comprar PARAUCO (Sigma-6) — 10,0%
-- Comprar VAPORES (Sigma-6) — 10,0%
-- Comprar ANDINA-B (Delta-12) — 12,5%
-- Comprar BCI (Delta-12) — 12,5%
-- Comprar BSANTANDER (Delta-12) — 12,5%
-- Comprar CHILE (Delta-12) — 12,5%
-- Comprar ECL (Delta-12) — 12,5%
-- Comprar ITAUCL (Delta-12) — 12,5%
-- Comprar MALLPLAZA (Delta-12) — 12,5%
-- Comprar PARAUCO (Delta-12) — 12,5%
-- Comprar ABT (Gamma-6) — 16,7%
-- Comprar BAC (Gamma-6) — 16,7%
-- Comprar INTC (Gamma-6) — 16,7%
-- Comprar JNJ (Gamma-6) — 16,7%
-- Comprar MRK (Gamma-6) — 16,7%
-- Comprar TGT (Gamma-6) — 16,7%
-- Comprar IAU (Oro) — 100,0%
+- Comprar ANDINA-B (Delta-12) — señal del 31-08-2026
+- Comprar BCI (Delta-12) — señal del 31-08-2026
+- Vender ILC (Delta-12) — señal del 31-08-2026
+- Vender LTM (Delta-12) — señal del 31-08-2026
+- Comprar ABT (Gamma-6) — señal del 31-08-2026
+- Comprar JNJ (Gamma-6) — señal del 31-08-2026
+- Vender AAPL (Gamma-6) — señal del 31-08-2026
+- Vender UNH (Gamma-6) — señal del 31-08-2026
 
 ## Cada estrategia
 

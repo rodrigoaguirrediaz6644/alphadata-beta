@@ -61,20 +61,39 @@ def test_el_informe_no_lleva_descargos():
         assert descargo not in html
 
 
-def test_report_leads_with_the_combined_result_and_the_weekly_orders():
+MOVIMIENTOS = pd.DataFrame([
+    {"estrategia": "Sigma-6", "instrumento": "BCI", "accion": "COMPRAR", "fecha": pd.Timestamp("2026-09-18")},
+    {"estrategia": "Gamma-6", "instrumento": "BAC", "accion": "VENDER", "fecha": pd.Timestamp("2026-08-31")},
+])
+
+
+def test_report_leads_with_the_combined_result_and_the_movements():
+    """Los movimientos salen del libro y llevan la fecha de su propia señal.
+
+    Antes salían de comparar la cartera con la anterior, y eso mezclaba lo que
+    cambió con lo que hay que comprar para entrar hoy: el informe llegó a decir
+    «Comprar INTC» en la misma página en que la tabla decía «comprada el
+    30-09-2025».
+    """
     markdown, html = _report(
         gamma=pd.DataFrame([{"ticker": "MRK", "target_weight": 1 / 6, "opened_at": "2026-08-03", "current_price": 146.87, "open_return": .15}]),
-        gamma_moves=pd.DataFrame([{"ticker": "BAC", "action": "SALE", "previous_weight": 1 / 6, "target_weight": 0.0, "change": -1 / 6}]),
+        movimientos=MOVIMIENTOS,
     )
     assert "Conjunto AlphaData" in html and "+12,0%" in html  # 100 -> 112
-    assert "Comprar" in html and "Vender" in html and "toda la posición" in html
+    assert "Comprar" in html and "Vender" in html
+    assert "18-09-2026" in html and "31-08-2026" in html
     assert "Gamma-6" in html and "MRK" in html
     assert "Comprar BCI (Sigma-6)" in markdown and "Vender BAC (Gamma-6)" in markdown
 
 
 def test_report_says_plainly_when_there_is_nothing_to_do():
-    _, html = _report(sigma_moves=pd.DataFrame([{"ticker": "BCI", "action": "MANTIENE", "previous_weight": .1, "target_weight": .1, "change": 0.0}]))
-    assert "No hay nada que comprar ni vender" in html
+    """Tres de las cuatro piezas son mensuales: el bloque vacío es lo normal.
+
+    Y un bloque vacío se lee como informe roto, así que tiene que decirlo con
+    todas sus letras.
+    """
+    markdown, html = _report()
+    assert "Sin movimientos" in html and "Sin movimientos" in markdown
     assert "Comprar" not in html
 
 
