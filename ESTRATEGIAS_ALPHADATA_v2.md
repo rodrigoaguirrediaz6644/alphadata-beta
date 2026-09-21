@@ -27,6 +27,13 @@ Sigma-6 es la estrategia anteriormente evaluada como Credicorp Momentum. Combina
 
 Se requieren al menos 252 sesiones de historia y el momentum debe ser estrictamente positivo.
 
+**El precio ajustado debe estar estrictamente sobre la SMA de 200 sesiones**,
+la misma condición que usan Delta-12 y Gamma-6. Entró el 21-09-2026: hasta
+entonces Sigma-6 era la única estrategia accionaria sin ninguna condición que
+mirara el precio de hoy, y `Momentum12-1` salta las últimas 21 ruedas, así que
+una caída del último mes le era invisible. Es también condición de permanencia.
+Medición en `research/sma200_sigma6/`.
+
 ### Entrada
 
 Una acción entra sólo cuando se cumplen simultáneamente:
@@ -52,6 +59,7 @@ Se vende en la siguiente apertura cuando ocurre cualquiera de estos eventos:
 
 - La recomendación vigente de Credicorp pasa a `0` o `-1`.
 - `Momentum12-1 <= 0`.
+- **`PrecioAjustado <= SMA200`.**
 - La recomendación caduca.
 - La posición alcanza 365 días.
 - Los precios son inválidos o están vencidos.

@@ -4,10 +4,9 @@
   "gamma_rule_version": "1.0.0",
   "sigma_entries": {
     "VAPORES": "2026-09-17",
-    "PARAUCO": "2026-09-17",
-    "LTM": "2026-09-17",
     "BCI": "2026-09-17",
-    "CENCOMALLS": "2026-09-17"
+    "PARAUCO": "2026-09-17",
+    "LTM": "2026-09-17"
   },
   "delta_entries": {
     "PARAUCO": "2026-09-17",
@@ -46,30 +45,16 @@
       "monto_clp": 500000.0
     },
     {
-      "ticker": "CENCOMALLS",
-      "target_weight": 0.1,
-      "opened_at": "2026-04-02",
-      "entry_price": 2449.89990234375,
-      "current_price": 2240.0,
-      "open_return": -0.08055524581677742,
-      "con_dividendo": false,
-      "dividendos_clp": 15.0,
-      "peso_real": 0.1,
-      "dias_tenencia": 168,
-      "tope_tenencia": 365,
-      "monto_clp": 500000.0
-    },
-    {
       "ticker": "LTM",
       "target_weight": 0.1,
-      "opened_at": "2026-08-28",
-      "entry_price": 23.69,
+      "opened_at": "2026-09-17",
+      "entry_price": 24.78,
       "current_price": 24.78,
-      "open_return": 0.04601097509497687,
+      "open_return": 0.0,
       "con_dividendo": false,
       "dividendos_clp": null,
       "peso_real": 0.1,
-      "dias_tenencia": 20,
+      "dias_tenencia": 0,
       "tope_tenencia": 365,
       "monto_clp": 500000.0
     },
@@ -90,14 +75,14 @@
     {
       "ticker": "VAPORES",
       "target_weight": 0.1,
-      "opened_at": "2026-03-27",
-      "entry_price": 48.88999938964844,
+      "opened_at": "2026-06-12",
+      "entry_price": 44.59000015258789,
       "current_price": 48.3,
-      "open_return": 0.12859361704881578,
+      "open_return": 0.0832025080671992,
       "con_dividendo": false,
-      "dividendos_clp": 6.705327,
+      "dividendos_clp": null,
       "peso_real": 0.1,
-      "dias_tenencia": 174,
+      "dias_tenencia": 97,
       "tope_tenencia": 365,
       "monto_clp": 500000.0
     }
@@ -290,7 +275,7 @@
   ],
   "valuation_date": "2026-09-17",
   "nav": {
-    "Sigma-6": 99.91075000000001,
+    "Sigma-6": 99.892915931125,
     "Delta-12": 99.8215,
     "Gamma-6": 99.9,
     "Oro": 99.9,
@@ -309,7 +294,7 @@
     "uploaded_files": 0,
     "history_rows": 1108
   },
-  "last_run_utc": "2026-09-21T14:53:20.623230+00:00",
+  "last_run_utc": "2026-09-21T15:02:14.776334+00:00",
   "entry_dates_version": 3,
   "delta_last_period": "2026-08",
   "gamma_last_period": "2026-08"

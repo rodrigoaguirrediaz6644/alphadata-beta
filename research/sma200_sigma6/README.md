@@ -54,8 +54,43 @@ y en la ventana completa la versión con SMA200 sale por delante. Tomar eso
 último como ventaja sería exactamente el error que las dos submuestras existen
 para evitar.
 
-## Estado
+## Qué le hace a la cartera de hoy
 
-`sigma6(..., exigir_sma200=...)` existe y viene **apagada**. Encenderla cambia
-la cartera publicada —de 9,75 a 7,74 nombres promedio— y eso no se hace sin
-decisión explícita.
+La precaución que había que tomar antes de encenderla: la medición corrió
+sobre 2021-2026, cuando Credicorp entregaba 17-19 filas mensuales. Hoy entrega
+4-8 y Sigma-6 tenía cinco nombres. Si el filtro baja el promedio de 9,75 a
+7,74 sobre una muestra sana, sobre una hambrienta podía dejar la cartera en
+tres nombres y 70% de caja.
+
+**No ocurrió: quedan cuatro nombres y 60% de caja** ($3.000.000 de $5.000.000).
+
+| | cierre | SMA200 | |
+|---|---|---|---|
+| BCI | 65.600,00 | 61.282,07 | +7,0% pasa |
+| **CENCOMALLS** | **2.240,00** | **2.446,80** | **−8,5% no pasa** |
+| LTM | 24,78 | 24,26 | +2,2% pasa |
+| PARAUCO | 3.900,00 | 3.761,10 | +3,7% pasa |
+| VAPORES | 48,30 | 44,78 | +7,9% pasa |
+
+Sale una sola: **CENCOMALLS**, y era justamente la única posición perdedora de
+Sigma-6, que el informe mostraba en −8,1%. El hueco que la regla venía a tapar,
+tapado en el primer caso real.
+
+## Estado: encendida
+
+`exigir_sma200` viene en `True` desde el 21-09-2026, y está en
+`ESTRATEGIAS_ALPHADATA_v2.md` como condición de elegibilidad y de permanencia.
+
+Dos consecuencias del encendido que conviene tener anotadas:
+
+- **El libro se reconstruyó entero**, porque cambian las selecciones pasadas.
+  Sigma-6 pasa de 85 a 99 posiciones anotadas en el recorrido: la condición
+  añade rotación en una estrategia semanal. En la ventana completa medida las
+  operaciones bajaban de 843 a 632, así que el efecto neto sigue siendo menos
+  rotación; el tramo reciente va en la otra dirección.
+- **La venta de CENCOMALLS no aparece en el informe de esta semana.** Bajo la
+  regla nueva el recorrido la sitúa en la revisión del 11-09, no en la del
+  17-09, y el bloque de movimientos muestra la revisión vigente. Es un
+  artefacto de la transición y no tiene efecto práctico —nadie ha comprado
+  todavía—; de aquí en adelante cada movimiento se informa la semana en que
+  ocurre.

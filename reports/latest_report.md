@@ -14,6 +14,7 @@
 - Comprar JNJ (Gamma-6) — señal del 31-08-2026
 - Vender AAPL (Gamma-6) — señal del 31-08-2026
 - Vender UNH (Gamma-6) — señal del 31-08-2026
+- Comprar LTM (Sigma-6) — señal del 17-09-2026
 
 ## Cada estrategia
 

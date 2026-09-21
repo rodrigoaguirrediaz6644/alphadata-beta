@@ -166,3 +166,29 @@ def test_sin_salidas_ni_entradas_una_revision_no_mueve_nada():
     pesos = {"BCI": .2, "CHILE": .1}
     nuevos, caja = _reasignar(pesos, .7, {"BCI": .125, "CHILE": .125})
     assert nuevos == pesos and abs(caja - .7) < 1e-12
+
+
+def test_sigma6_exige_estar_sobre_la_sma200():
+    """Era la única estrategia accionaria sin salida que mirara el precio de hoy.
+
+    Su `Momentum12-1` salta las últimas 21 ruedas, así que una caída del último
+    mes le era invisible. La condición viene encendida desde el 21-09-2026 y es
+    también de permanencia: una acción con recomendación viva y momentum
+    positivo se suelta igual si cae bajo su SMA200.
+    """
+    from src.strategy_engine import sigma6
+    fechas = pd.bdate_range("2024-01-01", "2026-09-17")
+    # Sube tres años y se desploma el último mes: el momentum 12-1 no lo ve.
+    serie = pd.Series(range(100, 100 + len(fechas)), index=fechas, dtype=float)
+    serie.iloc[-21:] = serie.iloc[-22] * .5
+    precios = pd.DataFrame({"date": fechas, "alphadata_ticker": "CAE",
+                            "adjusted_close": serie.to_numpy(), "close": serie.to_numpy(),
+                            "volume": 1e6})
+    recomendacion = pd.DataFrame([{"ticker": "CAE", "broker_normalized": "Credicorp Capital",
+                                   "signal": 1, "row_number": 1,
+                                   "available_at_parsed": pd.Timestamp("2026-09-01")}])
+    as_of = pd.Timestamp("2026-09-17")
+    con, _, _ = sigma6(recomendacion, precios, as_of, {"sigma_entries": {}})
+    sin, _, _ = sigma6(recomendacion, precios, as_of, {"sigma_entries": {}}, exigir_sma200=False)
+    assert "CAE" not in set(con.ticker), "la SMA200 tiene que soltarla"
+    assert "CAE" in set(sin.ticker), "sin la condición, el momentum 12-1 no ve la caída"

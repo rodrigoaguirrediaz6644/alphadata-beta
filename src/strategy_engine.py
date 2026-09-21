@@ -85,15 +85,22 @@ def capped_pro_rata(scores: pd.Series, cap: float) -> pd.Series:
 TOPE_TENENCIA_SIGMA=365
 
 
-def sigma6(valid: pd.DataFrame, prices: pd.DataFrame, as_of: pd.Timestamp, previous: dict[str, Any], exigir_sma200: bool = False) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, Any]]:
+def sigma6(valid: pd.DataFrame, prices: pd.DataFrame, as_of: pd.Timestamp, previous: dict[str, Any], exigir_sma200: bool = True) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, Any]]:
     """Sigma-6: recomendacion de Credicorp vigente mas momentum 12-1 positivo.
 
-    `exigir_sma200` agrega la condicion `adjusted_close > sma200`, la misma que
-    Delta-12 y Gamma-6 ya usan. Existe porque Sigma-6 es la unica estrategia
-    accionaria sin ninguna salida que mire el precio de hoy: el momentum 12-1
-    salta las ultimas 21 ruedas, asi que una caida del ultimo mes le es
-    invisible. Viene apagada: se enciende para medir, no en produccion, hasta
-    que la medicion diga algo.
+    `exigir_sma200` es la condicion `adjusted_close > sma200`, la misma que
+    Delta-12 y Gamma-6 ya usan. Entro el 21-09-2026 porque Sigma-6 era la unica
+    estrategia accionaria sin ninguna salida que mirara el precio de hoy: el
+    momentum 12-1 salta las ultimas 21 ruedas, asi que una caida del ultimo mes
+    le era invisible.
+
+    El argumento que mas pesa no es el del backtest --donde el retorno se da
+    vuelta entre submuestras y por lo tanto no se distingue-- sino que tapa un
+    hueco estructural con una condicion que el sistema ya usa en dos de tres
+    piezas. La caida si mejora de forma consistente. Ver
+    `research/sma200_sigma6/`.
+
+    El parametro sigue existiendo para poder medir con y sin.
     """
     if valid.empty:
         active=pd.DataFrame(columns=["ticker","broker_normalized","signal","available_at_parsed"])
@@ -287,7 +294,7 @@ def delta12_historical_nav(prices: pd.DataFrame, universe: pd.DataFrame, start: 
     return nav_corrido(panel,sesiones,"M",lambda f: dict(zip(*[delta12(prices,universe,f)[0][c] for c in ("ticker","target_weight")])),cost_rate,"Delta-12")
 
 
-def sigma6_historical_nav(valid: pd.DataFrame, prices: pd.DataFrame, universe: pd.DataFrame, start: pd.Timestamp, end: pd.Timestamp, cost_rate: float = .001785, exigir_sma200: bool = False) -> pd.DataFrame:
+def sigma6_historical_nav(valid: pd.DataFrame, prices: pd.DataFrame, universe: pd.DataFrame, start: pd.Timestamp, end: pd.Timestamp, cost_rate: float = .001785, exigir_sma200: bool = True) -> pd.DataFrame:
     """Reconstruye Sigma-6 semanal con los pesos corriendo.
 
     No existía: la serie de Sigma-6 venía congelada en
