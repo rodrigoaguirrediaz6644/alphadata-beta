@@ -102,6 +102,51 @@ larga es lo que le da peso, y esa ventana arrastra sus propios defectos
 conocidos: reconstrucción retrospectiva, sesgo de supervivencia, y los datos
 anteriores a 2025 sin reparar.
 
+## El costo a $20 millones: no discrimina
+
+Capital definido: $20 millones en total. A reparto parejo son $5 millones por
+pieza, con Delta-12 operando a $625.000 y Sigma-6 a $500.000, ambas bajo el
+umbral de $1.114.846 donde el porcentual alcanza al mínimo.
+
+Confirmado el cálculo: las 127 operaciones chilenas al año —49 de Sigma-6 y 78
+de Delta-12— pagan **$252.730** en mínimos donde el porcentual habría cobrado
+**$130.752**. El sobrecosto es de **$121.978 al año, 0,61%** del capital total.
+
+Y los dos umbrales de eficiencia suman $20.067.227, apenas por encima del
+capital disponible: **no hay reparto que deje eficientes a las dos piezas
+chilenas a este capital.**
+
+El mínimo es un peaje fijo por operación, así que el peso marginal en una pieza
+chilena es gratis hasta el umbral. La consecuencia, medida sobre una rejilla de
+todos los repartos en múltiplos de 5% con al menos 5% por pieza:
+
+| reparto | Sigma-6 | Delta-12 | Gamma-6 | total | % capital |
+|---|---|---|---|---|---|
+| peso igual 25/25/25/25 | $97.510 | $155.220 | $20.000 | $272.730 | 1,36% |
+| inverso a volatilidad | $97.510 | $155.220 | $13.600 | $266.330 | 1,33% |
+| Delta-12 al 45% (su umbral) | $97.510 | $156.634 | $16.000 | $270.144 | 1,35% |
+| Sigma-6 al 56% (su umbral) | $97.961 | $155.220 | $8.000 | $261.181 | 1,31% |
+
+**El costo no distingue entre los esquemas.** Entre los cinco hay 0,05 puntos
+de diferencia, y en toda la rejilla el rango completo es de 0,70% del capital
+—y ese rango lo produce Gamma-6, cuyo costo sí es proporcional, no las piezas
+chilenas, cuyo costo es plano.
+
+Dos consecuencias que conviene no confundir:
+
+**Llegar al umbral no ahorra nada.** Poner Delta-12 en 45% para que su
+operación supere $1.114.846 cuesta $156.634, más que el $155.220 que paga en
+25%. El umbral no es donde el costo baja: es donde el costo deja de ser fijo y
+empieza a crecer con el tamaño. Por debajo se paga un peaje plano, que en pesos
+absolutos es el régimen más barato.
+
+**El argumento de costo da un permiso, no una prescripción.** Subir el peso de
+una pieza chilena de 25% a 44% no cuesta un peso más. Si hubiera una razón de
+retorno para hacerlo, el costo no se opondría. Pero por sí solo el costo no
+favorece ningún reparto sobre otro, así que **no es un argumento para dejar de
+repartir en cuartos**. El encargo buscaba una razón robusta y de costo para no
+repartir parejo; la medición dice que esa razón no existe a este capital.
+
 ## Dependencia
 
 Este estudio mide las reglas oficiales vigentes. Si cambia el filtro RSI de
