@@ -59,6 +59,32 @@ empresas que salieron de bolsa en el periodo no están en el universo. El númer
 de mercado no tiene ese problema; el de las estrategias sí. La comparación es
 la mejor disponible, no una medición limpia.
 
+## Hecho: el reemplazo
+
+`tools/reemplazar_benchmark.py`, con ensayo por defecto y `--confirmar` para
+escribir. Es reemplazo **total**: la serie del proxy se archiva entera en
+`data/archivo/ipsa_tr_proxy_cfmitnipsa.csv` y no se empalma ningún tramo.
+Empalmar dos series de niveles distintos fue lo que produjo el salto de 100 a
+212,56 en el NAV.
+
+| | antes | después |
+|---|---|---|
+| fuente | ETF proxy `CFMITNIPSA.SN`, automática | MSCI IPSA Gross, manual semanal |
+| ruedas | 2.916 | 1.423 |
+| desde | 02-01-2015 | 04-01-2021 |
+| mayor variación diaria | 12,0% | **9,69%** |
+| ruedas sin variación en las últimas 60 | **44** | **0** |
+
+El 9,69% es del 22-11-2021, la jornada siguiente a la primera vuelta
+presidencial: un evento real, no un artefacto. Sólo dos ruedas superan el 8% en
+cinco años y no hay ningún valor repetido consecutivo.
+
+Se pierde la historia anterior a 2021. La reconstrucción oficial arranca el
+08-07-2021 y no la necesita.
+
+En `config/tickers.csv` la fila queda con `estado = manual`, que la excluye de
+la descarga automática sin sacarla del universo ni del informe de cobertura.
+
 ## Mantención
 
 La Bolsa de Santiago publica "MSCI IPSA S" —la S es la Gross; la N es sin

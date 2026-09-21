@@ -42,7 +42,7 @@ INGEVEC,INGEVEC.SN,Ingevec,accion_sigma,CLP,activo
 MULTIFOODS,MULTI-X.SN,Multiexport Foods,accion_sigma,CLP,activo
 SMSAAM,SMSAAM.SN,SAAM,accion_sigma,CLP,activo
 SONDA,SONDA.SN,Sonda,accion_sigma,CLP,activo
-IPSA_TR,CFMITNIPSA.SN,IPSA retorno total (proxy ETF CFMITNIPSA),benchmark,indice,activo
+IPSA_TR,MSCI_IPSA_GROSS,MSCI IPSA Gross (descarga manual semanal),benchmark,indice,manual
 ABT,ABT,Abbott Laboratories (CDV ABTCL),accion_us,USD,activo
 GOOGL,GOOGL,Alphabet Inc. Class A (CDV GOOGLCL),accion_us,USD,activo
 GOOG,GOOG,Alphabet Inc. Class C (CDV GOOGCL),accion_us,USD,activo
