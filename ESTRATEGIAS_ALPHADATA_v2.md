@@ -82,6 +82,27 @@ Se utiliza la tarifa Trii/Racional:
 
 Los backtests independientes del capital aplican 0,1785% al monto transado y no aplican el mínimo de $1.990. Las simulaciones con capital definido deben utilizar el mayor entre la comisión variable y la tarifa mínima cuando corresponda.
 
+### Guardia de vigencia de las recomendaciones
+
+Si en una revisión la recomendación más reciente del proveedor tiene **más de
+90 días**, Sigma-6 **conserva la cartera, no abre posiciones nuevas y no
+vende**. El informe lo dice. Se reanuda sola en cuanto entren recomendaciones
+nuevas.
+
+Es la misma regla que para los precios: una venta disparada por la ausencia del
+insumo no es una señal, es un hueco. Sin la guardia, las posiciones se irían
+soltando una a una a medida que sus recomendaciones cumplen 365 días, y esa
+liquidación sería un artefacto de que nadie cargó el archivo.
+
+El umbral no está ajustado a la muestra: entre 2021 y 2026 el hueco más largo
+entre recomendaciones fue de **29 días**, así que la guardia nunca se habría
+activado y no cambia ninguna serie publicada.
+
+**Consecuencia que hay que aceptar:** mientras la guardia está activa también
+quedan suspendidas las salidas por precio. Una posición que cayera bajo su
+SMA200 durante ese periodo no se vendería. Es el precio de «no vende» dicho sin
+excepciones, y es deliberado.
+
 ### Límite de concentración
 
 Ninguna posición puede pasar del **25% del valor de su propia pieza** —6,25%

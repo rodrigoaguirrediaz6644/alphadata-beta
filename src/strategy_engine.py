@@ -78,6 +78,32 @@ def capped_pro_rata(scores: pd.Series, cap: float) -> pd.Series:
     return result
 
 
+# Guardia de vigencia de las recomendaciones. Si en una revision la mas reciente
+# tiene mas de noventa dias, Sigma-6 conserva la cartera, no abre nada y el
+# informe lo dice. **No vende**: es la misma regla que para los precios, porque
+# una venta disparada por la ausencia del insumo no es una senal, es un hueco.
+#
+# El argumento es que un mes saltado tiene que ser ruidoso y no silencioso. Todo
+# lo que este proyecto reparo en septiembre de 2026 fue algo que dejo de
+# actualizarse sin avisar: el feed chileno, las fechas de entrada, el grafico
+# publicado, la serie de Sigma-6.
+#
+# El umbral de 90 dias no es arbitrario ni ajustado: en 2021-2026 el hueco mas
+# largo entre recomendaciones fue de 29 dias, asi que la guardia nunca se
+# habria activado y no cambia ninguna serie publicada. Separa el ritmo normal
+# de una carga que dejo de ocurrir.
+DIAS_VIGENCIA_RECOMENDACIONES=90
+
+
+def recomendaciones_vencidas(valid: pd.DataFrame, as_of: pd.Timestamp,
+                             dias: int = DIAS_VIGENCIA_RECOMENDACIONES) -> int | None:
+    """Cuantos dias lleva la recomendacion mas reciente. None si no hay ninguna."""
+    if valid.empty: return None
+    disponibles=valid.loc[valid.available_at_parsed<=as_of,"available_at_parsed"]
+    if disponibles.empty: return None
+    return int((pd.Timestamp(as_of).normalize()-disponibles.max().normalize()).days)
+
+
 def sigma6(valid: pd.DataFrame, prices: pd.DataFrame, as_of: pd.Timestamp, previous: dict[str, Any], exigir_sma200: bool = True) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, Any]]:
     """Sigma-6: recomendacion de Credicorp vigente mas momentum 12-1 positivo.
 
@@ -131,10 +157,16 @@ def sigma6(valid: pd.DataFrame, prices: pd.DataFrame, as_of: pd.Timestamp, previ
     # Sigma-6 no tiene tope de tenencia: rota por señal, no por calendario. El
     # de 365 días salió el 21-09-2026; ver data/archivo/cambio_aritmetica_nav.md.
     entries=previous.get("sigma_entries",{}); eligible={t:1.0 for t in candidates.index}
+    antiguedad=recomendaciones_vencidas(valid,as_of)
+    detenida=antiguedad is not None and antiguedad>DIAS_VIGENCIA_RECOMENDACIONES
+    if detenida:
+        # Se conserva la cartera tal cual: no se abre nada y no se vende nada.
+        eligible={t:1.0 for t in entries}
     weights=capped_pro_rata(pd.Series(eligible,dtype=float),.10)
     portfolio=pd.DataFrame({"ticker":weights.index,"target_weight":weights.values}) if len(weights) else pd.DataFrame(columns=["ticker","target_weight"])
     old=set(entries); new=set(portfolio.ticker); new_entries={t:(entries[t] if t in entries else as_of.date().isoformat()) for t in new}
-    state={**previous,"sigma_entries":new_entries}
+    state={**previous,"sigma_entries":new_entries,
+           "vigencia_detenida":bool(detenida),"dias_sin_recomendaciones":antiguedad}
     return portfolio.sort_values("target_weight",ascending=False), scores.sort_values(["eligible","momentum_12_1"],ascending=[False,False]) if len(scores) else scores, state
 
 

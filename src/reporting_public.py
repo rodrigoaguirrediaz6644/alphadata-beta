@@ -247,6 +247,39 @@ def _deriva(real, objetivo, limite: float | None = LIMITE_CONCENTRACION) -> str:
     return f"<strong>{texto}</strong>" if abs(real - float(objetivo)) > .02 else texto
 
 
+def _vigencia(vigencia: dict | None) -> str:
+    """Qué nombres necesitan recomendación nueva y antes de cuándo.
+
+    Y si la más reciente pasó el umbral, que la estrategia está detenida. Un mes
+    saltado tiene que ser ruidoso y no silencioso: todo lo que este sistema
+    reparó fue algo que dejó de actualizarse sin avisar.
+    """
+    if not vigencia or vigencia.get("dias") is None:
+        return ""
+    dias, umbral = int(vigencia["dias"]), int(vigencia["umbral"])
+    renovar = vigencia.get("renovar") or []
+    lista = "".join(
+        f'<li><strong>{escape(str(r["ticker"]))}</strong> — antes del '
+        f'{pd.to_datetime(r["caduca"]):%d-%m-%Y}'
+        + (f' (en {int(r["dias_para_caducar"])} días)' if pd.notna(r.get("dias_para_caducar")) else "")
+        + "</li>"
+        for r in renovar)
+    if vigencia.get("detenida"):
+        return ('<div class="warn"><strong>Sigma-6 está detenida.</strong> La recomendación más '
+                f'reciente tiene {dias} días y el límite son {umbral}. La estrategia conserva su '
+                'cartera y no abre posiciones nuevas; tampoco vende, porque una venta disparada por '
+                'la falta del dato no es una señal. Se reanuda sola en cuanto entren recomendaciones '
+                f'nuevas.{("<p>Necesitan recomendación nueva:</p><ul>" + lista + "</ul>") if lista else ""}'
+                "</div>")
+    quedan = umbral - dias
+    cuerpo = (f'<p class="muted">La recomendación más reciente tiene {dias} días. Si llega a '
+              f'{umbral} sin que entren nuevas, Sigma-6 conserva la cartera y deja de abrir '
+              f'posiciones: quedan {quedan} días.</p>')
+    if lista:
+        cuerpo += f"<p class=\"muted\">Necesitan recomendación nueva:</p><ul>{lista}</ul>"
+    return cuerpo
+
+
 def _caducidad(fecha, dias) -> str:
     """Hasta cuándo vale la recomendación que sostiene la posición.
 
@@ -327,6 +360,7 @@ def build_public_report(
     oro_moves: pd.DataFrame | None = None,
     movimientos: pd.DataFrame | None = None,
     capital_por_pieza: float | None = None,
+    vigencia: dict | None = None,
 ) -> tuple[str, str]:
     vacio_cartera = pd.DataFrame(columns=["ticker", "target_weight"])
     vacio_movs = pd.DataFrame(columns=["ticker", "action", "target_weight"])
@@ -370,6 +404,7 @@ def build_public_report(
         summary_rows.append(f'<tr{strong}><td>{name}</td><td>{invierte}</td><td>{_signed(m["return"])}</td><td>{_signed(m["last_year"])}</td><td>{pct(m["mdd"])}</td><td>{cuantas}</td></tr>')
 
     problems = []
+    aviso_vigencia = _vigencia(vigencia)
     if len(errors):
         problems.append(f"{len(errors)} recomendaciones nuevas no se pudieron usar porque venían incompletas.")
     if not benchmark_usable:
@@ -452,7 +487,7 @@ def build_public_report(
     <p class="muted">Todos los precios están en pesos. Gamma-6 y el oro se compran en Chile como CDV, así que su resultado ya incluye el efecto del tipo de cambio. El oro no se compra ni se vende por señales: es una posición fija que está para amortiguar las caídas del resto.</p>
     </section>
 
-    <section><h2>Estado de los datos</h2>{problems_block}</section>
+    <section><h2>Estado de los datos</h2>{aviso_vigencia}{problems_block}</section>
 
     </main></body></html>'''
 

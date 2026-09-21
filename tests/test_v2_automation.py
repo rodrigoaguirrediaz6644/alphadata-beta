@@ -261,3 +261,80 @@ def test_sin_limite_una_posicion_puede_correr():
     from src.nav_historico import _reasignar
     nuevos, caja = _reasignar({"IAU": 1.}, 0., {"IAU": 1.}, limite=None)
     assert nuevos == {"IAU": 1.} and abs(caja) < 1e-12
+
+
+def _recomendacion(ticker, fecha):
+    return {"ticker": ticker, "broker_normalized": "Credicorp Capital", "signal": 1,
+            "row_number": 1, "available_at_parsed": pd.Timestamp(fecha)}
+
+
+def _precios_sanos(tickers, hasta="2026-12-31"):
+    fechas = pd.bdate_range("2023-01-02", hasta)
+    filas = []
+    for i, t in enumerate(tickers):
+        serie = pd.Series(range(100 + i, 100 + i + len(fechas)), index=fechas, dtype=float)
+        filas.append(pd.DataFrame({"date": fechas, "alphadata_ticker": t,
+                                   "adjusted_close": serie.to_numpy(),
+                                   "close": serie.to_numpy(), "volume": 1e6}))
+    return pd.concat(filas, ignore_index=True)
+
+
+def test_la_guardia_de_vigencia_conserva_la_cartera_y_no_abre_nada():
+    """Un mes saltado tiene que ser ruidoso, no silencioso.
+
+    Si la recomendación más reciente pasa de noventa días, Sigma-6 conserva la
+    cartera, no abre posiciones y **no vende**: una venta disparada por la
+    ausencia del insumo no es una señal, es un hueco. Es la misma regla que
+    para los precios.
+    """
+    from src.strategy_engine import sigma6
+    v = pd.DataFrame([_recomendacion("VIEJA", "2026-07-22"), _recomendacion("NUEVA", "2026-07-22")])
+    precios = _precios_sanos(["VIEJA", "NUEVA"])
+    estado = {"sigma_entries": {"VIEJA": "2026-01-02"}}
+    # A los 90 días todavía opera y abre la que falta.
+    cartera, _, st = sigma6(v, precios, pd.Timestamp("2026-10-20"), estado)
+    assert st["dias_sin_recomendaciones"] == 90 and not st["vigencia_detenida"]
+    assert set(cartera.ticker) == {"VIEJA", "NUEVA"}
+    # A los 91 se detiene: conserva lo que tenía y no abre NUEVA.
+    cartera, _, st = sigma6(v, precios, pd.Timestamp("2026-10-21"), estado)
+    assert st["dias_sin_recomendaciones"] == 91 and st["vigencia_detenida"]
+    assert set(cartera.ticker) == {"VIEJA"}
+
+
+def test_la_guardia_no_vende_una_posicion_cuya_recomendacion_caduco():
+    """Es el caso concreto: sin la guardia, VAPORES se vendería el 27-11-2026."""
+    from src.strategy_engine import sigma6
+    import src.strategy_engine as motor
+    v = pd.DataFrame([_recomendacion("CADUCA", "2026-07-22")])
+    precios = _precios_sanos(["CADUCA"], hasta="2027-09-30")
+    estado = {"sigma_entries": {"CADUCA": "2026-01-02"}}
+    # Pasados los 365 días la recomendación ya no está vigente.
+    cartera, _, st = sigma6(v, precios, pd.Timestamp("2027-08-01"), estado)
+    assert st["vigencia_detenida"] and set(cartera.ticker) == {"CADUCA"}
+    # Sin la guardia, la misma fecha la suelta.
+    viejo = motor.DIAS_VIGENCIA_RECOMENDACIONES
+    motor.DIAS_VIGENCIA_RECOMENDACIONES = 99_999
+    try:
+        sin_guardia, _, _ = sigma6(v, precios, pd.Timestamp("2027-08-01"), estado)
+    finally:
+        motor.DIAS_VIGENCIA_RECOMENDACIONES = viejo
+    assert set(sin_guardia.ticker) == set()
+
+
+def test_la_guardia_nunca_se_habria_activado_en_el_historial():
+    """El umbral no está ajustado a la muestra: separa el ritmo normal de un corte.
+
+    Entre 2021 y 2026 el hueco más largo entre recomendaciones fue de 29 días,
+    así que la guardia no cambia ninguna serie publicada.
+    """
+    from pathlib import Path
+    from src.strategy_engine import DIAS_VIGENCIA_RECOMENDACIONES
+    archivo = Path(__file__).resolve().parents[1] / "data" / "recommendations_input.csv"
+    if not archivo.exists():
+        pytest.skip("sin archivo de recomendaciones")
+    d = pd.read_csv(archivo, dtype=str).fillna("")
+    fechas = pd.to_datetime(
+        d.available_at.where(d.available_at.str.strip() != "", d.published_at),
+        errors="coerce").dropna()
+    hueco = pd.Series(sorted(fechas.unique())).diff().dt.days.max()
+    assert hueco < DIAS_VIGENCIA_RECOMENDACIONES, f"hueco histórico de {hueco} días"

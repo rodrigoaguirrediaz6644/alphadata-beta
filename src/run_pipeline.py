@@ -13,7 +13,7 @@ from src.ingest_recommendations import ingest
 from src.libro import abiertas as libro_abiertas, anotar, cargar as cargar_libro, cartera_publicada, guardar as guardar_libro, guardar_publicada, movimientos_de, precios_de_entrada
 from src.strategy_registry import validate_registry
 from src.reporting_public import build_public_report
-from src.strategy_engine import ORO_TICKER, RECOMMENDATION_COLUMNS, combined_equal_weight, delta12, delta12_historical_nav, gamma6, gamma6_historical_nav, movements, sigma6_historical_nav, oro, oro_historical_nav, reconstruct_entry_dates, sigma6, to_clp, validate_recommendations
+from src.strategy_engine import DIAS_VIGENCIA_RECOMENDACIONES, ORO_TICKER, RECOMMENDATION_COLUMNS, combined_equal_weight, delta12, delta12_historical_nav, gamma6, gamma6_historical_nav, movements, sigma6_historical_nav, oro, oro_historical_nav, reconstruct_entry_dates, sigma6, to_clp, validate_recommendations
 
 ROOT=Path(__file__).resolve().parents[1]; DATA=ROOT/'data'; REPORTS=ROOT/'reports'; STATE=DATA/'strategy_state.json'; NAV=DATA/'strategy_nav.csv'
 US_COST_RATE=.001  # spread de Trii para acciones de EE.UU. (0,1% por lado)
@@ -408,6 +408,18 @@ def main()->None:
             lambda t: (ultima[t]+pd.Timedelta(days=365)).date().isoformat() if t in ultima else pd.NA)
         sigma['dias_para_caducar']=sigma.caduca.map(
             lambda f: (pd.Timestamp(f).normalize()-as_of.normalize()).days if pd.notna(f) else pd.NA)
+    # Qué nombres necesitan recomendación nueva y antes de cuándo. Es el paso
+    # corto que hace la diferencia entre un compromiso que el sistema sostiene
+    # y uno que hay que recordar.
+    renovar=(sigma.loc[sigma.caduca.notna(),['ticker','caduca','dias_para_caducar']]
+             .sort_values('dias_para_caducar').to_dict('records') if len(sigma) else [])
+    vigencia={'dias':state.get('dias_sin_recomendaciones'),
+              'umbral':DIAS_VIGENCIA_RECOMENDACIONES,
+              'detenida':bool(state.get('vigencia_detenida')),
+              'renovar':renovar}
+    if vigencia['detenida']:
+        print(f"ADVERTENCIA: Sigma-6 detenida por vigencia: la recomendación más reciente tiene "
+              f"{vigencia['dias']} días. Conserva la cartera y no abre posiciones.")
     # Cuántos pesos es cada posición, con el capital de la configuración.
     capital=json.loads(CONFIG.read_text(encoding='utf-8')).get('capital',{})
     por_pieza=float(capital.get('total_clp',0))/len(STRATEGY_SERIES)
@@ -473,7 +485,7 @@ def main()->None:
             raise RuntimeError('Hay series publicadas que nadie recalcula: '+', '.join(sorted(sin_recalcular))
                                +'. Ver CENSO_DE_SERIES.md; una serie guardada es la forma del defecto de Sigma-6.')
         historical.to_csv(historical_path,index=False)
-    md,html=build_public_report(as_of,sigma,delta,smove,dmove,coverage,errors,history,gamma=gamma,gamma_moves=gmove,oro=oro_portfolio,oro_moves=omove,movimientos=movimientos_libro,capital_por_pieza=por_pieza);(REPORTS/'latest_report.md').write_text(md,encoding='utf-8');(REPORTS/'latest_report.html').write_text(html,encoding='utf-8')
+    md,html=build_public_report(as_of,sigma,delta,smove,dmove,coverage,errors,history,gamma=gamma,gamma_moves=gmove,oro=oro_portfolio,oro_moves=omove,movimientos=movimientos_libro,capital_por_pieza=por_pieza,vigencia=vigencia);(REPORTS/'latest_report.md').write_text(md,encoding='utf-8');(REPORTS/'latest_report.html').write_text(html,encoding='utf-8')
     guardar_publicada(vigente,as_of,PUBLICADA)
     sigma.to_csv(DATA/'portfolio_sigma6.csv',index=False);delta.to_csv(DATA/'portfolio_delta12.csv',index=False);gamma.to_csv(DATA/'portfolio_gamma6.csv',index=False);oro_portfolio.to_csv(DATA/'portfolio_oro.csv',index=False)
     s_audit.to_csv(DATA/'audit_sigma6.csv',index=False);d_audit.to_csv(DATA/'audit_delta12.csv',index=False)

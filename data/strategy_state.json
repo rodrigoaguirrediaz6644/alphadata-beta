@@ -4,9 +4,9 @@
   "gamma_rule_version": "1.0.0",
   "sigma_entries": {
     "PARAUCO": "2026-09-17",
+    "VAPORES": "2026-09-17",
     "LTM": "2026-09-17",
-    "BCI": "2026-09-17",
-    "VAPORES": "2026-09-17"
+    "BCI": "2026-09-17"
   },
   "delta_entries": {
     "PARAUCO": "2026-09-17",
@@ -294,8 +294,10 @@
     "uploaded_files": 0,
     "history_rows": 1108
   },
-  "last_run_utc": "2026-09-21T16:43:33.978974+00:00",
+  "last_run_utc": "2026-09-21T17:43:31.754085+00:00",
   "entry_dates_version": 3,
   "delta_last_period": "2026-08",
-  "gamma_last_period": "2026-08"
+  "gamma_last_period": "2026-08",
+  "vigencia_detenida": false,
+  "dias_sin_recomendaciones": 57
 }
