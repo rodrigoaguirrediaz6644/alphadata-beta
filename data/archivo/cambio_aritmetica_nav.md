@@ -37,13 +37,24 @@ Ventana 2021-07-08 a 2026-07-15. Retorno anual y peor caída.
 Delta-12 y Gamma-6 se mueven lo medido: la aritmética explica los −0,8 y +3,4
 puntos.
 
-## Sigma-6 se mueve mucho más que lo medido, y la razón no es la aritmética
+## Sigma-6: los 10,7 puntos, separados
 
-La brecha medida para Sigma-6 entre peso constante y pesos corriendo era de
-**0,9 puntos anuales** (+18,94% contra +18,06%). La caída publicada es de
-**10,7**. La diferencia no viene del cambio de política.
+La primera versión de este registro decía que las dos causas no se podían
+separar. **Sí se pueden**, usando el banco de pruebas como punto intermedio:
+el banco midió Sigma-6 con las reglas y los datos de hoy bajo las dos
+políticas de rebalanceo, así que provee el eslabón que faltaba.
 
-Viene de que **la serie de Sigma-6 nunca se reconstruía.** El pipeline
+| tramo | de | a | cuánto | qué es |
+|---|---|---|---|---|
+| serie vieja → peso constante de hoy | +28,75% | +18,94% | **−9,8 pp** | corrección de datos y metodología |
+| peso constante → pesos corriendo | +18,94% | +18,06% | **−0,9 pp** | el cambio de política |
+| publicado | | +18,04% | | (la reconstrucción alinea fechas con `ffill`) |
+
+**El número que importa no es el de la política sino el otro: la serie vieja
+sobreestimaba el retorno anual de Sigma-6 en cerca de diez puntos.** Ésa es la
+magnitud del defecto.
+
+La causa es que **la serie de Sigma-6 nunca se reconstruía.** El pipeline
 recalculaba Delta-12, Gamma-6 y Oro en cada corrida, y Sigma-6 se quedaba con
 los valores congelados en `reconstruccion_historica.csv` desde antes del
 incidente del feed: antes de reparar los precios chilenos de 2025-2026, antes
@@ -53,9 +64,10 @@ metodología. Nadie la había vuelto a calcular.
 Al agregarse `sigma6_historical_nav` —que no existía— la serie se recalcula por
 primera vez con las reglas y los datos de hoy, y el +28,75% no sobrevive.
 
-**Los 10,7 puntos son, casi todos, la corrección de una serie vieja, no el
-efecto del rebalanceo.** No hay forma de separar las dos causas con precisión,
-porque la serie anterior no dejó registro de cómo se había calculado.
+Lo que **no** se puede desglosar es el −9,8 dentro de sí mismo: cuánto es la
+reparación de los precios chilenos, cuánto la tabla de dividendos y cuánto los
+cambios de metodología, porque la serie anterior no dejó registro de cómo se
+había calculado. Ver `CENSO_DE_SERIES.md`.
 
 ## Control
 
