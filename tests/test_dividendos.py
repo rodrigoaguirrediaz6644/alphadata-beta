@@ -92,3 +92,35 @@ def test_la_misma_caida_con_dividendo_registrado_no_suena():
 def test_una_caida_moderada_no_suena():
     panel = _panel({"ILC": [100, 100, 97, 97]})
     assert alarma_por_salto(panel).empty
+
+
+def test_los_dividendos_de_las_posiciones_vivas_estan_confirmados():
+    """Envejecen fuera de la señal, no fuera de la pantalla.
+
+    Los 127 fechados por convención se dejaron así porque salen de la ventana
+    del momentum 12-1 en un año. Eso vale para la señal, no para el número
+    publicado: la variación se calcula desde la entrada hasta hoy, y sin tope de
+    tenencia esa ventana crece con la posición.
+
+    El alcance se define solo: los que caen dentro de la ventana de tenencia de
+    una posición viva. Si aparece uno nuevo sin confirmar, esta prueba lo dice.
+    """
+    import pandas as pd
+    from pathlib import Path
+    raiz = Path(__file__).resolve().parents[1]
+    libro_csv, dividendos_csv = raiz / "data" / "libro_posiciones.csv", raiz / "data" / "dividendos.csv"
+    if not (libro_csv.exists() and dividendos_csv.exists()):
+        import pytest
+        pytest.skip("sin libro o sin tabla de dividendos")
+    libro = pd.read_csv(libro_csv, parse_dates=["fecha_entrada", "fecha_salida"])
+    d = pd.read_csv(dividendos_csv, parse_dates=["fecha_ex"])
+    vivas = libro[libro.fecha_salida.isna() & (libro.origen != "calentamiento")]
+    sin_confirmar = []
+    for fila in vivas.itertuples():
+        dentro = d[(d.alphadata_ticker == fila.instrumento) & (d.fecha_ex > fila.fecha_entrada)]
+        sin_confirmar += [f"{fila.instrumento} {x.fecha_ex.date()}"
+                          for x in dentro.itertuples() if pd.isna(x.caida_observada)]
+    # MALLPLAZA 2026-09-03 cae dentro del tramo del feed congelado: no se puede
+    # confirmar por contraste y está documentado en research/dividendos/.
+    conocidos = {"MALLPLAZA 2026-09-03"}
+    assert set(sin_confirmar) <= conocidos, f"sin confirmar y sin documentar: {sorted(set(sin_confirmar) - conocidos)}"
