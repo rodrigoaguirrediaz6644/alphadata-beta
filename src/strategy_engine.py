@@ -83,7 +83,16 @@ def capped_pro_rata(scores: pd.Series, cap: float) -> pd.Series:
 TOPE_TENENCIA_SIGMA=365
 
 
-def sigma6(valid: pd.DataFrame, prices: pd.DataFrame, as_of: pd.Timestamp, previous: dict[str, Any]) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, Any]]:
+def sigma6(valid: pd.DataFrame, prices: pd.DataFrame, as_of: pd.Timestamp, previous: dict[str, Any], exigir_sma200: bool = False) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, Any]]:
+    """Sigma-6: recomendacion de Credicorp vigente mas momentum 12-1 positivo.
+
+    `exigir_sma200` agrega la condicion `adjusted_close > sma200`, la misma que
+    Delta-12 y Gamma-6 ya usan. Existe porque Sigma-6 es la unica estrategia
+    accionaria sin ninguna salida que mire el precio de hoy: el momentum 12-1
+    salta las ultimas 21 ruedas, asi que una caida del ultimo mes le es
+    invisible. Viene apagada: se enciende para medir, no en produccion, hasta
+    que la medicion diga algo.
+    """
     if valid.empty:
         active=pd.DataFrame(columns=["ticker","broker_normalized","signal","available_at_parsed"])
     else:
@@ -95,10 +104,13 @@ def sigma6(valid: pd.DataFrame, prices: pd.DataFrame, as_of: pd.Timestamp, previ
     # que ese desfase transforme posiciones válidas en ventas.
     close=close.ffill(limit=3)
     momentum=(close.shift(21).iloc[-1]/close.shift(252).iloc[-1]-1) if len(close)>=252 else pd.Series(dtype=float)
+    sma200=close.rolling(200,min_periods=200).mean().iloc[-1] if len(close)>=200 else pd.Series(dtype=float)
+    ultimo=close.iloc[-1] if len(close) else pd.Series(dtype=float)
     audit=[]
     for ticker,g in active.groupby("ticker"):
         signal=int(g.iloc[-1].signal); mom=float(momentum.get(ticker,np.nan))
-        audit.append({"ticker":ticker,"credicorp_signal":signal,"momentum_12_1":mom,"history_rows":int(close[ticker].notna().sum()) if ticker in close else 0,"latest_signal_at":g.available_at_parsed.max(),"eligible":bool(signal==1 and pd.notna(mom) and mom>0)})
+        sobre=(not exigir_sma200) or (pd.notna(sma200.get(ticker,np.nan)) and pd.notna(ultimo.get(ticker,np.nan)) and ultimo.get(ticker)>sma200.get(ticker))
+        audit.append({"ticker":ticker,"credicorp_signal":signal,"momentum_12_1":mom,"sma200":float(sma200.get(ticker,np.nan)) if len(sma200) else np.nan,"history_rows":int(close[ticker].notna().sum()) if ticker in close else 0,"latest_signal_at":g.available_at_parsed.max(),"eligible":bool(signal==1 and pd.notna(mom) and mom>0 and sobre)})
     scores=pd.DataFrame(audit)
     positive=scores.loc[scores.credicorp_signal==1] if len(scores) else scores
     missing_positive=set(positive.loc[positive.momentum_12_1.isna(),"ticker"]) if len(positive) else set()
