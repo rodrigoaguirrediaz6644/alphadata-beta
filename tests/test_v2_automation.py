@@ -83,3 +83,17 @@ def test_las_recomendaciones_del_nombre_viejo_siguen_valiendo():
     validas, errores = validate_recommendations(pd.DataFrame([fila]), {"CENCOMALLS"})
     assert len(errores) == 0
     assert validas.iloc[0].ticker == "CENCOMALLS"
+
+
+def test_el_correo_reescribe_los_graficos_a_cid():
+    """En el archivo el gráfico apunta al PNG; en el correo, a cid:.
+
+    Son dos destinos con formas distintas: `cid:` sólo funciona dentro del
+    mensaje, y dejarlo en el archivo hacía que el informe se viera sin gráficos
+    al abrirlo desde el repositorio.
+    """
+    from src.send_report import GRAFICOS
+    html = '<img src="seguimiento_vivo.png"><img src="reconstruccion.png">'
+    for nombre in GRAFICOS:
+        html = html.replace(f'src="{nombre}"', f'src="cid:{Path(nombre).stem}"')
+    assert html == '<img src="cid:seguimiento_vivo"><img src="cid:reconstruccion">'

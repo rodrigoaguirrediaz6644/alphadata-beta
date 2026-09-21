@@ -37,13 +37,3 @@
 - IPSA TR: +1,3% desde el inicio; peor caída 0,0%.
 
 El informe HTML incluye el gráfico y las carteras. La metodología y sus parámetros son información reservada.
-
-
-<!-- HORIZONTE_START -->
-## Estrategia Horizonte
-
-- Fondo vigente: **Fondo A**.
-- Última señal: Fondo A (5/5), fecha 2026-08-31.
-- Datos Cuprum actualizados al 2026-09-16.
-- Backtest y tablas: `data/horizonte_backtest_summary.csv`, `data/horizonte_annual.csv`, `data/horizonte_trades.csv` y `data/horizonte_signals.csv`.
-<!-- HORIZONTE_END -->

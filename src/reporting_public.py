@@ -115,7 +115,10 @@ def _dibujar(data: pd.DataFrame, nombres: list[str], titulo: str, archivo: str,
     figura.tight_layout()
     figura.savefig(salida, bbox_inches="tight", facecolor="white")
     plt.close(figura)
-    return (f'<img src="cid:{Path(archivo).stem}" alt="{titulo}" '
+    # El `src` apunta al archivo, no a un `cid`. Así el informe se ve completo
+    # abriendo reports/latest_report.html desde cualquier parte; el correo lo
+    # reescribe a `cid:` al armar el adjunto, que es donde esa forma sí sirve.
+    return (f'<img src="{archivo}" alt="{titulo}" '
             'style="display:block;width:100%;max-width:900px;height:auto">'
             f'<p class="muted">{pie}</p>')
 

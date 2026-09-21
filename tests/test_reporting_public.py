@@ -120,8 +120,11 @@ def test_el_informe_dibuja_dos_graficos_separados(_graficos_en_temporal):
     como resultado.
     """
     _, html = _report()
-    assert 'cid:seguimiento_vivo' in html
-    assert 'cid:reconstruccion' in html
+    # El archivo apunta al PNG para verse fuera del correo; el correo lo
+    # reescribe a cid: al adjuntarlo.
+    assert 'src="seguimiento_vivo.png"' in html
+    assert 'src="reconstruccion.png"' in html
+    assert "cid:" not in html
     assert "Reconstrucción" in html
     assert (_graficos_en_temporal / "seguimiento_vivo.png").exists()
 
@@ -136,7 +139,7 @@ def test_la_serie_viva_no_se_reescala_con_la_reconstruccion():
     vivo = pd.DataFrame({"date": pd.to_datetime(["2026-09-17", "2026-09-18", "2026-09-21"]),
                          "Sigma-6": [100.0, 101.0, 102.0], "Conjunto AlphaData": [100.0, 100.5, 101.0]})
     bloque = _dibujar(vivo, _series_presentes(vivo), "prueba", "prueba_vivo.png", "pie")
-    assert "cid:prueba_vivo" in bloque
+    assert 'src="prueba_vivo.png"' in bloque
     # El dibujo normaliza a 100 en el primer dato propio de la serie, sin mirar
     # ningún archivo histórico.
     assert vivo["Sigma-6"].iloc[0] == 100.0

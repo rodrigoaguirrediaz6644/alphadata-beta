@@ -6,6 +6,7 @@ import smtplib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+GRAFICOS = ("seguimiento_vivo.png", "reconstruccion.png")
 
 
 def main() -> None:
@@ -15,6 +16,11 @@ def main() -> None:
         print("Correo omitido; faltan secretos: " + ", ".join(missing))
         return
     html = (ROOT / "reports" / "latest_report.html").read_text(encoding="utf-8")
+    # En el archivo los gráficos apuntan al PNG para que se vea fuera del
+    # correo; acá se reescriben a `cid:`, que es la forma que entiende el
+    # cliente de correo al recibirlos adjuntos.
+    for nombre in GRAFICOS:
+        html = html.replace(f'src="{nombre}"', f'src="cid:{Path(nombre).stem}"')
     md = (ROOT / "reports" / "latest_report.md").read_text(encoding="utf-8")
     msg = EmailMessage()
     msg["Subject"] = os.getenv("REPORT_SUBJECT", "AlphaData — informe Sigma-6 y Delta-12")
@@ -25,7 +31,7 @@ def main() -> None:
     html_part = msg.get_payload()[-1]
     # El informe lleva dos gráficos separados: el seguimiento en vivo y la
     # reconstrucción. Son series distintas y van como imágenes distintas.
-    for nombre in ("seguimiento_vivo.png", "reconstruccion.png"):
+    for nombre in GRAFICOS:
         grafico = ROOT / "reports" / nombre
         if grafico.exists():
             html_part.add_related(grafico.read_bytes(), maintype="image", subtype="png",
