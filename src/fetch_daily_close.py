@@ -31,7 +31,7 @@ from typing import Callable
 
 import pandas as pd
 
-from src.fetch_prices import PRICE_COLUMNS, load_universe, operables
+from src.fetch_prices import PRICE_COLUMNS, _ajustar_chilenos, load_universe, operables
 from src.guards import ruedas_faltantes
 from src.price_store import agregar
 
@@ -168,6 +168,7 @@ def main() -> None:
     guardado = pd.read_csv(ruta, parse_dates=["date"]) if ruta.exists() else pd.DataFrame(columns=PRICE_COLUMNS)
     antes = len(guardado)
     resultado, revisiones = agregar(guardado, capturadas)
+    resultado = _ajustar_chilenos(resultado, universe)
     DATA.mkdir(parents=True, exist_ok=True)
     resultado.to_csv(ruta, index=False, date_format="%Y-%m-%d")
     agregadas = len(resultado) - antes

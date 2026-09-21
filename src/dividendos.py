@@ -32,6 +32,9 @@ en la magnitud que el factor predice.
 
 from __future__ import annotations
 
+import json
+import urllib.request
+
 import pandas as pd
 
 UMBRAL_ESCALON = .002      # un cambio menor es ruido de redondeo entre fuentes
@@ -122,3 +125,150 @@ def alarma_por_salto(precios: pd.DataFrame, dividendos: pd.DataFrame | None = No
                 continue
             filas.append({"alphadata_ticker": ticker, "date": fecha, "retorno": float(retorno)})
     return pd.DataFrame(filas, columns=["alphadata_ticker", "date", "retorno"])
+
+
+# --- la tabla: el proveedor declara, el precio confirma ---------------------
+
+AGENTE = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+VENTANA_BUSQUEDA = (-10, 2)   # ruedas alrededor de la fecha declarada
+TOLERANCIA_MINIMA = .005
+VECES_LA_VOLATILIDAD = 2.0
+COLUMNAS_TABLA = ["alphadata_ticker", "fecha_ex", "monto", "fecha_declarada",
+                  "caida_esperada", "caida_observada", "error", "origen"]
+
+
+def descargar_eventos(yahoo_ticker: str, desde: pd.Timestamp, hasta: pd.Timestamp,
+                      timeout: int = 30) -> list[dict]:
+    """Dividendos declarados por el proveedor, con fecha y monto.
+
+    El arreglo histórico de los `.SN` sigue congelado, pero el bloque de
+    eventos de la misma respuesta sí llega: son cosas distintas dentro del
+    mismo JSON.
+    """
+    url = (f"https://query2.finance.yahoo.com/v8/finance/chart/{yahoo_ticker}"
+           f"?period1={int(desde.timestamp())}&period2={int(hasta.timestamp())}"
+           "&interval=1d&events=div")
+    with urllib.request.urlopen(urllib.request.Request(url, headers=AGENTE), timeout=timeout) as respuesta:
+        cuerpo = json.load(respuesta)
+    eventos = cuerpo["chart"]["result"][0].get("events", {}).get("dividends", {})
+    return [{"fecha_declarada": pd.Timestamp(int(k), unit="s").normalize(), "monto": float(v["amount"])}
+            for k, v in sorted(eventos.items(), key=lambda x: int(x[0]))]
+
+
+def tolerancia_de(cruda: pd.Series, veces: float = VECES_LA_VOLATILIDAD,
+                  minima: float = TOLERANCIA_MINIMA) -> float:
+    """Cuánto puede alejarse la caída observada de la esperada.
+
+    No es un umbral fijo, y la razón es aritmética: lo que se observa el día ex
+    es `-monto/precio` **más el movimiento del mercado de ese día**. El residuo
+    después de quitar el dividendo es ese movimiento, así que la tolerancia
+    tiene que ser del tamaño del ruido diario del propio instrumento.
+
+    Con un punto porcentual fijo quedaban fuera 18 dividendos, y 17 de ellos
+    tenían un error menor a 1,4 veces la volatilidad diaria de su papel: se
+    rechazaban por haber caído en un día movido, no por estar mal fechados. El
+    único con error de 3,5 volatilidades —VAPORES, mayo de 2025— sigue fuera.
+    """
+    retornos = pd.to_numeric(cruda, errors="coerce").dropna().pct_change().dropna()
+    if len(retornos) < 30:
+        return max(minima, .01)
+    return max(minima, veces * float(retornos.tail(500).std()))
+
+
+def localizar_fecha_ex(cruda: pd.Series, fecha_declarada: pd.Timestamp, monto: float,
+                       ventana: tuple[int, int] = VENTANA_BUSQUEDA,
+                       tolerancia: float | None = None) -> dict | None:
+    """Encuentra la rueda en que el precio cayó lo que el dividendo predice.
+
+    El proveedor no declara la fecha ex sino una posterior. Medido sobre 113
+    dividendos chilenos: sólo 3 caen en la fecha declarada, el desfase mediano
+    es de 5 ruedas, y la caída ocurre antes de la fecha declarada en 71 de los
+    113 casos. En Chile el derecho a dividendo se fija días hábiles antes del
+    pago, así que la acción transa ex- bastante antes de la fecha del evento.
+
+    **No se aplica un corrimiento fijo**, porque el desfase no es constante: va
+    de 0 a 9 ruedas. Se busca en una ventana la rueda cuya caída coincide con
+    la que el monto predice, y sólo se acepta si coincide dentro de la
+    tolerancia. El monto lo declara el proveedor; la fecha la confirma el
+    precio. Lo que no calza no entra: se reporta para confirmarlo a mano.
+    """
+    cruda = pd.to_numeric(cruda, errors="coerce").dropna().sort_index()
+    if len(cruda) < 2:
+        return None
+    if tolerancia is None:
+        tolerancia = tolerancia_de(cruda)
+    posicion = int(cruda.index.searchsorted(fecha_declarada))
+    desde, hasta = max(1, posicion + ventana[0]), min(len(cruda) - 1, posicion + ventana[1])
+    if desde > hasta:
+        return None
+    mejor = None
+    for i in range(desde, hasta + 1):
+        anterior, actual = cruda.iloc[i - 1], cruda.iloc[i]
+        if anterior <= 0:
+            continue
+        esperada = -monto / anterior
+        observada = actual / anterior - 1
+        error = abs(observada - esperada)
+        if mejor is None or error < mejor["error"]:
+            mejor = {"fecha_ex": cruda.index[i], "caida_esperada": esperada,
+                     "caida_observada": observada, "error": error}
+    if mejor is None:
+        return None
+    return {**mejor, "rechazado": mejor["error"] > tolerancia}
+
+
+def factores(dividendos: pd.DataFrame, cruda: pd.Series) -> pd.Series:
+    """Factor acumulado de ajuste por fecha: el producto de los repartos futuros.
+
+    `adjusted_close(t) = close(t) x factor(t)`, donde el factor es el producto
+    de `(1 - monto/cierre_previo)` sobre todas las fechas ex posteriores a `t`.
+    Es el ajuste estándar hacia atrás, y calcularlo desde el crudo más la tabla
+    es lo que cierra el círculo del almacén: lo inmutable se guarda, lo que
+    cambia hacia atrás se deriva.
+    """
+    cruda = pd.to_numeric(cruda, errors="coerce").dropna().sort_index()
+    factor = pd.Series(1.0, index=cruda.index)
+    if dividendos is None or dividendos.empty or cruda.empty:
+        return factor
+    eventos = dividendos.copy()
+    eventos["fecha_ex"] = pd.to_datetime(eventos["fecha_ex"], errors="coerce")
+    for evento in eventos.dropna(subset=["fecha_ex"]).itertuples(index=False):
+        previas = cruda.loc[cruda.index < evento.fecha_ex]
+        if previas.empty or previas.iloc[-1] <= 0:
+            continue
+        unitario = 1 - float(evento.monto) / previas.iloc[-1]
+        if not (0 < unitario <= 1):
+            continue
+        factor.loc[factor.index < evento.fecha_ex] *= unitario
+    return factor
+
+
+def derivar_ajustado(crudo: pd.DataFrame, dividendos: pd.DataFrame) -> pd.Series:
+    """Recalcula `adjusted_close` desde el cierre crudo y la tabla de dividendos."""
+    salida = pd.Series(index=crudo.index, dtype=float)
+    for ticker, grupo in crudo.groupby("alphadata_ticker"):
+        serie = grupo.set_index("date")["close"]
+        propios = dividendos.loc[dividendos.alphadata_ticker == ticker] if len(dividendos) else dividendos
+        f = factores(propios, serie)
+        salida.loc[grupo.index] = (serie * f).reindex(serie.index).to_numpy()
+    return salida
+
+
+def aplicar_ajuste(precios: pd.DataFrame, dividendos: pd.DataFrame, tickers: set[str]) -> pd.DataFrame:
+    """Reemplaza `adjusted_close` por el derivado, sólo en los instrumentos dados.
+
+    Cierra el círculo del almacén de sólo agregar: el cierre crudo es un hecho
+    y se guarda; el ajustado cambia hacia atrás con cada reparto y se calcula.
+    Deja de venir del proveedor, cuyo factor escalonaba entre cinco y siete
+    ruedas después de la caída ex real y producía movimientos ficticios de
+    hasta 9%.
+
+    Los instrumentos fuera de `tickers` —los de EE.UU., el oro, el tipo de
+    cambio— conservan el ajustado del proveedor, que en su mercado funciona.
+    """
+    salida = precios.copy()
+    afectados = salida.alphadata_ticker.isin(tickers)
+    if not afectados.any():
+        return salida
+    salida.loc[afectados, "adjusted_close"] = derivar_ajustado(salida.loc[afectados], dividendos)
+    return salida

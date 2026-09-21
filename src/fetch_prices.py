@@ -7,6 +7,7 @@ import os
 import pandas as pd
 
 from src.guards import MAX_RUEDAS_SIN_VARIACION, adr_contra_local, feed_detenido, fraccion_sin_variacion, ruedas_sin_variacion
+from src.dividendos import aplicar_ajuste
 from src.price_store import agregar, cambios_de_ajuste
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -29,6 +30,19 @@ def load_universe(path: Path = CONFIG_PATH) -> pd.DataFrame:
     if universe["yahoo_ticker"].eq("").any():
         raise ValueError("Existen instrumentos sin ticker de mercado")
     return universe
+
+
+def _ajustar_chilenos(precios: pd.DataFrame, universe: pd.DataFrame) -> pd.DataFrame:
+    """El cierre ajustado chileno se deriva del crudo, no se toma del proveedor."""
+    tabla = DATA_DIR / "dividendos.csv"
+    if not tabla.exists():
+        print("ADVERTENCIA: no existe data/dividendos.csv; el cierre ajustado queda como lo entrega el proveedor.")
+        return precios
+    dividendos = pd.read_csv(tabla, parse_dates=["fecha_ex"])
+    locales = set(universe.loc[universe.tipo.isin({"accion_local", "accion_sigma"}), "alphadata_ticker"])
+    print(f"Cierre ajustado derivado desde el crudo para {len(locales)} instrumentos chilenos "
+          f"con {len(dividendos)} dividendos confirmados.")
+    return aplicar_ajuste(precios, dividendos, locales)
 
 
 def operables(universe: pd.DataFrame) -> pd.DataFrame:
@@ -251,6 +265,7 @@ def main() -> None:
     # pasados se informan y no se aplican; el cierre ajustado sí se recalcula.
     rastro = cambios_de_ajuste(cached, fresh)
     daily, revisiones = agregar(cached, fresh)
+    daily = _ajustar_chilenos(daily, universe)
     weekly = daily_to_weekly(daily)
     coverage = build_coverage(daily, universe, fresh_tickers=fresh_tickers)
     DATA_DIR.mkdir(parents=True, exist_ok=True)
