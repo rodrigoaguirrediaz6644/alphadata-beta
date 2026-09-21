@@ -8,7 +8,7 @@ import sys
 
 import pandas as pd
 
-from src.fetch_prices import load_universe
+from src.fetch_prices import load_universe, operables
 from src.ingest_recommendations import ingest
 from src.strategy_registry import validate_registry
 from src.reporting_public import build_public_report
@@ -196,7 +196,7 @@ def main()->None:
     prices=prices[~prices.alphadata_ticker.isin(us_tickers|etf_tickers|{'USDCLP'})].copy()
     as_of=prices.loc[prices.alphadata_ticker!='IPSA_TR','date'].max().normalize(); state=load_state()
     input_path=DATA/'recommendations_input.csv'; raw=pd.read_csv(input_path,dtype=str).fillna('') if input_path.exists() else pd.DataFrame(columns=RECOMMENDATION_COLUMNS)
-    valid,errors=validate_recommendations(raw,set(universe.alphadata_ticker)); valid.to_csv(DATA/'recommendations_validated_live.csv',index=False,date_format='%Y-%m-%d');errors.to_csv(DATA/'recommendations_errors.csv',index=False,date_format='%Y-%m-%d')
+    valid,errors=validate_recommendations(raw,set(operables(universe).alphadata_ticker)); valid.to_csv(DATA/'recommendations_validated_live.csv',index=False,date_format='%Y-%m-%d');errors.to_csv(DATA/'recommendations_errors.csv',index=False,date_format='%Y-%m-%d')
     old_sigma=state.get('sigma_portfolio',[]); old_delta=state.get('delta_portfolio',[]); old_gamma=state.get('gamma_portfolio',[]); old_oro=state.get('oro_portfolio',[])
     if state.get('entry_dates_version') != 3:
         sigma_entries, delta_entries = reconstruct_entry_dates(valid, prices, universe, as_of)

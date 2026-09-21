@@ -31,7 +31,7 @@ from typing import Callable
 
 import pandas as pd
 
-from src.fetch_prices import PRICE_COLUMNS, load_universe
+from src.fetch_prices import PRICE_COLUMNS, load_universe, operables
 from src.guards import ruedas_faltantes
 from src.price_store import agregar
 
@@ -130,7 +130,7 @@ def fila(meta: dict, alphadata_ticker: str, yahoo_ticker: str,
 def capturar(universe: pd.DataFrame, descargar: Callable[[str], dict] = _descargar,
              espera: float = ESPERA_ENTRE_LLAMADAS) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Recorre los instrumentos locales y devuelve (filas del día, incidencias)."""
-    objetivo = universe.loc[universe.tipo.isin(TIPOS_LOCALES) & (universe.estado == "activo")]
+    objetivo = operables(universe).loc[lambda u: u.tipo.isin(TIPOS_LOCALES)]
     filas, incidencias = [], []
     for item in objetivo.itertuples(index=False):
         try:
@@ -153,7 +153,7 @@ def capturar(universe: pd.DataFrame, descargar: Callable[[str], dict] = _descarg
 
 def main() -> None:
     universe = load_universe()
-    esperados = int(universe.tipo.isin(TIPOS_LOCALES).sum())
+    esperados = int(operables(universe).tipo.isin(TIPOS_LOCALES).sum())
     capturadas, incidencias = capturar(universe)
     # Ruidosamente y no en silencio: un cierre que no se captura hoy no se
     # puede recuperar mañana, así que un día en blanco tiene que romper el job

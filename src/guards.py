@@ -12,7 +12,17 @@ from __future__ import annotations
 
 import pandas as pd
 
-MAX_RUEDAS_SIN_VARIACION = 3
+# Calibrado con los datos, no supuesto. Entre enero de 2025 y el 16-07-2026 la
+# racha más larga sin cambio de precio de todo el universo fue de 19 ruedas
+# (INGEVEC), seguida de 14 (INDISA) y 10 (HITES): son papeles que no transan
+# todos los días, no series muertas. En la ventana congelada la racha más corta
+# fue de 23. El umbral va en medio.
+MAX_RUEDAS_SIN_VARIACION = 20
+# Un feed caído no se nota en un instrumento sino en todos a la vez. En periodo
+# sano la fracción de instrumentos sin cambio de precio en una misma rueda tuvo
+# mediana 10,3% y nunca pasó de 25,6% en 383 ruedas. El 20-07-2026, primera
+# rueda tras el congelamiento, fue 100%.
+FRACCION_MERCADO_DETENIDO = .5
 UMBRAL_CONTRASTE = .01
 UMBRAL_ADR = .01
 VENTANA_ADR = 5
@@ -84,6 +94,40 @@ def ruedas_faltantes(precios: pd.DataFrame, locales: set[str], referencia: str =
     con_dato = presentes.dropna(how="all").index
     faltan = testigo.index.difference(con_dato)
     return faltan[faltan >= desde] if desde is not None else faltan
+
+
+def fraccion_sin_variacion(precios: pd.DataFrame, instrumentos: set[str] | None = None,
+                           columna: str = "adjusted_close") -> pd.Series:
+    """Por rueda, qué proporción de los instrumentos no movió su precio."""
+    panel = _panel(precios, columna)
+    if panel.empty:
+        return pd.Series(dtype=float)
+    if instrumentos:
+        panel = panel[[c for c in panel.columns if c in instrumentos]]
+    if panel.empty or panel.shape[1] == 0:
+        return pd.Series(dtype=float)
+    disponibles = panel.notna().sum(axis=1)
+    return ((panel.diff() == 0).sum(axis=1) / disponibles.replace(0, pd.NA)).dropna()
+
+
+def feed_detenido(precios: pd.DataFrame, instrumentos: set[str] | None = None,
+                  umbral: float = FRACCION_MERCADO_DETENIDO, ruedas: int = 1) -> pd.DatetimeIndex:
+    """Ruedas en que el mercado entero dejó de moverse, que es un feed caído.
+
+    Es la guardia que habría avisado el mismo 20-07-2026 en vez de dos meses
+    después, y la más robusta de todas: separa 25,6% de 92,3%.
+
+    El volumen, que parecía el discriminador natural entre un papel que no
+    transó y un feed muerto, **no sirve**: durante el congelamiento el
+    proveedor entregó volumen cero en las 31 ruedas de todos los instrumentos
+    afectados, igual que un papel ilíquido. Los dos casos se ven idénticos mirando
+    un instrumento; se separan mirando el mercado completo.
+    """
+    fraccion = fraccion_sin_variacion(precios, instrumentos)
+    if fraccion.empty:
+        return pd.DatetimeIndex([])
+    sospechosas = fraccion[fraccion > umbral]
+    return pd.DatetimeIndex(sospechosas.index[-ruedas:] if ruedas and len(sospechosas) >= ruedas else sospechosas.index)
 
 
 def contraste_entre_fuentes(principal: pd.DataFrame, contraste: pd.DataFrame,

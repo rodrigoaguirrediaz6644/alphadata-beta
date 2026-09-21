@@ -6,7 +6,7 @@ import os
 
 import pandas as pd
 
-from src.guards import MAX_RUEDAS_SIN_VARIACION, adr_contra_local, ruedas_sin_variacion
+from src.guards import MAX_RUEDAS_SIN_VARIACION, adr_contra_local, feed_detenido, fraccion_sin_variacion, ruedas_sin_variacion
 from src.price_store import agregar, cambios_de_ajuste
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -29,6 +29,18 @@ def load_universe(path: Path = CONFIG_PATH) -> pd.DataFrame:
     if universe["yahoo_ticker"].eq("").any():
         raise ValueError("Existen instrumentos sin ticker de mercado")
     return universe
+
+
+def operables(universe: pd.DataFrame) -> pd.DataFrame:
+    """Los instrumentos que el sistema puede usar hoy.
+
+    `estado` distinto de `activo` significa que el instrumento existe en el
+    catálogo pero no hay de dónde sacarle precios: AESANDES no tiene símbolo en
+    el proveedor ni con su nombre anterior, AES Gener, y su última variación de
+    precio es de marzo de 2024. Se conserva la fila para no perder el registro
+    de por qué quedó fuera, pero no se descarga ni se puede recomendar.
+    """
+    return universe.loc[universe.estado == "activo"]
 
 
 def _ticker_frame(raw: pd.DataFrame, yahoo_ticker: str) -> pd.DataFrame:
@@ -193,7 +205,7 @@ def build_coverage(
 
 def main() -> None:
     import yfinance as yf
-    universe = load_universe(); tickers = universe["yahoo_ticker"].tolist()
+    universe = load_universe(); tickers = operables(universe)["yahoo_ticker"].tolist()
     last_error = None
     for attempt in range(3):
         try:
@@ -212,7 +224,7 @@ def main() -> None:
 
     # Una respuesta no vacía de Yahoo puede omitir algunos instrumentos por
     # rate limiting. Se reintentan sólo los ausentes para no repetir todo el lote.
-    missing = universe.loc[~universe["alphadata_ticker"].isin(fresh_tickers)]
+    missing = operables(universe).loc[~operables(universe)["alphadata_ticker"].isin(fresh_tickers)]
     for item in missing.itertuples(index=False):
         try:
             individual_raw = yf.download(
@@ -263,6 +275,14 @@ def main() -> None:
     # El ADR cotiza en Nueva York y no depende del feed chileno. Si se mueve
     # mientras su acción local no, el mercado local no está quieto: está
     # detenido. Esta guardia habría delatado el incidente el 18-07-2026.
+    locales = set(universe.loc[universe.tipo.isin({"accion_local", "accion_sigma"}), "alphadata_ticker"])
+    fraccion = fraccion_sin_variacion(daily, locales)
+    if len(fraccion):
+        print(f"Instrumentos sin cambio de precio en la última rueda: {fraccion.iloc[-1]:.0%}")
+    caidas = feed_detenido(daily, locales)
+    if len(caidas):
+        raise SystemExit(f"Feed detenido: el {fraccion.loc[caidas[-1]]:.0%} de las acciones chilenas no movió su precio el {caidas[-1]:%d-%m-%Y}. "
+                         "En periodo sano esa fracción nunca pasó de 26%.")
     alarma_adr = adr_contra_local(daily)
     if len(alarma_adr):
         detalle = "; ".join(f"{r.adr} se movió {r.movimiento_adr:.1%} y {r.local} no se movió nada" for r in alarma_adr.itertuples())

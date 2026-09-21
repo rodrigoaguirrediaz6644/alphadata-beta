@@ -31,16 +31,15 @@ SQM-B,SQM-B.SN,SQM Serie B,accion_local,CLP,activo
 VAPORES,VAPORES.SN,Compañía Sud Americana de Vapores,accion_local,CLP,activo
 LTM-ADR,LTM,Latam Airlines ADR,adr,USD,activo
 SQM-ADR,SQM,SQM ADR,adr,USD,activo
-AESANDES,AESANDES.SN,AES Andes,accion_sigma,CLP,activo
+AESANDES,AESANDES.SN,AES Andes,accion_sigma,CLP,sin_datos
 ANTARCHILE,ANTARCHILE.SN,Antarchile,accion_sigma,CLP,activo
 BESALCO,BESALCO.SN,Besalco,accion_sigma,CLP,activo
-CENCOSHOPP,CENCOSHOPP.SN,Cencosud Shopping,accion_sigma,CLP,legado
 EMBONOR-B,EMBONOR-B.SN,Coca-Cola Embonor B,accion_sigma,CLP,activo
 FORUS,FORUS.SN,Forus,accion_sigma,CLP,activo
 HITES,HITES.SN,Hites,accion_sigma,CLP,activo
 INDISA,INDISA.SN,Indisa,accion_sigma,CLP,activo
 INGEVEC,INGEVEC.SN,Ingevec,accion_sigma,CLP,activo
-MULTIFOODS,MULTIFOODS.SN,Multiexport Foods,accion_sigma,CLP,activo
+MULTIFOODS,MULTI-X.SN,Multiexport Foods,accion_sigma,CLP,activo
 SMSAAM,SMSAAM.SN,SAAM,accion_sigma,CLP,activo
 SONDA,SONDA.SN,Sonda,accion_sigma,CLP,activo
 IPSA_TR,CFMITNIPSA.SN,IPSA retorno total (proxy ETF CFMITNIPSA),benchmark,indice,activo
