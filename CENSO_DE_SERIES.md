@@ -170,11 +170,24 @@ habría sido contra nada. No es registro continuo desde antes de esa fecha.
 
 ### Completitud de lo que baja Horizonte
 
-**Pendiente.** Los 332 → 366 datos de 2012 son treinta y cuatro días que el
+**Hecha.** Los 332 → 366 datos de 2012 eran treinta y cuatro días que el
 recálculo rellenó: la corrida anterior tenía huecos y que el resumen publicado
-no se moviera fue suerte. Hace falta una verificación de completitud sobre las
-cuotas de Cuprum, como el informe de cobertura la tiene para los precios. No
-está hecha.
+no se moviera fue suerte, no control.
+
+`verificar_completitud` corre antes del backtest y **detiene la corrida** si los
+insumos no están completos. Comprueba cuatro cosas:
+
+- que no falte ningún **día calendario** en el rango de las cuotas —el valor
+  cuota se publica todos los días, así que un día ausente es un hueco y no un
+  feriado—;
+- que no haya valores cuota nulos;
+- que las cuotas no lleven más de **14 días** sin actualizarse, que es lo que
+  tolera el atraso normal de la AFP más un fin de semana;
+- que no falte ningún día hábil en las series de FRED.
+
+Estado al 21-09-2026: **8.813 de 8.813 días calendario presentes, sin nulos**,
+último dato del 16-09-2026 con cinco días de rezago. Las series de FRED, sin
+huecos en 14.511 días hábiles.
 
 ## La regla que queda
 

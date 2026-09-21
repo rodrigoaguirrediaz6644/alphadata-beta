@@ -92,6 +92,46 @@ def fetch_inputs() -> tuple[pd.DataFrame, pd.DataFrame]:
     cuotas = cuotas[["date", "a", "e"]].dropna().sort_values("date")
     return cuotas, _fetch_external()
 
+# Rezago tolerado de las cuotas de Cuprum. La AFP publica con unos dias de
+# atraso y hay fines de semana de por medio; mas de dos semanas es que el
+# proveedor dejo de responder.
+REZAGO_MAXIMO_CUOTAS = 14
+
+
+def verificar_completitud(cuotas: pd.DataFrame, external: pd.DataFrame,
+                          ahora: pd.Timestamp | None = None) -> list[str]:
+    """Que lo que se bajo este completo, como el informe de cobertura para los precios.
+
+    Hacia falta: una corrida anterior tenia huecos en 2012 --332 datos donde el
+    recalculo encontro 366-- y nadie se entero. Que el resumen publicado no se
+    moviera con eso fue suerte, no control. El valor cuota se publica **todos
+    los dias calendario**, asi que un dia ausente en el rango es un hueco, no
+    un feriado.
+    """
+    problemas = []
+    if cuotas.empty:
+        return ["las cuotas de Cuprum vinieron vacias"]
+    fechas = pd.DatetimeIndex(cuotas["date"])
+    faltan = pd.date_range(fechas.min(), fechas.max(), freq="D").difference(fechas)
+    if len(faltan):
+        muestra = ", ".join(f"{f:%d-%m-%Y}" for f in faltan[:5])
+        problemas.append(f"faltan {len(faltan)} dias calendario en las cuotas de Cuprum ({muestra}...)")
+    nulos = int(cuotas[["a", "e"]].isna().sum().sum())
+    if nulos:
+        problemas.append(f"{nulos} valores cuota nulos")
+    rezago = (pd.Timestamp(ahora or pd.Timestamp.now()).normalize() - fechas.max().normalize()).days
+    if rezago > REZAGO_MAXIMO_CUOTAS:
+        problemas.append(f"las cuotas de Cuprum llevan {rezago} dias sin actualizarse")
+    if external.empty:
+        problemas.append("las series externas vinieron vacias")
+    else:
+        habiles = pd.DatetimeIndex(external["date"])
+        huecos = pd.bdate_range(habiles.min(), habiles.max()).difference(habiles)
+        if len(huecos):
+            problemas.append(f"faltan {len(huecos)} dias habiles en las series de FRED")
+    return problemas
+
+
 def monthly_features(cuotas: pd.DataFrame, external: pd.DataFrame) -> pd.DataFrame:
     q = cuotas.set_index("date").resample("ME").last().dropna()
     latest = cuotas["date"].max()
@@ -255,6 +295,11 @@ def update_report(outputs: dict) -> None:
 
 def main() -> None:
     cuotas, external = fetch_inputs()
+    problemas = verificar_completitud(cuotas, external)
+    if problemas:
+        raise RuntimeError("Horizonte: los insumos no estan completos. " + "; ".join(problemas)
+                           + ". Ver CENSO_DE_SERIES.md: un backtest sobre una serie con huecos "
+                             "publica cifras que nadie puede reproducir.")
     features = monthly_features(cuotas, external)
     returns, trades = backtest(cuotas, features)
     outputs = build_outputs(cuotas, features, returns, trades)

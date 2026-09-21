@@ -82,3 +82,30 @@ def test_external_uses_cache_when_both_sources_fail(monkeypatch, tmp_path):
     )
     result = horizonte._fetch_external()
     pd.testing.assert_frame_equal(result.reset_index(drop=True), expected)
+
+
+def test_la_completitud_de_los_insumos_se_verifica():
+    """Una corrida anterior tenía huecos en 2012 y nadie se enteró.
+
+    Eran treinta y cuatro días —332 datos donde el recálculo encontró 366— y
+    que el resumen publicado no se moviera con eso fue suerte, no control. El
+    valor cuota se publica todos los días calendario, así que un día ausente en
+    el rango es un hueco y no un feriado.
+    """
+    import pandas as pd
+    from src.horizonte import verificar_completitud
+    dias = pd.date_range("2026-01-01", "2026-09-16", freq="D")
+    cuotas = pd.DataFrame({"date": dias, "a": 1.0, "e": 1.0})
+    externas = pd.DataFrame({"date": pd.bdate_range("2026-01-01", "2026-09-18"),
+                             "nasdaq": 1.0, "vix": 1.0})
+    ahora = pd.Timestamp("2026-09-21")
+    assert verificar_completitud(cuotas, externas, ahora) == []
+
+    con_hueco = cuotas[~cuotas.date.isin(pd.date_range("2026-05-04", "2026-05-08"))]
+    assert "faltan 5 dias calendario" in verificar_completitud(con_hueco, externas, ahora)[0]
+
+    con_nulo = cuotas.copy(); con_nulo.loc[con_nulo.index[10], "a"] = None
+    assert "nulos" in " ".join(verificar_completitud(con_nulo, externas, ahora))
+
+    viejas = cuotas[cuotas.date <= "2026-08-01"]
+    assert "sin actualizarse" in " ".join(verificar_completitud(viejas, externas, ahora))
