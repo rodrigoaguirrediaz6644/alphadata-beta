@@ -21,7 +21,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from src.dividendos import CONFIRMADA, COLUMNAS_TABLA, descargar_eventos, localizar_fecha_ex
+from src.dividendos import CONFIRMADA, COLUMNAS_TABLA, confirmada_por_precio, descargar_eventos, localizar_fecha_ex
 from src.fetch_prices import load_universe, operables
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -66,7 +66,7 @@ def main(confirmar: bool = False) -> int:
         por_origen = tabla.origen.value_counts()
         for origen, n in por_origen.items():
             print(f"  {origen}: {n}")
-        confirmadas = tabla.loc[tabla.origen == CONFIRMADA]
+        confirmadas = tabla.loc[tabla.origen.map(confirmada_por_precio)]
         if len(confirmadas):
             print(f"  error de calce de las confirmadas: mediano {confirmadas.error.median():.2%}   "
                   f"p90 {confirmadas.error.quantile(.9):.2%}")

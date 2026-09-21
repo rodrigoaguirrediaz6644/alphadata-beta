@@ -153,9 +153,28 @@ UMBRAL_CONFIRMABLE = 2.0
 # sobre los que sí: la fecha ex está 5 ruedas antes de la que declara el
 # proveedor (mediana 5, cuartiles 4 y 5, en los calces fiables).
 DESFASE_POR_CONVENCION = 5
+# Dos instrumentos, dos columnas, cada una con su etiqueta. `caida_observada`
+# es el metodo por precio: mide el retorno crudo de la rueda ex, que trae la
+# caida del dividendo **mas el movimiento del mercado de ese dia**.
+# `caida_por_contraste` mide la razon entre las dos fuentes del mismo dia, donde
+# ese movimiento se cancela, y resulta entre cuatro y diez veces mas preciso
+# sobre los dividendos que los dos alcanzan. Ver
+# research/dividendos/CONFIRMACION_POR_CONTRASTE.md.
+#
+# Un dividendo que los dos confirman esta mejor respaldado que uno con
+# cualquiera de los dos solo, y por eso las columnas conviven en vez de
+# pisarse. La consecuencia hay que asumirla: **los confirmados solo por precio
+# son la evidencia mas debil de la tabla, no la mas fuerte.**
 COLUMNAS_TABLA = ["alphadata_ticker", "fecha_ex", "monto", "fecha_declarada", "tamano",
-                  "caida_esperada", "caida_observada", "error", "origen"]
+                  "caida_esperada", "caida_observada", "error",
+                  "caida_por_contraste", "error_contraste", "origen"]
 CONFIRMADA = "confirmada por el precio"
+POR_CONTRASTE = "confirmada por contraste entre fuentes"
+POR_AMBOS = "confirmada por precio y contraste"
+
+
+def confirmada_por_precio(origen) -> bool:
+    return str(origen) in {CONFIRMADA, POR_AMBOS}
 POR_CONVENCION = f"fecha por convención ({DESFASE_POR_CONVENCION} ruedas antes de la declarada)"
 
 

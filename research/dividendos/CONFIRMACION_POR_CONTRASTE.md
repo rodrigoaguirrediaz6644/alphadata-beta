@@ -61,8 +61,16 @@ precio mide el retorno crudo de un día, que trae **la caída del dividendo más
 movimiento del mercado de esa jornada**. El contraste mide la razón entre dos
 fuentes del mismo día, y ahí el movimiento del mercado se cancela.
 
-Las confirmaciones por precio que ya existían **no se sobrescribieron**: son
-evidencia directa y se conservan como están.
+**Las dos columnas conviven**, cada una con su etiqueta: `caida_observada` para
+el método por precio y `caida_por_contraste` para el otro. La primera versión de
+esto revertía las filas sobrescritas para conservar la confirmación directa, y
+eso dejaba en el archivo el número peor y borraba el mejor. Un dividendo que los
+dos instrumentos confirman está mejor respaldado que uno con cualquiera de los
+dos solo, y eso ahora queda registrado.
+
+Con una consecuencia que hay que asumir y no esconder: **los confirmados sólo
+por precio pasan a ser la evidencia más débil de la tabla, no la más fuerte.**
+Son dos.
 
 ## Resultado: cinco de seis
 
@@ -116,27 +124,45 @@ de la declarada» está bien calibrada, y la hipótesis de que pudiera haberse
 calibrado contra el mismo proveedor cuyo rezago venía a corregir queda
 descartada: el contraste usa la **otra** fuente y llega al mismo lugar.
 
-### Lo que sí queda, y es chico
+### Las nueve que se apartan no son una decisión pendiente
 
-Nueve dividendos empiezan dos o tres ruedas después de la fecha ex asignada:
-CENCOSUD, CONCHATORO, COPEC, ILC, INDISA, LTM, QUINENCO, RIPLEY y SMSAAM. Ahí el
-contraste da una fecha mejor evidenciada que la convención.
+Nueve dividendos —CENCOSUD, CONCHATORO, COPEC, ILC, INDISA, LTM, QUINENCO,
+RIPLEY y SMSAAM— empiezan dos o tres ruedas después de la fecha ex asignada.
 
-**No se movió ninguna fecha.** Corregirlas cambia la serie ajustada y con ella
-el momentum 12-1, la SMA200, el RSI y los retornos diarios del NAV, que es
-precisamente el argumento por el que esto había que medirlo y no archivarlo. La
-decisión está disponible y el desglose por dividendo queda en el propio
-`data/dividendos.csv`.
+**No traen evidencia de estar mal fechadas, y dejarlas es la respuesta, no un
+aplazamiento.**
+
+El escalón no puede empezar antes de que la fuente adelantada aplique la caída,
+así que **el desfase está censurado en cero**: sólo puede ser cero o positivo.
+Una distribución de 58, 34, 8 y 1 sobre un piso duro es exactamente la forma de
+un instrumento con resolución de una rueda: **una cola que decae, no dos
+poblaciones.** Si las nueve estuvieran mal fechadas se vería un segundo grupo
+separado, no la continuación suave de la misma cola.
+
+Queda anotado así a propósito, para que en seis meses nadie lo lea como
+pendiente.
 
 ## Estado de la tabla
 
-| origen | filas |
-|---|---|
-| confirmada por contraste entre fuentes | **96** |
-| confirmada por el precio | 7 |
-| fecha por convención | 31 |
+| origen | filas | |
+|---|---|---|
+| confirmada por contraste entre fuentes | **96** | |
+| confirmada por **precio y contraste** | **5** | los dos instrumentos coinciden |
+| confirmada por el precio | 2 | la evidencia más débil |
+| fecha por convención | 31 | fuera del solape de las dos fuentes |
 
 **103 de 134 confirmados**, contra 7 antes de esto.
+
+### Y de los 31 por convención, uno solo llega a la pantalla
+
+De los 31 que siguen sin contraste, **uno** cae dentro de la ventana de tenencia
+de una posición viva: **MALLPLAZA del 03-09-2026, por $30**. Los demás son
+anteriores a las entradas vivas o de instrumentos que ya no están en cartera.
+
+O sea que de todo lo que sostiene una cifra publicada hoy queda **un solo dato
+sin respaldo de precio**, identificado, corroborado en magnitud y calendario
+contra la fuente primaria, y con una dirección a la que volver. Hay una prueba
+que falla si aparece un segundo.
 
 Los 31 que siguen por convención están fuera del solape de las dos fuentes
 —antes de 2025, o instrumentos que el relleno no cubrió— así que no hay con qué

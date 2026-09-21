@@ -119,8 +119,12 @@ def test_los_dividendos_de_las_posiciones_vivas_estan_confirmados():
     for fila in vivas.itertuples():
         dentro = d[(d.alphadata_ticker == fila.instrumento) & (d.fecha_ex > fila.fecha_entrada)]
         sin_confirmar += [f"{fila.instrumento} {x.fecha_ex.date()}"
-                          for x in dentro.itertuples() if pd.isna(x.caida_observada)]
-    # MALLPLAZA 2026-09-03 cae dentro del tramo del feed congelado: no se puede
-    # confirmar por contraste y está documentado en research/dividendos/.
+                          for x in dentro.itertuples()
+                          if pd.isna(x.caida_observada) and pd.isna(x.caida_por_contraste)]
+    # De todo lo que sostiene una cifra publicada hoy, queda **un solo dato sin
+    # respaldo de precio**: MALLPLAZA del 03-09-2026, cuya ventana cae dentro
+    # del tramo del feed congelado. Está identificado, corroborado en magnitud
+    # y calendario contra la fuente primaria, y documentado en
+    # research/dividendos/CONFIRMACION_POR_CONTRASTE.md.
     conocidos = {"MALLPLAZA 2026-09-03"}
     assert set(sin_confirmar) <= conocidos, f"sin confirmar y sin documentar: {sorted(set(sin_confirmar) - conocidos)}"

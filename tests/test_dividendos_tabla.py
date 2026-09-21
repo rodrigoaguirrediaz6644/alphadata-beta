@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.dividendos import (CONFIRMADA, POR_CONVENCION, aplicar_ajuste, derivar_ajustado,
+from src.dividendos import (CONFIRMADA, POR_CONVENCION, aplicar_ajuste, confirmada_por_precio, derivar_ajustado,
                             detectar_nuevos, factores, localizar_fecha_ex, tolerancia_de)
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -134,7 +134,7 @@ def test_la_tabla_publicada_pasa_su_prueba_de_aceptacion_donde_es_verificable():
         pytest.skip("todavía no se ha construido la tabla de dividendos")
     dividendos = pd.read_csv(tabla, parse_dates=["fecha_ex"])
     precios = pd.read_csv(ROOT / "data" / "market_prices_daily.csv", parse_dates=["date"])
-    confirmadas = dividendos.loc[dividendos.origen == CONFIRMADA]
+    confirmadas = dividendos.loc[dividendos.origen.map(confirmada_por_precio)]
     assert len(confirmadas) >= 5
 
     crudos, ajustados = [], []
