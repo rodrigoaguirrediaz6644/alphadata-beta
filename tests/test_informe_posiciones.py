@@ -169,3 +169,12 @@ def test_la_columna_del_peso_no_se_llama_objetivo():
     html = _positions(CARTERA.assign(peso_real=[.199]))
     assert "<th>Peso de entrada</th>" in html
     assert "objetivo" not in html.lower()
+
+
+def test_la_columna_avisa_cuando_la_posicion_se_acerca_al_limite():
+    """Pasar el límite sí es una instrucción: se recorta en la revisión siguiente."""
+    from src.reporting_public import _deriva
+    assert "se recorta al 25%" in _deriva(.329, 1 / 6)
+    assert "cerca del 25%" in _deriva(.23, 1 / 6)
+    assert _deriva(.199, 1 / 6) == "<strong>19,9%</strong>"
+    assert _deriva(.163, 1 / 6) == "16,3%"

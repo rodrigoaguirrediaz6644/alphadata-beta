@@ -35,8 +35,25 @@ from __future__ import annotations
 import pandas as pd
 
 
+# Limite de concentracion: ninguna posicion puede pasar del 25% **del valor de
+# su propia pieza**. Como cada pieza es un cuarto del total, equivale a 6,25%
+# de los $20 millones; las dos lecturas son plausibles y solo una es correcta.
+# Se revisa en cada revision de la estrategia, con el mismo calendario que todo
+# lo demas, y no es un control continuo ni intradia.
+#
+# Es un **limite de cola, no una optimizacion**: se recorta hasta 25% exacto y
+# nada mas --volver al peso de entrada seria rebalancear, que es lo que la
+# politica descarto-- y lo recortado va a la caja de la pieza, no se reparte
+# entre las otras posiciones.
+#
+# No aplica al oro, que es 100% de su pieza por diseno. Es una excepcion
+# explicita, no un caso que no se dio.
+LIMITE_CONCENTRACION = .25
+
+
 def nav_corrido(panel: pd.DataFrame, sesiones: pd.DatetimeIndex, marca: str,
-                elegir, cost_rate: float, nombre: str) -> pd.DataFrame:
+                elegir, cost_rate: float, nombre: str,
+                limite: float | None = LIMITE_CONCENTRACION) -> pd.DataFrame:
     """Serie base 100 con los pesos corriendo entre revisiones.
 
     `marca` es el periodo del calendario de la estrategia (`"M"` mensual,
@@ -69,7 +86,7 @@ def nav_corrido(panel: pd.DataFrame, sesiones: pd.DatetimeIndex, marca: str,
             previas = panel.index[panel.index < sesion]
             if len(previas):
                 referencia = elegir(pd.Timestamp(previas[-1]))
-                nuevos, nueva_caja = _reasignar(pesos, caja, referencia)
+                nuevos, nueva_caja = _reasignar(pesos, caja, referencia, limite)
                 riesgo = sum(abs(nuevos.get(t, 0) - pesos.get(t, 0)) for t in set(pesos) | set(nuevos))
                 valor *= 1 - .5 * (riesgo + abs(nueva_caja - caja)) * cost_rate
                 pesos, caja = nuevos, nueva_caja
@@ -79,13 +96,19 @@ def nav_corrido(panel: pd.DataFrame, sesiones: pd.DatetimeIndex, marca: str,
     return pd.DataFrame(filas)
 
 
-def _reasignar(pesos: dict[str, float], caja: float,
-               referencia: dict[str, float]) -> tuple[dict[str, float], float]:
-    """Las entradas se financian con el producto de las salidas."""
+def _reasignar(pesos: dict[str, float], caja: float, referencia: dict[str, float],
+               limite: float | None = LIMITE_CONCENTRACION) -> tuple[dict[str, float], float]:
+    """Las entradas se financian con el producto de las salidas.
+
+    Y al final se aplica el limite de concentracion: lo que pase de `limite` se
+    recorta hasta ahi exacto y el excedente queda en caja.
+    """
     salen = set(pesos) - set(referencia)
     entran = [t for t in referencia if t not in pesos]
     liberado = sum(pesos[t] for t in salen) + caja
     nuevos = {t: w for t, w in pesos.items() if t not in salen}
     if entran:
         nuevos.update({t: min(referencia[t], liberado / len(entran)) for t in entran})
+    if limite is not None:
+        nuevos = {t: min(w, limite) for t, w in nuevos.items()}
     return nuevos, 1 - sum(nuevos.values())

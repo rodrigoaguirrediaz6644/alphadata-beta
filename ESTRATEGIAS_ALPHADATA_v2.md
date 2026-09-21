@@ -82,6 +82,15 @@ Se utiliza la tarifa Trii/Racional:
 
 Los backtests independientes del capital aplican 0,1785% al monto transado y no aplican el mínimo de $1.990. Las simulaciones con capital definido deben utilizar el mayor entre la comisión variable y la tarifa mínima cuando corresponda.
 
+### Límite de concentración
+
+Ninguna posición puede pasar del **25% del valor de su propia pieza** —6,25%
+del capital total, porque cada pieza es un cuarto—. Se revisa en cada revisión
+de la estrategia; al pasarse se recorta hasta 25% exacto y el excedente queda
+en la caja de la pieza. Aplica a Sigma-6, Delta-12 y Gamma-6, y **no al oro**,
+que es 100% de su pieza por diseño. Entró el 21-09-2026. Es un límite de cola,
+no una optimización: ver `POLITICA_REBALANCEO.md`.
+
 ## 2. Delta-12
 
 Delta-12 es una estrategia mensual independiente de las corredoras que busca tendencias persistentes mediante precio, momentum y liquidez.

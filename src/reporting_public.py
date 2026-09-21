@@ -21,6 +21,7 @@ QUE_INVIERTE = {
     BENCHMARK: "La bolsa chilena completa",
 }
 HISTORICAL = ROOT / "data" / "reconstruccion_historica.csv"
+from src.nav_historico import LIMITE_CONCENTRACION  # noqa: E402  (el límite es del modelo, no del informe)
 # Las pruebas lo redirigen a un directorio temporal. Sin eso, correr la suite
 # sobrescribe los gráficos publicados con los de un fixture sintético, y lo que
 # queda commiteado es una curva que no existió.
@@ -222,7 +223,7 @@ def _positions(portfolio: pd.DataFrame, currency: str = "$") -> str:
             + f'</tr></thead><tbody>{"".join(rows)}</tbody></table>')
 
 
-def _deriva(real, objetivo) -> str:
+def _deriva(real, objetivo, limite: float | None = LIMITE_CONCENTRACION) -> str:
     """El peso al que llegó la posición, contra el que el modelo supone.
 
     El peso de referencia sólo aplica al entrar: la política dice dejar correr
@@ -230,11 +231,20 @@ def _deriva(real, objetivo) -> str:
     el único que existe después. La columna no es una instrucción pendiente.
     Se marca cuando la diferencia pasa de dos puntos, que es donde deja de ser
     ruido.
+
+    Y avisa cuando la posición se acerca al límite de concentración, que sí es
+    una instrucción: al pasarlo se recorta hasta el límite en la revisión
+    siguiente.
     """
     if real is None or pd.isna(real) or objetivo is None or pd.isna(objetivo):
         return "—"
-    lejos = abs(float(real) - float(objetivo)) > .02
-    return f"<strong>{pct(float(real))}</strong>" if lejos else pct(float(real))
+    real = float(real)
+    texto = pct(real)
+    if limite is not None and real >= limite:
+        return f'<strong class="down">{texto}</strong> · se recorta al {pct(limite, 0)}'
+    if limite is not None and real >= limite - .03:
+        return f"<strong>{texto}</strong> · cerca del {pct(limite, 0)}"
+    return f"<strong>{texto}</strong>" if abs(real - float(objetivo)) > .02 else texto
 
 
 def _caducidad(fecha, dias) -> str:

@@ -154,13 +154,65 @@ vuelta. Con un solo ganador de esa magnitud en la muestra, no hay cómo saberlo.
 
 Esto no cambia la decisión, pero se toma con los ojos abiertos.
 
-**Queda abierto un tope de concentración por posición** —por ejemplo, recortar
-sólo cuando una posición supera el 25% de su pieza—. No es una banda de
-rebalanceo, que ya se descartó por ruido: sería un **límite de cola**, y su
-justificación no es «mejora el retorno» sino «no quiero un tercio de una pieza
-en un solo papel». Esa pregunta no se contesta con backtest y no está decidida.
-Mientras tanto, la columna de peso real es el instrumento para mirar cómo
-evoluciona.
+### El límite de concentración: 25% de la pieza
+
+**Decidido el 21-09-2026.** Ninguna posición puede pasar del **25% del valor de
+su propia pieza**. Como cada pieza es un cuarto del total, equivale a **6,25%
+de los $20 millones**; las dos lecturas son plausibles y sólo una es la
+correcta.
+
+- Se revisa **en cada revisión de la estrategia**, con el mismo calendario que
+  todo lo demás. No es un control continuo ni intradía.
+- Al pasarse, **se recorta hasta 25% exacto y nada más.** No se vuelve al peso
+  de entrada: eso sería rebalancear, que es justo lo que esta política
+  descartó. El recorte mínimo es coherente con la justificación y es el más
+  barato.
+- **Lo recortado va a la caja de la pieza**, no se reparte entre las otras
+  posiciones. Queda ahí hasta que una entrada lo use, igual que el producto de
+  las ventas.
+- Aplica a Sigma-6, Delta-12 y Gamma-6. **No aplica al oro**, que es 100% de su
+  pieza por diseño: excepción explícita, no un caso que no se dio.
+- Aplica también a la reconstrucción, o la serie publicada dejaría de describir
+  la regla.
+
+**No es una banda de rebalanceo**, que se descartó por ruido. Es un límite de
+cola, y su justificación no es «mejora el retorno» sino «no quiero un tercio de
+una pieza en un solo papel». Esa pregunta no se contesta con backtest.
+
+#### Lo medido, aunque la decisión ya estuviera tomada
+
+Un tope al 25% es, estructuralmente, una banda de un solo lado en un umbral
+ancho, así que había que saber si dispara dos veces en cinco años o veinte.
+
+| pieza | disparos en 5 años | comisión acumulada |
+|---|---|---|
+| Delta-12 | **0** | $0 |
+| Sigma-6 | **0** | $0 |
+| Gamma-6 | **12** (2,4 al año) | **$3.839** |
+
+En las piezas chilenas nunca llega a atarse. En Gamma-6 dispara sobre dos
+nombres: NVDA nueve veces entre 2021 y 2024, e INTC tres veces en 2026, la
+mayor de ellas al 32,9%.
+
+$3.839 en cinco años sobre una pieza de $5.000.000 es **0,077% acumulado**, o
+sea 0,015% al año. No es la banda rechazada entrando por la puerta de atrás: la
+banda 0 costaba $1.095.000 **al año** sólo en Sigma-6.
+
+**El costo real no es la comisión, es el retorno que se deja de componer:**
+
+| Gamma-6 | sin límite | con límite |
+|---|---|---|
+| completa | +27,24% · −28,9% | **+26,08% · −26,9%** |
+| 1ª mitad | +16,94% · −21,9% | +16,95% · −21,9% |
+| 2ª mitad | +38,41% · −28,9% | +35,89% · −26,9% |
+
+Cuesta **1,16 puntos anuales** y compra **2 puntos de peor caída**. En la
+primera mitad no se nota, porque no hubo un ganador de ese tamaño; todo el
+efecto está en la segunda. Es exactamente lo que un límite de cola hace, y es
+el precio que se acepta al ponerlo.
+
+Sobre la serie publicada: Gamma-6 pasa de 335,00 a 319,95 y el Conjunto de
+293,05 a 288,93.
 
 ## El modelo ya calcula esto
 

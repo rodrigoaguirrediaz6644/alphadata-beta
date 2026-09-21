@@ -236,3 +236,28 @@ def test_sigma6_no_suelta_una_posicion_por_calendario():
     estado = {"sigma_entries": {"VIEJA": "2023-01-02"}}
     cartera, _, _ = sigma6(recomendacion, precios, pd.Timestamp("2026-09-17"), estado)
     assert "VIEJA" in set(cartera.ticker)
+
+
+def test_el_limite_de_concentracion_recorta_hasta_el_limite_y_nada_mas():
+    """25% del valor de la propia pieza, no de la cartera total.
+
+    Se recorta hasta el límite exacto: volver al peso de entrada sería
+    rebalancear, que es lo que la política descartó. Y lo recortado va a la
+    caja de la pieza, no se reparte entre las otras posiciones.
+    """
+    from src.nav_historico import LIMITE_CONCENTRACION, _reasignar
+    assert LIMITE_CONCENTRACION == .25
+    pesos = {"INTC": .329, "MRK": .15, "BAC": .12}
+    referencia = {"INTC": 1 / 6, "MRK": 1 / 6, "BAC": 1 / 6}
+    nuevos, caja = _reasignar(pesos, .401, referencia)
+    assert nuevos["INTC"] == .25            # hasta el límite, no al peso de entrada
+    assert nuevos["MRK"] == .15             # las demás no se tocan
+    assert nuevos["BAC"] == .12
+    assert abs(caja - (1 - .25 - .15 - .12)) < 1e-12   # el excedente va a caja
+
+
+def test_sin_limite_una_posicion_puede_correr():
+    """El oro es 100% de su pieza por diseño: excepción explícita."""
+    from src.nav_historico import _reasignar
+    nuevos, caja = _reasignar({"IAU": 1.}, 0., {"IAU": 1.}, limite=None)
+    assert nuevos == {"IAU": 1.} and abs(caja) < 1e-12
