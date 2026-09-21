@@ -2,21 +2,209 @@
   "methodology_version": "2.3.0",
   "delta_rule_version": "2.1.0",
   "gamma_rule_version": "1.0.0",
-  "sigma_entries": {},
-  "delta_entries": {},
-  "gamma_entries": {},
-  "oro_entries": {},
-  "sigma_portfolio": [],
-  "delta_portfolio": [],
-  "gamma_portfolio": [],
-  "oro_portfolio": [],
-  "valuation_date": "2026-09-16",
+  "sigma_entries": {
+    "BCI": "2026-09-17",
+    "LTM": "2026-09-17",
+    "CENCOMALLS": "2026-09-17",
+    "PARAUCO": "2026-09-17",
+    "VAPORES": "2026-09-17"
+  },
+  "delta_entries": {
+    "PARAUCO": "2026-09-17",
+    "BCI": "2026-09-17",
+    "MALLPLAZA": "2026-09-17",
+    "ITAUCL": "2026-09-17",
+    "ECL": "2026-09-17",
+    "CHILE": "2026-09-17",
+    "BSANTANDER": "2026-09-17",
+    "ANDINA-B": "2026-09-17"
+  },
+  "gamma_entries": {
+    "TGT": "2026-09-17",
+    "INTC": "2026-09-17",
+    "MRK": "2026-09-17",
+    "BAC": "2026-09-17",
+    "JNJ": "2026-09-17",
+    "ABT": "2026-09-17"
+  },
+  "oro_entries": {
+    "IAU": "2026-09-17"
+  },
+  "sigma_portfolio": [
+    {
+      "ticker": "BCI",
+      "target_weight": 0.1,
+      "opened_at": "2026-09-17",
+      "entry_price": 65600.0,
+      "current_price": 65600.0,
+      "open_return": -0.001781819452277511
+    },
+    {
+      "ticker": "CENCOMALLS",
+      "target_weight": 0.1,
+      "opened_at": "2026-09-17",
+      "entry_price": 2240.0,
+      "current_price": 2240.0,
+      "open_return": -0.001781819452277622
+    },
+    {
+      "ticker": "LTM",
+      "target_weight": 0.1,
+      "opened_at": "2026-09-17",
+      "entry_price": 24.78,
+      "current_price": 24.78,
+      "open_return": -0.001781819452277622
+    },
+    {
+      "ticker": "PARAUCO",
+      "target_weight": 0.1,
+      "opened_at": "2026-09-17",
+      "entry_price": 3900.0,
+      "current_price": 3900.0,
+      "open_return": -0.001781819452277622
+    },
+    {
+      "ticker": "VAPORES",
+      "target_weight": 0.1,
+      "opened_at": "2026-09-17",
+      "entry_price": 48.3,
+      "current_price": 48.3,
+      "open_return": -0.001781819452277622
+    }
+  ],
+  "delta_portfolio": [
+    {
+      "ticker": "PARAUCO",
+      "target_weight": 0.125,
+      "opened_at": "2026-09-17",
+      "entry_price": 3900.0,
+      "current_price": 3900.0,
+      "open_return": -0.001781819452277622
+    },
+    {
+      "ticker": "BCI",
+      "target_weight": 0.125,
+      "opened_at": "2026-09-17",
+      "entry_price": 65600.0,
+      "current_price": 65600.0,
+      "open_return": -0.001781819452277511
+    },
+    {
+      "ticker": "MALLPLAZA",
+      "target_weight": 0.125,
+      "opened_at": "2026-09-17",
+      "entry_price": 3900.0,
+      "current_price": 3900.0,
+      "open_return": -0.001781819452277622
+    },
+    {
+      "ticker": "ITAUCL",
+      "target_weight": 0.125,
+      "opened_at": "2026-09-17",
+      "entry_price": 24200.0,
+      "current_price": 24200.0,
+      "open_return": -0.001781819452277511
+    },
+    {
+      "ticker": "ECL",
+      "target_weight": 0.125,
+      "opened_at": "2026-09-17",
+      "entry_price": 1855.0,
+      "current_price": 1855.0,
+      "open_return": -0.001781819452277622
+    },
+    {
+      "ticker": "CHILE",
+      "target_weight": 0.125,
+      "opened_at": "2026-09-17",
+      "entry_price": 197.9,
+      "current_price": 197.9,
+      "open_return": -0.001781819452277733
+    },
+    {
+      "ticker": "BSANTANDER",
+      "target_weight": 0.125,
+      "opened_at": "2026-09-17",
+      "entry_price": 81.82,
+      "current_price": 81.82,
+      "open_return": -0.001781819452277622
+    },
+    {
+      "ticker": "ANDINA-B",
+      "target_weight": 0.125,
+      "opened_at": "2026-09-17",
+      "entry_price": 4900.0,
+      "current_price": 4900.0,
+      "open_return": -0.001781819452277511
+    }
+  ],
+  "gamma_portfolio": [
+    {
+      "ticker": "TGT",
+      "target_weight": 0.16666666666666666,
+      "opened_at": "2026-09-17",
+      "entry_price": 152490.6108784424,
+      "current_price": 152490.6108784424,
+      "open_return": -0.0009990009990008542
+    },
+    {
+      "ticker": "INTC",
+      "target_weight": 0.16666666666666666,
+      "opened_at": "2026-09-17",
+      "entry_price": 103803.90877099613,
+      "current_price": 103803.90877099613,
+      "open_return": -0.0009990009990009652
+    },
+    {
+      "ticker": "MRK",
+      "target_weight": 0.16666666666666666,
+      "opened_at": "2026-09-17",
+      "entry_price": 140392.86869152822,
+      "current_price": 140392.86869152822,
+      "open_return": -0.0009990009990008542
+    },
+    {
+      "ticker": "BAC",
+      "target_weight": 0.16666666666666666,
+      "opened_at": "2026-09-17",
+      "entry_price": 55508.375685449224,
+      "current_price": 55508.375685449224,
+      "open_return": -0.0009990009990008542
+    },
+    {
+      "ticker": "JNJ",
+      "target_weight": 0.16666666666666666,
+      "opened_at": "2026-09-17",
+      "entry_price": 257811.50338266604,
+      "current_price": 257811.50338266604,
+      "open_return": -0.0009990009990008542
+    },
+    {
+      "ticker": "ABT",
+      "target_weight": 0.16666666666666666,
+      "opened_at": "2026-09-17",
+      "entry_price": 97535.60334987799,
+      "current_price": 97535.60334987799,
+      "open_return": -0.0009990009990008542
+    }
+  ],
+  "oro_portfolio": [
+    {
+      "ticker": "IAU",
+      "target_weight": 1.0,
+      "opened_at": "2026-09-17",
+      "entry_price": 77938.79892536625,
+      "current_price": 77938.79892536625,
+      "open_return": -0.0009990009990008542
+    }
+  ],
+  "valuation_date": "2026-09-17",
   "nav": {
-    "Sigma-6": 100.0,
-    "Delta-12": 100.0,
-    "Gamma-6": 100.0,
-    "Oro": 100.0,
-    "IPSA TR": 100.0
+    "Sigma-6": 99.91075000000001,
+    "Delta-12": 99.8215,
+    "Gamma-6": 99.9,
+    "Oro": 99.9,
+    "IPSA TR": 101.29570294421303
   },
   "reinicio": {
     "fecha": "2026-09-16",
@@ -24,11 +212,15 @@
     "series_archivadas": [
       "strategy_nav_incidente_2026.csv",
       "strategy_state_incidente_2026.json"
-    ]
+    ],
+    "primera_corrida": "2026-09-17"
   },
   "ingestion": {
     "uploaded_files": 0,
     "history_rows": 1108
   },
-  "last_run_utc": "2026-09-21T05:25:35.008423+00:00"
+  "last_run_utc": "2026-09-21T05:37:36.335970+00:00",
+  "entry_dates_version": 3,
+  "delta_last_period": "2026-08",
+  "gamma_last_period": "2026-08"
 }
