@@ -33,11 +33,26 @@ def cargar(ruta: str | Path) -> pd.DataFrame:
     return pd.read_csv(ruta, parse_dates=["fecha_entrada", "fecha_salida"])
 
 
+CALENTAMIENTO = "calentamiento"
+
+
+def _vivas(libro: pd.DataFrame, estrategia: str) -> pd.DataFrame:
+    """Las posiciones abiertas que se pueden publicar.
+
+    El recorrido arranca un año antes del piso de publicación para que el
+    estado sea el correcto al entrar a la ventana. Esas filas se conservan
+    —sirven para auditar y para los contadores de tenencia— pero no llevan
+    precio, porque vienen de un tramo sin reparar, y no se muestran nunca.
+    """
+    vivas = libro.loc[(libro.estrategia == estrategia) & libro.fecha_salida.isna()]
+    return vivas.loc[vivas.origen != CALENTAMIENTO] if "origen" in vivas else vivas
+
+
 def abiertas(libro: pd.DataFrame, estrategia: str) -> dict[str, pd.Timestamp]:
     """Las posiciones vivas de una estrategia, con su fecha de entrada."""
     if libro.empty:
         return {}
-    vivas = libro.loc[(libro.estrategia == estrategia) & libro.fecha_salida.isna()]
+    vivas = _vivas(libro, estrategia)
     return dict(zip(vivas.instrumento, pd.to_datetime(vivas.fecha_entrada)))
 
 
@@ -123,7 +138,7 @@ def precios_de_entrada(libro: pd.DataFrame, estrategia: str) -> dict[str, float]
     """
     if libro.empty:
         return {}
-    vivas = libro.loc[(libro.estrategia == estrategia) & libro.fecha_salida.isna()]
+    vivas = _vivas(libro, estrategia)
     vivas = vivas.loc[vivas.precio_entrada.notna()]
     return dict(zip(vivas.instrumento, vivas.precio_entrada.astype(float)))
 

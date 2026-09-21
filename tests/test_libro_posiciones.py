@@ -12,7 +12,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from tools.construir_libro import DESDE, ORO_FECHA_DECISION, _revisiones, recorrer
+from tools.construir_libro import CALENTAMIENTO, DESDE, DESDE_CALENTAMIENTO, ORO_FECHA_DECISION, _revisiones, recorrer
 
 ROOT = Path(__file__).resolve().parents[1]
 SESIONES = pd.DatetimeIndex(pd.bdate_range("2026-01-01", "2026-09-17"))
@@ -64,18 +64,41 @@ def test_una_posicion_que_vuelve_a_entrar_abre_de_nuevo():
     assert reabierta["fecha_entrada"] == fechas[2]
 
 
-def test_el_libro_publicado_marca_el_borde_y_no_inventa_fechas():
-    """Una entrada en la primera fecha del recorrido no tiene fecha real."""
+def test_el_tramo_de_calentamiento_se_conserva_y_no_se_publica():
+    """El recorrido arranca un año antes del piso, y ese tramo no se muestra.
+
+    Sin calentar, BCI quedaba con entrada el 16-01-2026; con el estado correcto
+    al entrar a la ventana queda el 24-10-2025. Las filas del tramo previo
+    sirven para auditar y para los contadores de tenencia, pero vienen de datos
+    sin reparar: se conservan sin precio y no se publican nunca.
+    """
     libro = ROOT / "data" / "libro_posiciones.csv"
     if not libro.exists():
         pytest.skip("todavía no se ha construido el libro")
     d = pd.read_csv(libro, parse_dates=["fecha_entrada", "fecha_salida"])
-    borde = d.loc[d.fecha_entrada <= DESDE]
-    assert (borde.origen.str.contains("borde")).all()
-    assert borde.precio_entrada.isna().all()
-    # Y ninguna posición del interior queda sin precio.
-    interior = d.loc[(d.fecha_entrada > DESDE) & (d.estrategia != "Oro")]
-    assert interior.precio_entrada.notna().all()
+    assert DESDE_CALENTAMIENTO < DESDE
+    calienta = d.loc[d.fecha_entrada < DESDE]
+    assert len(calienta)
+    assert (calienta.origen == CALENTAMIENTO).all()
+    assert calienta.precio_entrada.isna().all()
+    # Una fila del calentamiento abierta desaparecería del informe.
+    assert calienta.fecha_salida.notna().all()
+    # Y ninguna publicable queda sin precio.
+    publicable = d.loc[(d.origen != CALENTAMIENTO) & (d.estrategia != "Oro")]
+    assert publicable.precio_entrada.notna().all()
+    assert (publicable.fecha_entrada >= DESDE).all()
+
+
+def test_el_libro_no_entrega_filas_de_calentamiento_a_quien_las_mostraria():
+    from src.libro import abiertas, precios_de_entrada
+    libro = pd.DataFrame([
+        {"estrategia": "Sigma-6", "instrumento": "VIEJA", "fecha_entrada": pd.Timestamp("2024-03-01"),
+         "precio_entrada": None, "fecha_salida": pd.NaT, "origen": CALENTAMIENTO},
+        {"estrategia": "Sigma-6", "instrumento": "BCI", "fecha_entrada": pd.Timestamp("2025-10-24"),
+         "precio_entrada": 46502., "fecha_salida": pd.NaT, "origen": "recorrido"},
+    ])
+    assert set(abiertas(libro, "Sigma-6")) == {"BCI"}
+    assert precios_de_entrada(libro, "Sigma-6") == {"BCI": 46502.}
 
 
 def test_el_oro_entra_por_decision_y_no_por_senal():

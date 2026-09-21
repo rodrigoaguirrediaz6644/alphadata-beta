@@ -34,6 +34,8 @@ fabricó el +30% que este proyecto vino a terminar.
   semanal.
 - **La serie de precios entra completa hacia atrás.** El momentum 12-1 necesita
   doce meses previos, aunque las entradas que se muestran empiecen en 2025.
+- **El recorrido se calienta un año antes de lo que publica.** Ver
+  `DESDE_CALENTAMIENTO`.
 
 ## La prueba que decide si esto se publica
 
@@ -55,7 +57,27 @@ from src.strategy_engine import (delta12, gamma6, oro, sigma6, to_clp, validate_
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data"
+# Dos fechas distintas, que antes eran una sola.
+#
+# El recorrido arranca un año antes de lo que publica. Las cuatro piezas son
+# dependientes del camino —Sigma-6 tiene tope de tenencia, Delta-12 usa el RSI
+# como condición de permanencia, Gamma-6 filtra por tendencia— así que el
+# estado al entrar a la ventana condiciona todas las fechas posteriores.
+# Arrancando en 2025, BCI quedaba con entrada el 16-01-2026; con calentamiento
+# queda el 24-10-2025, y ésa es la correcta.
+#
+# Un año basta, y para Sigma-6 no es sólo empírico: su tope es de 365 días, así
+# que el camino desde 365 días antes determina el estado. Para Delta-12 y
+# Gamma-6, que no tienen tope, la suficiencia **es empírica**: se midió que
+# 2024, 2023 y 2021 dan exactamente las mismas fechas, no se demostró que no
+# puedan cambiar. Si alguna de esas dos reglas se modifica, hay que volver a
+# medirlo.
+DESDE_CALENTAMIENTO = pd.Timestamp("2024-01-02")
+# Piso de publicación. Hacia atrás no hay dato reparado en que confiar, así que
+# las filas del tramo de calentamiento se conservan para auditar y para los
+# contadores de tenencia, pero no se muestran nunca ni llevan precio.
 DESDE, HASTA = pd.Timestamp("2025-01-02"), pd.Timestamp("2026-09-17")
+CALENTAMIENTO = "calentamiento"
 # El oro no tiene señal: entra por decisión. El 01-01-2026 es feriado y no hay
 # precio, así que la fecha mostrada es la pedida y el precio de entrada es el
 # cierre de la primera rueda de 2026. No es un error que corregir.
@@ -150,12 +172,13 @@ def main(confirmar: bool = False) -> int:
     def elegir_gamma(fecha):
         return list(gamma6(hasta_la_fecha(fecha), universo, fecha)[0].ticker)
 
-    print(f"Recorrido de {DESDE.date()} a {HASTA.date()}")
+    print(f"Recorrido de {DESDE_CALENTAMIENTO.date()} a {HASTA.date()}; "
+          f"se publica desde {DESDE.date()}")
     recorridos, vivas = [], {}
     for nombre, revisiones, elegir in [
-            ("Sigma-6", _revisiones(ses_cl, "W-FRI", DESDE, HASTA), elegir_sigma),
-            ("Delta-12", _revisiones(ses_cl, "M", DESDE, HASTA), elegir_delta),
-            ("Gamma-6", _revisiones(ses_us, "M", DESDE, HASTA), elegir_gamma)]:
+            ("Sigma-6", _revisiones(ses_cl, "W-FRI", DESDE_CALENTAMIENTO, HASTA), elegir_sigma),
+            ("Delta-12", _revisiones(ses_cl, "M", DESDE_CALENTAMIENTO, HASTA), elegir_delta),
+            ("Gamma-6", _revisiones(ses_us, "M", DESDE_CALENTAMIENTO, HASTA), elegir_gamma)]:
         movimientos, abiertas = recorrer(nombre, revisiones, elegir)
         print(f"  {nombre:<9} {len(revisiones):>3} revisiones   "
               f"{len(movimientos):>3} posiciones anotadas   {len(abiertas)} abiertas al final")
@@ -191,19 +214,27 @@ def main(confirmar: bool = False) -> int:
     print("  las cuatro carteras reproducidas exactamente.")
 
     libro = pd.DataFrame(recorridos)
+    entradas = pd.to_datetime(libro.fecha_entrada)
+    calienta = (entradas < DESDE) & (libro.estrategia != "Oro")
+    libro["origen"] = [CALENTAMIENTO if c else "recorrido" for c in calienta]
     libro["precio_entrada"] = [
-        None if pd.Timestamp(f.fecha_entrada) <= DESDE and f.estrategia != "Oro"
+        None if c
         else precio_de(precios_mostrados, f.instrumento,
                        f.fecha_entrada if f.estrategia != "Oro"
                        else ses_us[ses_us >= ORO_FECHA_DECISION][0])
-        for f in libro.itertuples()]
-    # Una entrada en la primera fecha del recorrido no tiene fecha real: tiene
-    # el borde de la ventana. Hacia atrás del 02-01-2025 no hay dato reparado en
-    # que confiar, así que no se le inventa una fecha exacta.
-    libro["origen"] = ["recorrido (borde: en cartera desde al menos 02-01-2025)"
-                       if pd.Timestamp(f.fecha_entrada) <= DESDE and f.estrategia != "Oro"
-                       else "recorrido" for f in libro.itertuples()]
+        for c, f in zip(calienta, libro.itertuples())]
     libro = libro[COLUMNAS].sort_values(["estrategia", "fecha_entrada", "instrumento"])
+
+    # Una posición del tramo de calentamiento que siguiera abierta desaparecería
+    # del informe, porque no lleva precio. Hoy no hay ninguna; si aparece, hay
+    # que decidirla a mano y no dejarla pasar en silencio.
+    colgada = libro[(libro.origen == CALENTAMIENTO) & libro.fecha_salida.isna()]
+    if len(colgada):
+        print("\nHay posiciones del calentamiento todavía abiertas; no se escribe:")
+        print(colgada.to_string(index=False))
+        return 1
+    print(f"\n{int(calienta.sum())} filas del tramo de calentamiento: se conservan "
+          f"como '{CALENTAMIENTO}', sin precio, y no se publican.")
 
     abiertas = libro[libro.fecha_salida.isna()]
     print(f"\nLibro: {len(libro)} posiciones, {len(abiertas)} abiertas al 17-09-2026.")

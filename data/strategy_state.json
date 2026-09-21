@@ -3,11 +3,11 @@
   "delta_rule_version": "2.1.0",
   "gamma_rule_version": "1.0.0",
   "sigma_entries": {
-    "CENCOMALLS": "2026-09-17",
-    "VAPORES": "2026-09-17",
     "PARAUCO": "2026-09-17",
-    "LTM": "2026-09-17",
-    "BCI": "2026-09-17"
+    "BCI": "2026-09-17",
+    "VAPORES": "2026-09-17",
+    "CENCOMALLS": "2026-09-17",
+    "LTM": "2026-09-17"
   },
   "delta_entries": {
     "PARAUCO": "2026-09-17",
@@ -34,10 +34,10 @@
     {
       "ticker": "BCI",
       "target_weight": 0.1,
-      "opened_at": "2026-01-16",
-      "entry_price": 64500.0,
+      "opened_at": "2025-10-24",
+      "entry_price": 46502.0,
       "current_price": 65600.0,
-      "open_return": 0.04291157535146506,
+      "open_return": 0.4465570644309813,
       "con_dividendo": false,
       "dividendos_clp": 1500.0,
       "monto_clp": 500000.0
@@ -279,7 +279,7 @@
     "uploaded_files": 0,
     "history_rows": 1108
   },
-  "last_run_utc": "2026-09-21T10:56:23.341064+00:00",
+  "last_run_utc": "2026-09-21T13:24:45.286858+00:00",
   "entry_dates_version": 3,
   "delta_last_period": "2026-08",
   "gamma_last_period": "2026-08"
