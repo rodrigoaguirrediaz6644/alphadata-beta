@@ -108,6 +108,25 @@ filas entraron de una vez el 17-07-2026 y una más el 27-07. Ver
 - **24-11-2026** en adelante: las recomendaciones caducan una a una.
 - **Julio de 2027**: la pieza queda en 100% de caja.
 
+### Medido: la prueba nula no distingue
+
+Sigma-6 sin el filtro de corredora, con todo lo demás idéntico:
+
+| tramo | con Credicorp | sin corredora |
+|---|---|---|
+| 1ª mitad | **+6,84%** | +5,71% |
+| 2ª mitad | +28,26% | **+36,41%** |
+
+**El orden se da vuelta**, así que no se distingue. Ver
+`research/sigma6_prueba_nula/`.
+
+Lo que sí se puede afirmar: **no hay evidencia de que la recomendación de
+corredora agregue retorno por encima del momentum solo**, y la carga de
+justificar la única dependencia manual del sistema estaba de su lado.
+
+Y sin el filtro, el solape de Sigma-6 con Delta-12 casi se duplica —de 0,25 a
+0,42 de mediana— sin llegar a ser la misma cartera.
+
 ### Las opciones, sin implementar ni medir
 
 **A. Mantener la carga manual.** Es lo que hay. Cuesta una acción periódica y
