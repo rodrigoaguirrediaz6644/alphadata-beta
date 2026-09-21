@@ -105,3 +105,38 @@ def test_los_dividendos_van_en_pesos_y_no_como_nota_al_pie():
     html = _positions(sin)
     assert "<th>Dividendos cobrados</th>" not in html
     assert "*" in html
+
+
+def test_la_columna_de_tenencia_avisa_antes_de_que_el_calendario_venda():
+    """Una venta por calendario es información de ejecución, no de señal.
+
+    BCI entró el 24-10-2025 y toca el tope de 365 días a fines de octubre de
+    2026. Sin la columna, esa venta aparecería sin aviso en un informe que
+    muestra la posición ganando +44,7%.
+    """
+    from src.reporting_public import _tenencia
+    assert _tenencia(328, 365) == ("<strong>328 de 365 días</strong> · toca el tope en 37")
+    assert _tenencia(20, 365) == "20 de 365 días"
+    assert _tenencia(pd.NA, 365) == "—"
+    cerca = CARTERA.assign(dias_tenencia=[328], tope_tenencia=[365])
+    html = _positions(cerca)
+    assert "<th>Tiempo en cartera</th>" in html and "toca el tope en 37" in html
+    # Las piezas sin tope no llevan la columna.
+    assert "<th>Tiempo en cartera</th>" not in _positions(CARTERA)
+
+
+def test_el_informe_dice_que_las_fechas_salen_de_aplicar_las_reglas_hacia_atras(tmp_path, monkeypatch):
+    """Nunca hubo sistema en vivo antes del 15-07-2026.
+
+    «Comprada el 27-02-2026» se lee como que alguien la tuvo desde febrero. Lo
+    que pasó es que el modelo la seleccionó ese día y no la ha soltado.
+    """
+    import src.reporting_public as rp
+    monkeypatch.setattr(rp, "DIRECTORIO_GRAFICOS", tmp_path)
+    historia = pd.DataFrame([{"date": "2026-09-16", "Conjunto AlphaData": 100},
+                             {"date": "2026-09-18", "Conjunto AlphaData": 101}])
+    vacio = pd.DataFrame(columns=["ticker", "action", "target_weight"])
+    _, html = rp.build_public_report(pd.Timestamp("2026-09-18"), CARTERA, CARTERA, vacio, vacio,
+                                     pd.DataFrame([{"status": "OK"}]), pd.DataFrame(), historia)
+    assert "no de operaciones registradas en vivo" in html
+    assert "el modelo la seleccionó ese día y no la ha soltado" in html

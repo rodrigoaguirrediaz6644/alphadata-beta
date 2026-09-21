@@ -6,7 +6,11 @@ cuándo viene cada posición. Lo que se prueba acá es que cada corrida agrega s
 aperturas, cierra sus salidas y **no toca lo que ya estaba escrito**.
 """
 
+from pathlib import Path
+
 import pandas as pd
+
+ROOT = Path(__file__).resolve().parents[1]
 
 from src.libro import abiertas, anotar, cargar, guardar
 
@@ -148,3 +152,31 @@ def test_alterar_un_precio_pasado_no_mueve_ninguna_fila_del_libro():
                                   pd.Timestamp("2026-09-18"), alterados)
     assert movimientos == []
     pd.testing.assert_frame_equal(despues.reset_index(drop=True), libro.reset_index(drop=True))
+
+
+def test_los_dos_bloques_del_informe_no_pueden_contradecirse():
+    """El invariante entre movimientos y cartera, que el reinicio rompió.
+
+    Toda COMPRAR del bloque de movimientos tiene que estar en la cartera con
+    esa misma fecha, y ninguna posición más vieja puede aparecer como
+    movimiento. Sin esto el informe publicó veinte «Comprar» para posiciones
+    que llevaban meses abiertas, entre ellas INTC desde el 30-09-2025.
+    """
+    from src.libro import abiertas, movimientos_de
+    libro = pd.read_csv(ROOT / "data" / "libro_posiciones.csv",
+                        parse_dates=["fecha_entrada", "fecha_salida"])
+    senales = {"Sigma-6": pd.Timestamp("2026-09-17"), "Delta-12": pd.Timestamp("2026-08-31"),
+               "Gamma-6": pd.Timestamp("2026-08-31"), "Oro": pd.Timestamp("2026-09-17")}
+    movimientos = movimientos_de(libro, senales)
+    for estrategia, senal in senales.items():
+        cartera = abiertas(libro, estrategia)
+        compras = movimientos.loc[(movimientos.estrategia == estrategia)
+                                  & (movimientos.accion == "COMPRAR")]
+        for instrumento in compras.instrumento:
+            assert instrumento in cartera, f"{instrumento} se manda comprar y no está en la cartera"
+            assert cartera[instrumento] == senal, f"{instrumento} se manda comprar con otra fecha"
+        anteriores = {t for t, f in cartera.items() if f < senal}
+        assert not (anteriores & set(compras.instrumento)), "una posición vieja aparece como compra"
+        ventas = movimientos.loc[(movimientos.estrategia == estrategia)
+                                 & (movimientos.accion == "VENDER")]
+        assert not (set(ventas.instrumento) & set(cartera)), "se manda vender algo que sigue abierto"

@@ -184,6 +184,7 @@ def _positions(portfolio: pd.DataFrame, currency: str = "$") -> str:
         return '<p class="muted">Sin posiciones abiertas.</p>'
     hay_montos = "monto_clp" in portfolio and portfolio["monto_clp"].notna().any()
     hay_dividendos = "dividendos_clp" in portfolio and portfolio["dividendos_clp"].notna().any()
+    hay_tope = "tope_tenencia" in portfolio and portfolio.get("dias_tenencia", pd.Series(dtype="object")).notna().any()
     rows = []
     for record in portfolio.to_dict("records"):
         entry = pd.to_datetime(record.get("opened_at"), errors="coerce")
@@ -201,11 +202,30 @@ def _positions(portfolio: pd.DataFrame, currency: str = "$") -> str:
                    _precio(record.get("current_price"), currency)]
         if hay_dividendos:
             celdas.append(_precio(record.get("dividendos_clp"), currency))
+        if hay_tope:
+            celdas.append(_tenencia(record.get("dias_tenencia"), record.get("tope_tenencia")))
         rows.append("<tr>" + "".join(f"<td>{c}</td>" for c in celdas)
                     + f'<td{color}>{gain_text}</td></tr>')
-    cabecera = ["Acción"] + (["Cuánto invertir"] if hay_montos else []) +                ["Cuánto pesa", "Comprada el", "Precio de entrada", "Precio hoy"] +                (["Dividendos cobrados"] if hay_dividendos else []) + ["Va ganando"]
+    cabecera = ["Acción"] + (["Cuánto invertir"] if hay_montos else []) +                ["Cuánto pesa", "Comprada el", "Precio de entrada", "Precio hoy"] +                (["Dividendos cobrados"] if hay_dividendos else []) +                (["Tiempo en cartera"] if hay_tope else []) + ["Va ganando"]
     return ("<table><thead><tr>" + "".join(f"<th>{c}</th>" for c in cabecera)
             + f'</tr></thead><tbody>{"".join(rows)}</tbody></table>')
+
+
+def _tenencia(dias, tope) -> str:
+    """Cuánto le queda a la posición antes de que el calendario la suelte.
+
+    Sigma-6 vende al año, mire lo que mire la señal. Una venta por calendario
+    es información de ejecución —hay que tener el dinero y pagar la comisión—
+    y no estaba en ninguna parte del informe.
+    """
+    if dias is None or pd.isna(dias) or tope is None or pd.isna(tope):
+        return "—"
+    faltan = int(tope) - int(dias)
+    if faltan <= 60:
+        # «Toca el tope», no «se vende»: la venta ocurre en la primera revisión
+        # semanal posterior, que puede caer hasta seis días después.
+        return f'<strong>{int(dias)} de {int(tope)} días</strong> · toca el tope en {faltan}'
+    return f"{int(dias)} de {int(tope)} días"
 
 
 def _pesos(valor, moneda: str) -> str:
@@ -385,6 +405,7 @@ def build_public_report(
     {positions_blocks}
     {nota_dividendos}
     <p class="muted"><strong>Va ganando</strong> es cuánto se movió el precio de esa acción desde el día en que se compró, que es distinto del rendimiento de la estrategia desde el {inicio:%d-%m-%Y}: una acción comprada hace ocho meses puede ir muy arriba aunque la estrategia lleve poco medida. Los dos números son correctos y no tienen por qué calzar.</p>
+    <p class="muted">Las fechas y los precios de entrada salen de aplicar las reglas a la serie histórica, no de operaciones registradas en vivo: «comprada el 27-02-2026» quiere decir que el modelo la seleccionó ese día y no la ha soltado. Sigma-6 además suelta una posición al año de tenencia aunque la señal siga buena: la columna de tiempo en cartera dice cuánto falta, y la venta cae en la primera revisión semanal posterior.</p>
     <p class="muted">Todos los precios están en pesos. Gamma-6 y el oro se compran en Chile como CDV, así que su resultado ya incluye el efecto del tipo de cambio. El oro no se compra ni se vende por señales: es una posición fija que está para amortiguar las caídas del resto.</p>
     </section>
 

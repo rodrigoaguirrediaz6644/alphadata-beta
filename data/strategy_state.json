@@ -3,11 +3,11 @@
   "delta_rule_version": "2.1.0",
   "gamma_rule_version": "1.0.0",
   "sigma_entries": {
-    "PARAUCO": "2026-09-17",
-    "BCI": "2026-09-17",
-    "VAPORES": "2026-09-17",
     "CENCOMALLS": "2026-09-17",
-    "LTM": "2026-09-17"
+    "VAPORES": "2026-09-17",
+    "BCI": "2026-09-17",
+    "LTM": "2026-09-17",
+    "PARAUCO": "2026-09-17"
   },
   "delta_entries": {
     "PARAUCO": "2026-09-17",
@@ -40,6 +40,8 @@
       "open_return": 0.4465570644309813,
       "con_dividendo": false,
       "dividendos_clp": 1500.0,
+      "dias_tenencia": 328,
+      "tope_tenencia": 365,
       "monto_clp": 500000.0
     },
     {
@@ -51,6 +53,8 @@
       "open_return": -0.08055524581677742,
       "con_dividendo": false,
       "dividendos_clp": 15.0,
+      "dias_tenencia": 168,
+      "tope_tenencia": 365,
       "monto_clp": 500000.0
     },
     {
@@ -62,6 +66,8 @@
       "open_return": 0.04601097509497687,
       "con_dividendo": false,
       "dividendos_clp": null,
+      "dias_tenencia": 20,
+      "tope_tenencia": 365,
       "monto_clp": 500000.0
     },
     {
@@ -73,6 +79,8 @@
       "open_return": 0.019074993467467882,
       "con_dividendo": false,
       "dividendos_clp": null,
+      "dias_tenencia": 83,
+      "tope_tenencia": 365,
       "monto_clp": 500000.0
     },
     {
@@ -84,6 +92,8 @@
       "open_return": 0.12859361704881578,
       "con_dividendo": false,
       "dividendos_clp": 6.705327,
+      "dias_tenencia": 174,
+      "tope_tenencia": 365,
       "monto_clp": 500000.0
     }
   ],
@@ -279,7 +289,7 @@
     "uploaded_files": 0,
     "history_rows": 1108
   },
-  "last_run_utc": "2026-09-21T13:24:45.286858+00:00",
+  "last_run_utc": "2026-09-21T13:28:15.964455+00:00",
   "entry_dates_version": 3,
   "delta_last_period": "2026-08",
   "gamma_last_period": "2026-08"

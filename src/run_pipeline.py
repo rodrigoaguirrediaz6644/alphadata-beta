@@ -13,7 +13,7 @@ from src.ingest_recommendations import ingest
 from src.libro import abiertas as libro_abiertas, anotar, cargar as cargar_libro, guardar as guardar_libro, movimientos_de, precios_de_entrada
 from src.strategy_registry import validate_registry
 from src.reporting_public import build_public_report
-from src.strategy_engine import ORO_TICKER, RECOMMENDATION_COLUMNS, combined_equal_weight, delta12, delta12_historical_nav, gamma6, gamma6_historical_nav, movements, oro, oro_historical_nav, reconstruct_entry_dates, sigma6, to_clp, validate_recommendations
+from src.strategy_engine import TOPE_TENENCIA_SIGMA, ORO_TICKER, RECOMMENDATION_COLUMNS, combined_equal_weight, delta12, delta12_historical_nav, gamma6, gamma6_historical_nav, movements, oro, oro_historical_nav, reconstruct_entry_dates, sigma6, to_clp, validate_recommendations
 
 ROOT=Path(__file__).resolve().parents[1]; DATA=ROOT/'data'; REPORTS=ROOT/'reports'; STATE=DATA/'strategy_state.json'; NAV=DATA/'strategy_nav.csv'
 US_COST_RATE=.001  # spread de Trii para acciones de EE.UU. (0,1% por lado)
@@ -353,6 +353,13 @@ def main()->None:
     delta=enrich_open_positions(delta,prices,as_of,precios_anotados=precios_de_entrada(libro,'Delta-12'),dividendos=dividendos)
     gamma=enrich_open_positions(gamma,prices_us_clp,as_of,buy_cost=US_COST_RATE,precios_anotados=precios_de_entrada(libro,'Gamma-6'),dividendos=dividendos)
     oro_portfolio=enrich_open_positions(oro_portfolio,prices_oro_clp,as_of,buy_cost=US_COST_RATE,precios_anotados=precios_de_entrada(libro,'Oro'),dividendos=dividendos)
+    # Cuánto le queda a cada posición de Sigma-6 antes de que el tope la
+    # suelte. Una venta por calendario y no por señal es información de
+    # ejecución, y no estaba en ninguna parte del informe.
+    if len(sigma):
+        sigma['dias_tenencia']=sigma.opened_at.map(
+            lambda f: (as_of.normalize()-pd.Timestamp(f).normalize()).days if pd.notna(f) else pd.NA)
+        sigma['tope_tenencia']=TOPE_TENENCIA_SIGMA
     # Cuántos pesos es cada posición, con el capital de la configuración.
     capital=json.loads(CONFIG.read_text(encoding='utf-8')).get('capital',{})
     por_pieza=float(capital.get('total_clp',0))/len(STRATEGY_SERIES)

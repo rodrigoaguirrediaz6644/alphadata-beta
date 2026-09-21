@@ -76,6 +76,13 @@ def capped_pro_rata(scores: pd.Series, cap: float) -> pd.Series:
     return result
 
 
+# Tope de tenencia de Sigma-6: una posición se suelta al llegar al año, sin
+# mirar la señal. Medido sobre el recorrido 2024-2026, las nueve salidas por
+# tope volvieron a entrar la semana siguiente, porque al soltarse desaparecen
+# del contador y el reloj parte de cero. No se arregla acá: está reportado.
+TOPE_TENENCIA_SIGMA=365
+
+
 def sigma6(valid: pd.DataFrame, prices: pd.DataFrame, as_of: pd.Timestamp, previous: dict[str, Any]) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, Any]]:
     if valid.empty:
         active=pd.DataFrame(columns=["ticker","broker_normalized","signal","available_at_parsed"])
@@ -111,7 +118,7 @@ def sigma6(valid: pd.DataFrame, prices: pd.DataFrame, as_of: pd.Timestamp, previ
     if len(candidates):
         for ticker,row in candidates.iterrows():
             entered=pd.Timestamp(entries.get(ticker,as_of.date().isoformat()))
-            if (as_of.normalize()-entered.normalize()).days>=365:
+            if (as_of.normalize()-entered.normalize()).days>=TOPE_TENENCIA_SIGMA:
                 continue
             eligible[ticker]=1.0
     weights=capped_pro_rata(pd.Series(eligible,dtype=float),.10)
