@@ -80,9 +80,18 @@ Una acción es elegible sólo si:
 1. `Momentum12-1 = PrecioAjustado[t-21] / PrecioAjustado[t-252] - 1 > 0`.
 2. El precio ajustado está estrictamente sobre la SMA de 200 sesiones.
 3. Cuenta con al menos 252 sesiones de historia y 200 observaciones para la SMA.
-4. No pertenece al 20% menos líquido.
-5. La liquidez corresponde a la mediana de `PrecioAjustado × Volumen` durante 60 sesiones, con al menos 30 observaciones.
-6. Los datos requeridos son completos y no están vencidos.
+4. **`RSI14 <= 65`.** El RSI de 14 sesiones se calcula sobre el cierre
+   ajustado con suavizado exponencial (`alpha = 1/14`) y al menos 14
+   observaciones; sin datos suficientes se toma 100, que excluye.
+5. No pertenece al 20% menos líquido.
+6. La liquidez corresponde a la mediana de `PrecioAjustado × Volumen` durante 60 sesiones, con al menos 30 observaciones.
+7. Los datos requeridos son completos y no están vencidos.
+
+> **El RSI es también condición de permanencia, y es la única regla del sistema
+> que vende un ganador por serlo.** Una posición que se pone demasiado caliente
+> se suelta en la revisión siguiente aunque el momentum siga positivo y el
+> precio siga sobre la SMA200. Está en el código desde `274de5c` (27-07-2026) y
+> faltaba en este documento.
 
 ### Entrada y tamaño
 
@@ -101,6 +110,7 @@ Se vende en la siguiente revisión mensual si ocurre cualquiera de estos eventos
 - Sale del top 8.
 - `Momentum12-1 <= 0`.
 - `PrecioAjustado <= SMA200`.
+- **`RSI14 > 65`.**
 - Cae bajo el percentil 20 de liquidez.
 - Presenta datos inválidos o vencidos.
 

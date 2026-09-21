@@ -25,12 +25,34 @@ sin registrar, ese dato se perdió.
 | `fecha_ejecucion` | el día en que realmente se operó |
 | `estrategia` | Sigma-6, Delta-12, Gamma-6 u Oro |
 | `instrumento` | el ticker AlphaData, igual que en `config/tickers.csv` |
-| `accion` | COMPRA o VENTA |
+| `accion` | COMPRA, VENTA, APORTE o RETIRO |
 | `cantidad` | número de acciones o CDV |
 | `precio_modelo` | el cierre que usó el modelo en la fecha de señal |
 | `precio_pagado` | el precio efectivo de la transacción |
 | `comision` | lo que cobró la corredora por esa operación, en pesos |
 | `notas` | lo que haga falta: orden parcial, cambio de precio, lo que sea |
+
+En un APORTE o un RETIRO, `instrumento` va vacío, `cantidad` lleva el monto en
+pesos y `precio_pagado` la comisión o el costo de la transferencia si lo hubo.
+`estrategia` dice a qué pieza entra o de cuál sale, o `Conjunto` si se reparte.
+
+## Aportes y retiros: por qué hay una fila para algo que hoy no ocurre
+
+El NAV supone **reinversión total, para siempre**. Nunca sale plata y nunca
+entra. Es el supuesto correcto para medir una estrategia y es falso para una
+cuenta.
+
+El día que se retire plata para gastarla, el modelo y la cuenta se separan de
+forma permanente: el modelo sigue componiendo sobre un capital que ya no está.
+Y eso **no se puede reconstruir después** —igual que el precio pagado y la
+comisión, es información que sólo existe en el momento—. Sin la fila, un año
+más tarde la única explicación disponible para la diferencia es «la estrategia
+anduvo peor», que sería falso.
+
+Hay dos sentidos de «retirar utilidades» y conviene no confundirlos. Éste es
+sacar plata del sistema. El otro —recortar un ganador dentro de una
+estrategia— es la política de rebalanceo, que es otra cosa y vive en
+`ARQUITECTURA.md`.
 
 ## Lo que se va a poder medir con esto
 
