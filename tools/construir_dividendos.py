@@ -21,7 +21,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from src.dividendos import COLUMNAS_TABLA, descargar_eventos, localizar_fecha_ex
+from src.dividendos import CONFIRMADA, COLUMNAS_TABLA, descargar_eventos, localizar_fecha_ex
 from src.fetch_prices import load_universe, operables
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -46,8 +46,7 @@ def main(confirmar: bool = False) -> int:
         for evento in eventos:
             calce = localizar_fecha_ex(serie, evento["fecha_declarada"], evento["monto"])
             fila = {"alphadata_ticker": item.alphadata_ticker, "monto": evento["monto"],
-                    "fecha_declarada": evento["fecha_declarada"],
-                    "origen": "evento del proveedor, fecha confirmada con el cierre crudo"}
+                    "fecha_declarada": evento["fecha_declarada"]}
             if calce is None:
                 rechazados.append({**fila, "fecha_ex": pd.NaT, "error": None})
                 continue
@@ -64,10 +63,13 @@ def main(confirmar: bool = False) -> int:
 
     print(f"dividendos aceptados: {len(tabla)}   por confirmar a mano: {len(dudosos)}")
     if len(tabla):
-        desfase = (tabla.fecha_declarada - tabla.fecha_ex).dt.days
-        print(f"  error de calce: mediano {tabla.error.median():.2%}   p90 {tabla.error.quantile(.9):.2%}")
-        print(f"  desfase entre fecha declarada y fecha ex: mediano {desfase.median():.0f} dias, "
-              f"rango {desfase.min():.0f} a {desfase.max():.0f}")
+        por_origen = tabla.origen.value_counts()
+        for origen, n in por_origen.items():
+            print(f"  {origen}: {n}")
+        confirmadas = tabla.loc[tabla.origen == CONFIRMADA]
+        if len(confirmadas):
+            print(f"  error de calce de las confirmadas: mediano {confirmadas.error.median():.2%}   "
+                  f"p90 {confirmadas.error.quantile(.9):.2%}")
         print(f"  instrumentos cubiertos: {tabla.alphadata_ticker.nunique()} de {len(universo)}")
     if len(dudosos):
         cuenta = dudosos.alphadata_ticker.value_counts().head(8)

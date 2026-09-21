@@ -35,6 +35,7 @@ from __future__ import annotations
 import json
 import urllib.request
 
+import numpy as np
 import pandas as pd
 
 UMBRAL_ESCALON = .002      # un cambio menor es ruido de redondeo entre fuentes
@@ -133,8 +134,29 @@ AGENTE = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
 VENTANA_BUSQUEDA = (-10, 2)   # ruedas alrededor de la fecha declarada
 TOLERANCIA_MINIMA = .005
 VECES_LA_VOLATILIDAD = 2.0
-COLUMNAS_TABLA = ["alphadata_ticker", "fecha_ex", "monto", "fecha_declarada",
+# Por debajo de este tamaño —la caída esperada medida en tolerancias— buscar la
+# fecha en el precio no informa nada. Medido con una prueba nula sobre 1.480
+# fechas sin dividendo, usando los montos reales de cada papel y la misma
+# ventana de búsqueda, la tasa de falsos positivos es:
+#
+#     tamaño < 0,5      100,0%
+#     0,5 a 1            99,7%
+#     1 a 2              74,7%
+#     2 a 4               6,1%
+#     > 4                 0,0%
+#
+# O sea: en una serie ruidosa el confirmador encuentra una caída del tamaño
+# pedido casi siempre, aunque no haya habido dividendo. Sólo por encima de 2
+# tolerancias la confirmación significa algo.
+UMBRAL_CONFIRMABLE = 2.0
+# Para los que no se pueden confirmar se usa la convención chilena, medida
+# sobre los que sí: la fecha ex está 5 ruedas antes de la que declara el
+# proveedor (mediana 5, cuartiles 4 y 5, en los calces fiables).
+DESFASE_POR_CONVENCION = 5
+COLUMNAS_TABLA = ["alphadata_ticker", "fecha_ex", "monto", "fecha_declarada", "tamano",
                   "caida_esperada", "caida_observada", "error", "origen"]
+CONFIRMADA = "confirmada por el precio"
+POR_CONVENCION = f"fecha por convención ({DESFASE_POR_CONVENCION} ruedas antes de la declarada)"
 
 
 def descargar_eventos(yahoo_ticker: str, desde: pd.Timestamp, hasta: pd.Timestamp,
@@ -198,6 +220,18 @@ def localizar_fecha_ex(cruda: pd.Series, fecha_declarada: pd.Timestamp, monto: f
     if tolerancia is None:
         tolerancia = tolerancia_de(cruda)
     posicion = int(cruda.index.searchsorted(fecha_declarada))
+    previas = cruda.iloc[:posicion]
+    if previas.empty or previas.iloc[-1] <= 0:
+        return None
+    tamano = (monto / previas.iloc[-1]) / tolerancia
+
+    if tamano < UMBRAL_CONFIRMABLE:
+        # El precio no puede decir nada: se usa la convención y se marca como tal.
+        indice = max(0, posicion - DESFASE_POR_CONVENCION)
+        return {"fecha_ex": cruda.index[indice], "tamano": tamano,
+                "caida_esperada": -monto / previas.iloc[-1], "caida_observada": np.nan,
+                "error": np.nan, "origen": POR_CONVENCION, "rechazado": False}
+
     desde, hasta = max(1, posicion + ventana[0]), min(len(cruda) - 1, posicion + ventana[1])
     if desde > hasta:
         return None
@@ -214,7 +248,7 @@ def localizar_fecha_ex(cruda: pd.Series, fecha_declarada: pd.Timestamp, monto: f
                      "caida_observada": observada, "error": error}
     if mejor is None:
         return None
-    return {**mejor, "rechazado": mejor["error"] > tolerancia}
+    return {**mejor, "tamano": tamano, "origen": CONFIRMADA, "rechazado": mejor["error"] > tolerancia}
 
 
 def factores(dividendos: pd.DataFrame, cruda: pd.Series) -> pd.Series:
@@ -252,6 +286,24 @@ def derivar_ajustado(crudo: pd.DataFrame, dividendos: pd.DataFrame) -> pd.Series
         f = factores(propios, serie)
         salida.loc[grupo.index] = (serie * f).reindex(serie.index).to_numpy()
     return salida
+
+
+def detectar_nuevos(tabla: pd.DataFrame, pendientes: pd.DataFrame,
+                    eventos: list[dict], ticker: str) -> list[dict]:
+    """Eventos del proveedor que todavía no están en la tabla ni pendientes.
+
+    Sin esto la tabla nace correcta y se degrada sola: el próximo reparto de
+    cualquiera de los cuarenta instrumentos produciría un ajustado equivocado
+    en silencio, que es exactamente el modo de falla que este trabajo vino a
+    terminar.
+    """
+    conocidas = set()
+    for origen in (tabla, pendientes):
+        if origen is None or origen.empty or "fecha_declarada" not in origen:
+            continue
+        propios = origen.loc[origen.alphadata_ticker == ticker, "fecha_declarada"]
+        conocidas |= {pd.Timestamp(f).normalize() for f in pd.to_datetime(propios, errors="coerce").dropna()}
+    return [e for e in eventos if pd.Timestamp(e["fecha_declarada"]).normalize() not in conocidas]
 
 
 def aplicar_ajuste(precios: pd.DataFrame, dividendos: pd.DataFrame, tickers: set[str]) -> pd.DataFrame:

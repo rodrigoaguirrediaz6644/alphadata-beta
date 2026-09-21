@@ -12,7 +12,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.dividendos import aplicar_ajuste, derivar_ajustado, factores, localizar_fecha_ex, tolerancia_de
+from src.dividendos import (CONFIRMADA, POR_CONVENCION, aplicar_ajuste, derivar_ajustado,
+                            detectar_nuevos, factores, localizar_fecha_ex, tolerancia_de)
 
 ROOT = Path(__file__).resolve().parents[1]
 DIAS = pd.bdate_range("2026-01-05", periods=80)
@@ -88,19 +89,63 @@ def test_solo_se_tocan_los_instrumentos_indicados():
     assert np.allclose(abt.adjusted_close.to_numpy(), abt.close.to_numpy() * .9)  # intacto
 
 
-def test_la_tabla_publicada_pasa_su_propia_prueba_de_aceptacion():
-    """Regresión con los datos reales: el ajustado no cae en las fechas ex."""
+def test_un_dividendo_chico_no_se_confirma_con_el_precio_sino_por_convencion():
+    # La prueba nula mostró que buscar la fecha de un dividendo pequeño en una
+    # serie ruidosa "confirma" algo el 100% de las veces aunque no haya habido
+    # reparto. Por debajo del umbral no se busca: se usa la convención y se
+    # marca como tal, para no dar por verificado lo que no lo está.
+    serie = pd.Series(np.linspace(100, 120, len(DIAS)), index=DIAS)
+    calce = localizar_fecha_ex(serie, DIAS[45], 0.05)   # cinco centésimas: ruido puro
+    assert calce is not None and not calce["rechazado"]
+    assert calce["origen"] == POR_CONVENCION
+    assert calce["fecha_ex"] == DIAS[40]                 # cinco ruedas antes
+
+
+def test_un_dividendo_grande_si_se_confirma_con_el_precio():
+    serie = _serie_con_dividendo(monto=8.0, indice_ex=40)
+    calce = localizar_fecha_ex(serie, DIAS[45], 8.0)
+    assert calce is not None and not calce["rechazado"]
+    assert calce["origen"] == CONFIRMADA
+    assert calce["fecha_ex"] == DIAS[40]
+
+
+def test_un_dividendo_nuevo_del_proveedor_se_detecta():
+    tabla = pd.DataFrame([{"alphadata_ticker": "BCI", "fecha_declarada": pd.Timestamp("2026-04-10")}])
+    pendientes = pd.DataFrame(columns=["alphadata_ticker", "fecha_declarada"])
+    eventos = [{"fecha_declarada": pd.Timestamp("2026-04-10"), "monto": 100.0},
+               {"fecha_declarada": pd.Timestamp("2026-09-15"), "monto": 120.0}]
+    nuevos = detectar_nuevos(tabla, pendientes, eventos, "BCI")
+    assert len(nuevos) == 1 and nuevos[0]["fecha_declarada"] == pd.Timestamp("2026-09-15")
+    # Y lo que ya está pendiente no se anota dos veces.
+    pendientes = pd.DataFrame([{"alphadata_ticker": "BCI", "fecha_declarada": pd.Timestamp("2026-09-15")}])
+    assert detectar_nuevos(tabla, pendientes, eventos, "BCI") == []
+
+
+def test_la_tabla_publicada_pasa_su_prueba_de_aceptacion_donde_es_verificable():
+    """Regresión con datos reales, separando lo verificado de lo asumido.
+
+    Sólo los dividendos grandes se pueden verificar contra el precio, y son
+    justamente los que producían los artefactos visibles: el +9,33% de Banco de
+    Chile venía de uno de ellos. Los pequeños se fechan por convención y su
+    error es del tamaño del propio dividendo, que es chico por definición.
+    """
     tabla = ROOT / "data" / "dividendos.csv"
     if not tabla.exists():
         pytest.skip("todavía no se ha construido la tabla de dividendos")
     dividendos = pd.read_csv(tabla, parse_dates=["fecha_ex"])
     precios = pd.read_csv(ROOT / "data" / "market_prices_daily.csv", parse_dates=["date"])
-    errores = []
-    for evento in dividendos.itertuples():
+    confirmadas = dividendos.loc[dividendos.origen == CONFIRMADA]
+    assert len(confirmadas) >= 5
+
+    crudos, ajustados = [], []
+    for evento in confirmadas.itertuples():
         serie = precios.loc[precios.alphadata_ticker == evento.alphadata_ticker].set_index("date")
-        retorno = serie["adjusted_close"].pct_change().get(evento.fecha_ex)
-        if pd.notna(retorno):
-            errores.append(abs(retorno))
-    assert len(errores) > 100
-    # Con el ajustado del proveedor este promedio era de 1,96%.
-    assert float(np.mean(errores)) < .01
+        crudo = serie["close"].pct_change().get(evento.fecha_ex)
+        ajustado = serie["adjusted_close"].pct_change().get(evento.fecha_ex)
+        if pd.notna(crudo) and pd.notna(ajustado):
+            crudos.append(crudo)
+            ajustados.append(ajustado)
+    assert len(crudos) >= 5
+    # El crudo cae con fuerza en la fecha ex y el ajustado devuelve el dividendo.
+    assert float(np.mean(crudos)) < -.04
+    assert abs(float(np.mean(ajustados))) < .02

@@ -298,6 +298,15 @@ def main() -> None:
     if len(caidas):
         raise SystemExit(f"Feed detenido: el {fraccion.loc[caidas[-1]]:.0%} de las acciones chilenas no movió su precio el {caidas[-1]:%d-%m-%Y}. "
                          "En periodo sano esa fracción nunca pasó de 26%.")
+    pendientes_path = DATA_DIR / "dividendos_pendientes.csv"
+    if pendientes_path.exists():
+        pendientes = pd.read_csv(pendientes_path, parse_dates=["fecha_declarada"])
+        viejos = pendientes.loc[pendientes.fecha_declarada < pd.Timestamp.now().normalize() - pd.Timedelta(days=15)]
+        if len(viejos):
+            detalle = ", ".join(f"{r.alphadata_ticker} {r.fecha_declarada:%d-%m-%Y}" for r in viejos.itertuples())
+            raise SystemExit(f"Hay {len(viejos)} dividendos detectados y sin confirmar desde hace más de quince días "
+                             f"({detalle}). Desde su fecha ex el cierre ajustado de esos papeles está mal y lo sabemos. "
+                             "Correr tools/construir_dividendos antes de calcular.")
     alarma_adr = adr_contra_local(daily)
     if len(alarma_adr):
         detalle = "; ".join(f"{r.adr} se movió {r.movimiento_adr:.1%} y {r.local} no se movió nada" for r in alarma_adr.itertuples())

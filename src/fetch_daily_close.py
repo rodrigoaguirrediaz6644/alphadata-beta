@@ -32,6 +32,7 @@ from typing import Callable
 import pandas as pd
 
 from src.fetch_prices import PRICE_COLUMNS, _ajustar_chilenos, load_universe, operables
+from src.dividendos import descargar_eventos, detectar_nuevos
 from src.guards import ruedas_faltantes
 from src.price_store import agregar
 
@@ -151,6 +152,39 @@ def capturar(universe: pd.DataFrame, descargar: Callable[[str], dict] = _descarg
             pd.DataFrame(incidencias, columns=["alphadata_ticker", "motivo"]))
 
 
+def vigilar_dividendos(universe: pd.DataFrame) -> pd.DataFrame:
+    """Compara los eventos del proveedor contra la tabla y anota los nuevos.
+
+    No los incorpora: los deja en `data/dividendos_pendientes.csv` para que se
+    confirmen con `tools/construir_dividendos`. La corrida oficial se niega a
+    calcular si alguno lleva demasiado tiempo pendiente, porque desde la fecha
+    ex el cierre ajustado de ese papel está mal y lo sabemos.
+    """
+    tabla_path, pendientes_path = DATA / "dividendos.csv", DATA / "dividendos_pendientes.csv"
+    tabla = pd.read_csv(tabla_path) if tabla_path.exists() else pd.DataFrame()
+    pendientes = pd.read_csv(pendientes_path) if pendientes_path.exists() else pd.DataFrame()
+    desde = pd.Timestamp.now(tz="UTC").tz_localize(None) - pd.Timedelta(days=120)
+    hasta = pd.Timestamp.now(tz="UTC").tz_localize(None) + pd.Timedelta(days=30)
+    nuevos = []
+    for item in operables(universe).loc[lambda u: u.tipo.isin(TIPOS_LOCALES)].itertuples(index=False):
+        try:
+            eventos = descargar_eventos(item.yahoo_ticker, desde, hasta)
+        except Exception:
+            continue
+        for evento in detectar_nuevos(tabla, pendientes, eventos, item.alphadata_ticker):
+            nuevos.append({"alphadata_ticker": item.alphadata_ticker, **evento,
+                           "detectado": pd.Timestamp.now(tz="UTC").date().isoformat()})
+        time.sleep(.2)
+    if not nuevos:
+        return pendientes
+    salida = pd.concat([pendientes, pd.DataFrame(nuevos)], ignore_index=True)
+    salida.to_csv(pendientes_path, index=False, date_format="%Y-%m-%d")
+    detalle = ", ".join(f"{n['alphadata_ticker']} {pd.Timestamp(n['fecha_declarada']):%d-%m-%Y}" for n in nuevos)
+    print(f"ADVERTENCIA: {len(nuevos)} dividendos nuevos sin confirmar ({detalle}). "
+          "Correr tools/construir_dividendos antes de la próxima corrida oficial.")
+    return salida
+
+
 def main() -> None:
     universe = load_universe()
     esperados = int(operables(universe).tipo.isin(TIPOS_LOCALES).sum())
@@ -186,6 +220,7 @@ def main() -> None:
         print("ADVERTENCIA: ruedas en que el ADR testigo operó y no hay cierre local grabado: "
               + ", ".join(f"{d:%d-%m-%Y}" for d in faltantes)
               + ". Si no son feriados chilenos, hay que rellenarlas a mano.")
+    vigilar_dividendos(universe)
     (DATA / "ultima_captura_diaria.json").write_text(json.dumps({
         "ejecutada_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "ruedas": fechas, "leidos": int(len(capturadas)), "agregados": int(agregadas),

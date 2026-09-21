@@ -1,3 +1,3 @@
-alphadata_ticker,fecha_ex,monto,fecha_declarada,caida_esperada,caida_observada,error,origen
-MULTIFOODS,,5.94,2026-05-07,,,,"evento del proveedor, fecha confirmada con el cierre crudo"
-VAPORES,2025-05-13,7.8868833,2025-05-19,-0.14656910053893327,-0.08065415350306637,0.0659149470358669,"evento del proveedor, fecha confirmada con el cierre crudo"
+alphadata_ticker,fecha_ex,monto,fecha_declarada,tamano,caida_esperada,caida_observada,error,origen
+MULTIFOODS,,5.94,2026-05-07,,,,,
+VAPORES,2025-05-13,7.8868833,2025-05-19,4.16683837605576,-0.14656910053893327,-0.08065415350306637,0.0659149470358669,confirmada por el precio
