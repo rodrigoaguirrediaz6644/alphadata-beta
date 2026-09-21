@@ -18,12 +18,12 @@ Confirmado: sigue siendo lo correcto, y las mediciones de abajo lo respaldan.
 
 ## Qué se compra el primer día, por estrategia
 
-| estrategia | qué se compra | tramos | separación |
+| estrategia | qué se compra | cuándo | tramos |
 |---|---|---|---|
-| **Sigma-6** | la cartera vigente completa | **1** | — |
-| **Delta-12** | la cartera vigente completa | **1** | — |
-| **Gamma-6** | las seis posiciones vigentes | 1, o hasta 12 si se prefiere | semanal |
-| **Oro** | la posición completa | **1** | — |
+| **Sigma-6** | la cartera vigente completa | justo después de la revisión semanal | **1** |
+| **Delta-12** | la cartera vigente completa | justo después de la revisión de fin de mes | **1** |
+| **Gamma-6** | las seis posiciones vigentes | después de la revisión mensual | 1, o hasta 12 semanales si se prefiere |
+| **Oro** | la posición completa | cualquier día | **1** |
 
 Y con las posiciones que el modelo ya tiene abiertas: **se compran todas**, sin
 mirar si van arriba o abajo del precio de entrada del modelo, y sin saltarse
@@ -86,32 +86,53 @@ número de tramos, con capital de $5 millones por pieza:
 | **Oro** | **$5.000** | **$5.000** | **$5.000** | **$5.000** |
 
 En Delta-12, pasar de un tramo a doce cuesta **3,5 puntos de una vez** para
-recortar 1,8 puntos de desviación típica. En Sigma-6, 4,4 puntos. Es un mal
-trato incluso antes de contar los 3,6 puntos de media perdida.
+recortar 1,8 puntos de desviación típica. En Sigma-6, 4,4 puntos. Mal trato.
+
+Los 3,6 puntos de media perdida **no se cuentan como costo del método**: en una
+muestra donde el mercado subió 21% anual cualquier demora cuesta, y en un
+mercado plano o a la baja eso se da vuelta. Es propiedad del periodo. Lo que sí
+es determinista son las comisiones, y con ellas solas alcanza para cerrar el
+caso en las piezas chilenas.
 
 En Gamma-6 y Oro el costo **no cambia con el número de tramos**, porque el
-modelo estadounidense cobra 0,1% sin mínimo. Ahí escalonar es gratis, así que
-es una preferencia y no una decisión económica. La medición de dispersión se
-hizo sobre la cartera de Delta-12; no se midió sobre Gamma-6.
+modelo estadounidense cobra 0,1% sin mínimo. Ahí la reducción de dispersión
+—que aguantó las dos submuestras— se aprovecha gratis. La medición de
+dispersión se hizo sobre la cartera de Delta-12; no se midió sobre Gamma-6.
 
 La intuición de escalonar donde es gratis y entrar de una donde cuesta queda
 **confirmada en el costo**. Lo que no se confirma es que el beneficio valga la
 pena en las piezas caras.
 
+## Cuándo entrar: en la fecha de revisión, no en un día cualquiera
+
+La regla más barata del protocolo no cuesta nada y no exige pronosticar: entrar
+**justo después de la revisión de cada estrategia**. Delta-12 revisa a fin de
+mes; Sigma-6, cada semana.
+
+Medido sobre 63 revisiones y 8.959 combinaciones de día y posición:
+
+| | vida restante media | mediana | costo por mes mantenido |
+|---|---|---|---|
+| entrando en la fecha de revisión | **79,3 días** (2,6 meses) | 61 días | **$764** |
+| entrando un día cualquiera | 64,0 días (2,1 meses) | 43 días | $946 |
+
+Son **15,2 días más de vida por posición, un 24%**, y el costo de entrada por
+mes mantenido baja un 19%: de 1,82% a 1,47% anualizado sobre la posición.
+
+El mecanismo no es el que podría parecer. La proporción de posiciones que se
+venden en la primera revisión posterior apenas cambia —42% contra 45%—, así que
+entrar en la revisión **no evita las posiciones moribundas**. Lo que hace es
+regalar el periodo completo entre revisiones en vez de uno parcial: en promedio,
+media ventana extra. El beneficio está acotado por construcción a la mitad del
+intervalo de revisión, y eso es exactamente lo que se observa.
+
 ## Las posiciones que el modelo va a vender pronto
 
-| | |
-|---|---|
-| vida restante media de una posición heredada | **1,7 meses** |
-| mediana | 1 mes |
-| se vende en la revisión siguiente | **40%** de las veces |
-
-Cuatro de cada diez posiciones que se heredan se venden dentro del mes. Aun
-así **se compran**, por dos razones.
+Aun entrando en la fecha de revisión, **4 de cada 10 posiciones heredadas se
+venden en la revisión siguiente**. Se compran igual, por dos razones.
 
 El costo es chico y es por una sola vez: entrar a las ocho posiciones de
-Delta-12 con $5 millones cuesta $15.920, un **0,32% de la pieza**. Repartido
-sobre la vida restante media son $1.192 por mes mantenido.
+Delta-12 con $5 millones cuesta $15.920, un **0,32% de la pieza**.
 
 Y saltárselas es segundo-adivinar al modelo sin información: no se sabe cuáles
 de las ocho caen en ese 40%. El que se salta las que "parecen" próximas a

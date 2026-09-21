@@ -77,6 +77,45 @@ acotada: **inverso a volatilidad primero, con consistencia; los otros tres,
 indistinguibles entre sí.** La ventaja es de 1,4 a 2,1 puntos anuales sobre peso
 igual, a cambio de 1,1 a 1,2 puntos más de peor caída.
 
+## Qué hace realmente "inverso a volatilidad", y por qué la recomendación es peso igual
+
+El esquema gana las cuatro validaciones cruzadas, pero conviene mirar qué pesos
+produce antes de adoptarlo. Volatilidad anualizada medida de cada pieza en
+2021-2026 y peso medio que le asigna la regla:
+
+| pieza | volatilidad | peso medio inv. vol | contra peso igual |
+|---|---|---|---|
+| Sigma-6 | 13,2% | **34,7%** | +9,7pp |
+| Delta-12 | 15,4% | **29,9%** | +4,9pp |
+| Gamma-6 | 27,0% | 16,8% | −8,2pp |
+| Oro | 25,3% | 18,7% | −6,3pp |
+
+Dos cosas que esto deja claras y que la tabla de retornos no mostraba.
+
+**No es un esquema de riesgo, es una concentración en lo chileno.** Pone 64,6%
+en las dos piezas chilenas, que son exactamente las dos que más rindieron en
+las dos ventanas. Su ventaja de 1,4 a 2,1 puntos anuales es, en buena medida,
+sobreponderar a las ganadoras con otro nombre — que es precisamente lo que no
+sobrevive fuera de muestra.
+
+**Baja el oro por debajo del 25%.** El oro entró a la cartera por su
+comportamiento en las caídas, no por su retorno, y la regla lo recorta a 18,7%
+porque mide su volatilidad y no su correlación. Eso explica su peor caída:
+-9,9% contra -8,7% del peso igual.
+
+Y hay un problema de método que conviene decir: **las dos ventanas no son
+independientes.** La limpia, 2025-2026, está contenida en la larga, 2021-2026.
+No son cuatro pruebas separadas sino una muestra partida de dos maneras, así
+que la consistencia observada vale bastante menos de lo que parece.
+
+### La recomendación
+
+**Peso igual, 25/25/25/25.** El costo no opina —la diferencia entre esquemas es
+de 0,05 puntos—, la ventaja de retorno del inverso a volatilidad viene de
+concentrar en lo que ya había funcionado y de recortar la pieza que está ahí
+para amortiguar, y la evidencia que la respalda sale de muestras solapadas. Es
+un aterrizaje aburrido y es el que aguanta.
+
 ## La referencia, que no es una propuesta
 
 La mejor combinación fija en rejilla de 10%:
