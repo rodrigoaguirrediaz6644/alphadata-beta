@@ -107,22 +107,23 @@ def test_los_dividendos_van_en_pesos_y_no_como_nota_al_pie():
     assert "*" in html
 
 
-def test_la_columna_de_tenencia_avisa_antes_de_que_el_calendario_venda():
-    """Una venta por calendario es información de ejecución, no de señal.
+def test_la_columna_avisa_cuando_caduca_la_recomendacion():
+    """El único reloj que le queda a Sigma-6, y el que la va a ir vaciando.
 
-    BCI entró el 24-10-2025 y toca el tope de 365 días a fines de octubre de
-    2026. Sin la columna, esa venta aparecería sin aviso en un informe que
-    muestra la posición ganando +44,7%.
+    El tope de tenencia de 365 días salió el 21-09-2026. Lo que sigue vigente
+    es la caducidad de la recomendación: con el flujo de Credicorp detenido
+    desde el 22-07-2026, VAPORES se cae el 24-11-2026 y el resto hasta julio de
+    2027. Una salida por calendario es información de ejecución.
     """
-    from src.reporting_public import _tenencia
-    assert _tenencia(328, 365) == ("<strong>328 de 365 días</strong> · toca el tope en 37")
-    assert _tenencia(20, 365) == "20 de 365 días"
-    assert _tenencia(pd.NA, 365) == "—"
-    cerca = CARTERA.assign(dias_tenencia=[328], tope_tenencia=[365])
+    from src.reporting_public import _caducidad
+    assert _caducidad("2026-11-24", 68) == "<strong>24-11-2026</strong> · en 68 días"
+    assert _caducidad("2027-07-01", 287) == "01-07-2027"
+    assert _caducidad(pd.NaT, pd.NA) == "—"
+    cerca = CARTERA.assign(caduca=["2026-11-24"], dias_para_caducar=[68])
     html = _positions(cerca)
-    assert "<th>Tiempo en cartera</th>" in html and "toca el tope en 37" in html
-    # Las piezas sin tope no llevan la columna.
-    assert "<th>Tiempo en cartera</th>" not in _positions(CARTERA)
+    assert "<th>Recomendación vigente hasta</th>" in html and "en 68 días" in html
+    # Las piezas que no dependen de recomendaciones no llevan la columna.
+    assert "<th>Recomendación vigente hasta</th>" not in _positions(CARTERA)
 
 
 def test_el_informe_dice_que_las_fechas_salen_de_aplicar_las_reglas_hacia_atras(tmp_path, monkeypatch):

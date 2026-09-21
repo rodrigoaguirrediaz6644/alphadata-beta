@@ -61,10 +61,15 @@ Se vende en la siguiente apertura cuando ocurre cualquiera de estos eventos:
 - `Momentum12-1 <= 0`.
 - **`PrecioAjustado <= SMA200`.**
 - La recomendación caduca.
-- La posición alcanza 365 días.
 - Los precios son inválidos o están vencidos.
 
-No se utilizan precio objetivo, stop-loss intraperiodo ni decisiones discrecionales por noticias. Después de una salida por 365 días se permite una nueva entrada en la revisión semanal siguiente si todas las condiciones siguen vigentes.
+No se utilizan precio objetivo, stop-loss intraperiodo ni decisiones discrecionales por noticias.
+
+**Sigma-6 no tiene tope de tenencia: rota por señal, no por calendario.** El
+tope de 365 días salió el 21-09-2026. La consecuencia de carácter conviene
+decirla: la estrategia puede sostener un nombre por años. BCI viene desde el
+11-10-2024 y queda corriendo hasta que se caiga alguna condición de precio o
+caduque su recomendación. El único reloj que queda es el de la caducidad.
 
 ### Costos
 

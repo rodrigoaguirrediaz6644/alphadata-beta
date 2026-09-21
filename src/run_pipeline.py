@@ -13,7 +13,7 @@ from src.ingest_recommendations import ingest
 from src.libro import abiertas as libro_abiertas, anotar, cargar as cargar_libro, cartera_publicada, guardar as guardar_libro, guardar_publicada, movimientos_de, precios_de_entrada
 from src.strategy_registry import validate_registry
 from src.reporting_public import build_public_report
-from src.strategy_engine import TOPE_TENENCIA_SIGMA, ORO_TICKER, RECOMMENDATION_COLUMNS, combined_equal_weight, delta12, delta12_historical_nav, gamma6, gamma6_historical_nav, movements, sigma6_historical_nav, oro, oro_historical_nav, reconstruct_entry_dates, sigma6, to_clp, validate_recommendations
+from src.strategy_engine import ORO_TICKER, RECOMMENDATION_COLUMNS, combined_equal_weight, delta12, delta12_historical_nav, gamma6, gamma6_historical_nav, movements, sigma6_historical_nav, oro, oro_historical_nav, reconstruct_entry_dates, sigma6, to_clp, validate_recommendations
 
 ROOT=Path(__file__).resolve().parents[1]; DATA=ROOT/'data'; REPORTS=ROOT/'reports'; STATE=DATA/'strategy_state.json'; NAV=DATA/'strategy_nav.csv'
 US_COST_RATE=.001  # spread de Trii para acciones de EE.UU. (0,1% por lado)
@@ -397,13 +397,17 @@ def main()->None:
                                   (gamma, prices_us_clp, gamma_cutoff), (oro_portfolio, prices_oro_clp, as_of)]:
         if len(cartera): cartera['peso_real']=pesos_corridos(cartera, serie, senal, as_of)
 
-    # Cuánto le queda a cada posición de Sigma-6 antes de que el tope la
-    # suelte. Una venta por calendario y no por señal es información de
-    # ejecución, y no estaba en ninguna parte del informe.
+    # El reloj que queda en Sigma-6 es la caducidad de la recomendación, no el
+    # tope de tenencia, que salió. Y es el que va a ir vaciando la estrategia:
+    # cada nombre se cae cuando su recomendación cumple 365 días sin que llegue
+    # otra. Una salida por calendario es información de ejecución.
     if len(sigma):
-        sigma['dias_tenencia']=sigma.opened_at.map(
-            lambda f: (as_of.normalize()-pd.Timestamp(f).normalize()).days if pd.notna(f) else pd.NA)
-        sigma['tope_tenencia']=TOPE_TENENCIA_SIGMA
+        vigentes=valid.loc[(valid.signal==1)&(valid.available_at_parsed<=as_of)]
+        ultima=vigentes.groupby('ticker').available_at_parsed.max()
+        sigma['caduca']=sigma.ticker.map(
+            lambda t: (ultima[t]+pd.Timedelta(days=365)).date().isoformat() if t in ultima else pd.NA)
+        sigma['dias_para_caducar']=sigma.caduca.map(
+            lambda f: (pd.Timestamp(f).normalize()-as_of.normalize()).days if pd.notna(f) else pd.NA)
     # Cuántos pesos es cada posición, con el capital de la configuración.
     capital=json.loads(CONFIG.read_text(encoding='utf-8')).get('capital',{})
     por_pieza=float(capital.get('total_clp',0))/len(STRATEGY_SERIES)

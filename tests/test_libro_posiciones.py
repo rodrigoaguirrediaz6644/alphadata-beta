@@ -12,7 +12,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from tools.construir_libro import CALENTAMIENTO, DESDE, DESDE_CALENTAMIENTO, ORO_FECHA_DECISION, _revisiones, recorrer
+from tools.construir_libro import CALENTAMIENTO, DESDE, DESDE_CALENTAMIENTO, ORO_FECHA_DECISION, SIN_REPARAR, _revisiones, recorrer
 
 ROOT = Path(__file__).resolve().parents[1]
 SESIONES = pd.DatetimeIndex(pd.bdate_range("2026-01-01", "2026-09-17"))
@@ -77,16 +77,22 @@ def test_el_tramo_de_calentamiento_se_conserva_y_no_se_publica():
         pytest.skip("todavía no se ha construido el libro")
     d = pd.read_csv(libro, parse_dates=["fecha_entrada", "fecha_salida"])
     assert DESDE_CALENTAMIENTO < DESDE
-    calienta = d.loc[d.fecha_entrada < DESDE]
-    assert len(calienta)
+    antes = d.loc[d.fecha_entrada < DESDE]
+    assert len(antes)
+    # Las cerradas no se publican y no llevan precio.
+    calienta = antes.loc[antes.fecha_salida.notna()]
     assert (calienta.origen == CALENTAMIENTO).all()
     assert calienta.precio_entrada.isna().all()
-    # Una fila del calentamiento abierta desaparecería del informe.
-    assert calienta.fecha_salida.notna().all()
+    # Pero una **abierta** sí se publica, con su precio y marcada: ocultarle la
+    # fecha a una posición viva es peor que mostrar una del tramo sin reparar.
+    # Es el caso de BCI, en cartera desde el 11-10-2024.
+    vivas = antes.loc[antes.fecha_salida.isna()]
+    assert (vivas.origen == SIN_REPARAR).all()
+    assert vivas.precio_entrada.notna().all()
     # Y ninguna publicable queda sin precio.
     publicable = d.loc[(d.origen != CALENTAMIENTO) & (d.estrategia != "Oro")]
     assert publicable.precio_entrada.notna().all()
-    assert (publicable.fecha_entrada >= DESDE).all()
+    assert (publicable.loc[publicable.origen != SIN_REPARAR, "fecha_entrada"] >= DESDE).all()
 
 
 def test_el_libro_no_entrega_filas_de_calentamiento_a_quien_las_mostraria():

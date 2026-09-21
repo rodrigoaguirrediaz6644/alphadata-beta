@@ -78,6 +78,7 @@ DESDE_CALENTAMIENTO = pd.Timestamp("2024-01-02")
 # contadores de tenencia, pero no se muestran nunca ni llevan precio.
 DESDE, HASTA = pd.Timestamp("2025-01-02"), pd.Timestamp("2026-09-17")
 CALENTAMIENTO = "calentamiento"
+SIN_REPARAR = "recorrido (entrada anterior al piso, precio sin reparar)"
 # El oro no tiene señal: entra por decisión. El 01-01-2026 es feriado y no hay
 # precio, así que la fecha mostrada es la pedida y el precio de entrada es el
 # cierre de la primera rueda de 2026. No es un error que corregir.
@@ -215,8 +216,15 @@ def main(confirmar: bool = False) -> int:
 
     libro = pd.DataFrame(recorridos)
     entradas = pd.to_datetime(libro.fecha_entrada)
-    calienta = (entradas < DESDE) & (libro.estrategia != "Oro")
-    libro["origen"] = [CALENTAMIENTO if c else "recorrido" for c in calienta]
+    antes_del_piso = (entradas < DESDE) & (libro.estrategia != "Oro")
+    # Una posición **abierta** que entró antes del piso sí se publica. Ocultarle
+    # la fecha a una posición viva es peor que mostrar una que viene de un tramo
+    # sin reparar: es el mismo error que el piso del reinicio, que fechaba todo
+    # el 17-09-2026 porque no sabía. BCI entró el 11-10-2024 y sigue ahí.
+    calienta = antes_del_piso & libro.fecha_salida.notna()
+    sin_reparar = antes_del_piso & libro.fecha_salida.isna()
+    libro["origen"] = [CALENTAMIENTO if c else (SIN_REPARAR if s else "recorrido")
+                       for c, s in zip(calienta, sin_reparar)]
     libro["precio_entrada"] = [
         None if c
         else precio_de(precios_mostrados, f.instrumento,

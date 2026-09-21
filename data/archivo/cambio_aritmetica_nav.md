@@ -80,3 +80,80 @@ de pruebas, con desvío máximo `0,00000000%` en las tres:
 
 El Oro no cambia porque es una sola posición: no hay pesos que corran.
 `data/strategy_nav.csv`, la serie en vivo, no se toca.
+
+# Dos cambios de regla posteriores, y lo que movieron — 21-09-2026
+
+La serie de la reconstrucción se mueve cuando cambia una regla. Se anotan las
+dos, con la cifra anterior al lado, porque un número publicado que se mueve sin
+registro es la forma del defecto que este proyecto vino a terminar.
+
+## La SMA200 entra en Sigma-6
+
+| | antes | después | |
+|---|---|---|---|
+| Sigma-6 | 229,88 · +18,04% · −19,9% | 216,32 · **+16,62%** · −12,2% | −1,4 pp |
+| Conjunto | 297,72 · +24,28% | 292,72 · **+23,86%** | −0,4 pp |
+
+Baja el retorno y **baja mucho la peor caída**, de −19,9% a −12,2%. Es lo que
+la medición decía —el retorno no se distingue, la caída mejora de forma
+consistente— y ésa fue la regla con que se decidió. Ver
+`research/sma200_sigma6/`.
+
+Esta tabla faltaba: la regla se encendió sin dejar registro de lo que movió en
+la serie publicada.
+
+## Sale el tope de tenencia de 365 días
+
+| | antes | después | |
+|---|---|---|---|
+| Sigma-6 | 216,32 · +16,62% · −12,2% | 217,16 · **+16,71%** · −13,0% | +0,1 pp |
+| Conjunto | 292,72 · +23,86% | 293,05 · **+23,89%** | +0,03 pp |
+
+Sube poco, y por la razón esperada: desaparecen dieciocho operaciones de costo
+—nueve ventas y nueve recompras— que no cambiaban la cartera.
+
+**El libro pasa de 276 a 272 filas**, todas en Sigma-6 (99 → 95). Delta-12,
+Gamma-6 y el oro no se mueven ni una fila. Las nueve rotaciones se convierten en
+cinco posiciones continuas:
+
+| | antes | ahora |
+|---|---|---|
+| BCI | 11-10-2024 → 17-10-2025, y de nuevo 24-10-2025 → abierta | **11-10-2024 → abierta** |
+| ITAUCL | 17-01-2025 → 23-01-2026, y 30-01-2026 → 15-05-2026 | 17-01-2025 → 15-05-2026 |
+| LTM | 18-10-2024 → 24-10-2025, y 30-10-2025 → 06-03-2026 | 18-10-2024 → 06-03-2026 |
+| MALLPLAZA | 16-08-2024 → 22-08-2025, y 29-08-2025 → 17-09-2025 | 16-08-2024 → 17-09-2025 |
+| SALFACORP | 24-01-2025 → 30-01-2026, y 06-02-2026 | 24-01-2025 → 06-02-2026 |
+
+**Ninguna selección cambió.** No aparece ni desaparece ningún nombre: el cupo
+que liberaba una salida por tope nunca alcanzó a cambiar una elección, porque
+Sigma-6 casi nunca tuvo diez candidatos. El único efecto es que las posiciones
+dejan de partirse en dos.
+
+**El bloque de movimientos no emitió ninguna orden**, verificado sobre esta
+corrida: el informe dice «Sin cambios desde el informe anterior» aunque BCI haya
+cambiado de fecha. Un cambio de fecha no es una operación.
+
+## BCI queda con entrada anterior al piso de publicación
+
+La tenencia continua de BCI arranca el **11-10-2024**, anterior al piso del
+02-01-2025. La guardia del recorrido lo detectó y se negó a escribir el libro,
+que es lo que tenía que hacer.
+
+La regla del piso se afina: **una posición cerrada que entró antes del piso no
+se publica; una posición abierta sí.** Ocultarle la fecha a una posición viva
+es peor que mostrar una que viene de un tramo sin reparar, y es exactamente el
+error del piso del reinicio, que fechaba todo el 17-09-2026 porque no sabía.
+Queda marcada en `origen`.
+
+**El precio de entrada de BCI, $28.195 del 11-10-2024, viene del tramo sin
+reparar.** Lo que se pudo verificar: el factor de ajuste de la serie es
+coherente (0,944190 antes del dividendo de marzo de 2025, 0,975207 entre los
+dos, 1,0 después), así que el crudo es genuinamente crudo y el ajuste lo aplica
+nuestra propia tabla. `relleno_sobrescrituras.csv` confirma que BCI sólo se
+reparó desde el 28-03-2025.
+
+Lo que hay que decir igual: **las tres ruedas siguientes —14, 15 y 16 de octubre
+de 2024— repiten el mismo cierre con volumen cero.** Son parte de los tres días
+de octubre de 2024 que `guards.py` ya documenta como mercado entero quieto en el
+dato viejo. El 11-10 sí fue rueda real (volumen 65.317) y el precio se sostiene,
+pero la entrada quedó pegada al borde de un hueco conocido.

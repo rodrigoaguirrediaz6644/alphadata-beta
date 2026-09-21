@@ -78,13 +78,6 @@ def capped_pro_rata(scores: pd.Series, cap: float) -> pd.Series:
     return result
 
 
-# Tope de tenencia de Sigma-6: una posición se suelta al llegar al año, sin
-# mirar la señal. Medido sobre el recorrido 2024-2026, las nueve salidas por
-# tope volvieron a entrar la semana siguiente, porque al soltarse desaparecen
-# del contador y el reloj parte de cero. No se arregla acá: está reportado.
-TOPE_TENENCIA_SIGMA=365
-
-
 def sigma6(valid: pd.DataFrame, prices: pd.DataFrame, as_of: pd.Timestamp, previous: dict[str, Any], exigir_sma200: bool = True) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, Any]]:
     """Sigma-6: recomendacion de Credicorp vigente mas momentum 12-1 positivo.
 
@@ -135,13 +128,9 @@ def sigma6(valid: pd.DataFrame, prices: pd.DataFrame, as_of: pd.Timestamp, previ
             "Sigma-6 abortada: faltan todos los indicadores de momentum para las señales positivas"
         )
     candidates=scores[scores.eligible].set_index("ticker") if len(scores) else pd.DataFrame()
-    entries=previous.get("sigma_entries",{}); eligible={}
-    if len(candidates):
-        for ticker,row in candidates.iterrows():
-            entered=pd.Timestamp(entries.get(ticker,as_of.date().isoformat()))
-            if (as_of.normalize()-entered.normalize()).days>=TOPE_TENENCIA_SIGMA:
-                continue
-            eligible[ticker]=1.0
+    # Sigma-6 no tiene tope de tenencia: rota por señal, no por calendario. El
+    # de 365 días salió el 21-09-2026; ver data/archivo/cambio_aritmetica_nav.md.
+    entries=previous.get("sigma_entries",{}); eligible={t:1.0 for t in candidates.index}
     weights=capped_pro_rata(pd.Series(eligible,dtype=float),.10)
     portfolio=pd.DataFrame({"ticker":weights.index,"target_weight":weights.values}) if len(weights) else pd.DataFrame(columns=["ticker","target_weight"])
     old=set(entries); new=set(portfolio.ticker); new_entries={t:(entries[t] if t in entries else as_of.date().isoformat()) for t in new}

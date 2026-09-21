@@ -185,7 +185,7 @@ def _positions(portfolio: pd.DataFrame, currency: str = "$") -> str:
     hay_montos = "monto_clp" in portfolio and portfolio["monto_clp"].notna().any()
     hay_dividendos = "dividendos_clp" in portfolio and portfolio["dividendos_clp"].notna().any()
     hay_deriva = "peso_real" in portfolio and portfolio["peso_real"].notna().any()
-    hay_tope = "tope_tenencia" in portfolio and portfolio.get("dias_tenencia", pd.Series(dtype="object")).notna().any()
+    hay_caducidad = "caduca" in portfolio and portfolio["caduca"].notna().any()
     rows = []
     for record in portfolio.to_dict("records"):
         entry = pd.to_datetime(record.get("opened_at"), errors="coerce")
@@ -206,8 +206,8 @@ def _positions(portfolio: pd.DataFrame, currency: str = "$") -> str:
                    _precio(record.get("current_price"), currency)]
         if hay_dividendos:
             celdas.append(_precio(record.get("dividendos_clp"), currency))
-        if hay_tope:
-            celdas.append(_tenencia(record.get("dias_tenencia"), record.get("tope_tenencia")))
+        if hay_caducidad:
+            celdas.append(_caducidad(record.get("caduca"), record.get("dias_para_caducar")))
         rows.append("<tr>" + "".join(f"<td>{c}</td>" for c in celdas)
                     + f'<td{color}>{gain_text}</td></tr>')
     cabecera = (["Acción"]
@@ -216,7 +216,7 @@ def _positions(portfolio: pd.DataFrame, currency: str = "$") -> str:
                 + (["Peso hoy"] if hay_deriva else [])
                 + ["Comprada el", "Precio de entrada", "Precio hoy"]
                 + (["Dividendos cobrados"] if hay_dividendos else [])
-                + (["Tiempo en cartera"] if hay_tope else [])
+                + (["Recomendación vigente hasta"] if hay_caducidad else [])
                 + ["Va ganando"])
     return ("<table><thead><tr>" + "".join(f"<th>{c}</th>" for c in cabecera)
             + f'</tr></thead><tbody>{"".join(rows)}</tbody></table>')
@@ -237,21 +237,25 @@ def _deriva(real, objetivo) -> str:
     return f"<strong>{pct(float(real))}</strong>" if lejos else pct(float(real))
 
 
-def _tenencia(dias, tope) -> str:
-    """Cuánto le queda a la posición antes de que el calendario la suelte.
+def _caducidad(fecha, dias) -> str:
+    """Hasta cuándo vale la recomendación que sostiene la posición.
 
-    Sigma-6 vende al año, mire lo que mire la señal. Una venta por calendario
-    es información de ejecución —hay que tener el dinero y pagar la comisión—
-    y no estaba en ninguna parte del informe.
+    Sigma-6 sólo compra lo que sus recomendaciones sostienen, y una
+    recomendación caduca al año. Con el flujo de Credicorp detenido desde el
+    22-07-2026, ése es el reloj que va a ir vaciando la estrategia: VAPORES el
+    24-11-2026 y el resto hasta julio de 2027. Una salida por calendario es
+    información de ejecución.
+
+    El tope de tenencia de 365 días, que esta columna mostraba antes, salió el
+    21-09-2026.
     """
-    if dias is None or pd.isna(dias) or tope is None or pd.isna(tope):
+    fecha = pd.to_datetime(fecha, errors="coerce")
+    if pd.isna(fecha):
         return "—"
-    faltan = int(tope) - int(dias)
-    if faltan <= 60:
-        # «Toca el tope», no «se vende»: la venta ocurre en la primera revisión
-        # semanal posterior, que puede caer hasta seis días después.
-        return f'<strong>{int(dias)} de {int(tope)} días</strong> · toca el tope en {faltan}'
-    return f"{int(dias)} de {int(tope)} días"
+    texto = f"{fecha:%d-%m-%Y}"
+    if dias is not None and pd.notna(dias) and int(dias) <= 90:
+        return f"<strong>{texto}</strong> · en {int(dias)} días"
+    return texto
 
 
 def _pesos(valor, moneda: str) -> str:
@@ -434,7 +438,7 @@ def build_public_report(
     {positions_blocks}
     {nota_dividendos}
     <p class="muted"><strong>Va ganando</strong> es cuánto se movió el precio de esa acción desde el día en que se compró, que es distinto del rendimiento de la estrategia desde el {inicio:%d-%m-%Y}: una acción comprada hace ocho meses puede ir muy arriba aunque la estrategia lleve poco medida. Los dos números son correctos y no tienen por qué calzar.</p>
-    <p class="muted">Las fechas y los precios de entrada salen de aplicar las reglas a la serie histórica, no de operaciones registradas en vivo: «comprada el 27-02-2026» quiere decir que el modelo la seleccionó ese día y no la ha soltado. Sigma-6 además suelta una posición al año de tenencia aunque la señal siga buena: la columna de tiempo en cartera dice cuánto falta, y la venta cae en la primera revisión semanal posterior.</p>
+    <p class="muted">Las fechas y los precios de entrada salen de aplicar las reglas a la serie histórica, no de operaciones registradas en vivo: «comprada el 27-02-2026» quiere decir que el modelo la seleccionó ese día y no la ha soltado. Sigma-6 se apoya en recomendaciones externas que tienen fecha de vencimiento: la columna dice hasta cuándo vale la que sostiene cada posición, y cuando vence, la venta cae en la primera revisión semanal posterior.</p>
     <p class="muted">Todos los precios están en pesos. Gamma-6 y el oro se compran en Chile como CDV, así que su resultado ya incluye el efecto del tipo de cambio. El oro no se compra ni se vende por señales: es una posición fija que está para amortiguar las caídas del resto.</p>
     </section>
 

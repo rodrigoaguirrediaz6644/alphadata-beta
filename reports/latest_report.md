@@ -6,7 +6,7 @@
 
 ## Qué cambió desde el informe anterior
 
-- Vender CENCOMALLS (Sigma-6)
+- Sin cambios desde el informe anterior. Las carteras siguen tal cual.
 
 ## Cada estrategia
 

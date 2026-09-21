@@ -4,8 +4,8 @@
   "gamma_rule_version": "1.0.0",
   "sigma_entries": {
     "VAPORES": "2026-09-17",
-    "LTM": "2026-09-17",
     "BCI": "2026-09-17",
+    "LTM": "2026-09-17",
     "PARAUCO": "2026-09-17"
   },
   "delta_entries": {
@@ -33,15 +33,15 @@
     {
       "ticker": "BCI",
       "target_weight": 0.1,
-      "opened_at": "2025-10-24",
-      "entry_price": 46502.0,
+      "opened_at": "2024-10-11",
+      "entry_price": 28195.0,
       "current_price": 65600.0,
-      "open_return": 0.4465570644309813,
+      "open_return": 1.4641794907846366,
       "con_dividendo": false,
-      "dividendos_clp": 1500.0,
+      "dividendos_clp": 2610.0,
       "peso_real": 0.1,
-      "dias_tenencia": 328,
-      "tope_tenencia": 365,
+      "caduca": "2027-07-01",
+      "dias_para_caducar": 287,
       "monto_clp": 500000.0
     },
     {
@@ -54,8 +54,8 @@
       "con_dividendo": false,
       "dividendos_clp": null,
       "peso_real": 0.1,
-      "dias_tenencia": 0,
-      "tope_tenencia": 365,
+      "caduca": "2027-07-09",
+      "dias_para_caducar": 295,
       "monto_clp": 500000.0
     },
     {
@@ -68,8 +68,8 @@
       "con_dividendo": false,
       "dividendos_clp": null,
       "peso_real": 0.1,
-      "dias_tenencia": 83,
-      "tope_tenencia": 365,
+      "caduca": "2027-07-01",
+      "dias_para_caducar": 287,
       "monto_clp": 500000.0
     },
     {
@@ -82,8 +82,8 @@
       "con_dividendo": false,
       "dividendos_clp": null,
       "peso_real": 0.1,
-      "dias_tenencia": 97,
-      "tope_tenencia": 365,
+      "caduca": "2026-11-24",
+      "dias_para_caducar": 68,
       "monto_clp": 500000.0
     }
   ],
@@ -294,7 +294,7 @@
     "uploaded_files": 0,
     "history_rows": 1108
   },
-  "last_run_utc": "2026-09-21T15:52:18.116124+00:00",
+  "last_run_utc": "2026-09-21T16:26:49.090933+00:00",
   "entry_dates_version": 3,
   "delta_last_period": "2026-08",
   "gamma_last_period": "2026-08"

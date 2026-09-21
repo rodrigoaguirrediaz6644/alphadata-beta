@@ -211,3 +211,28 @@ def test_toda_serie_publicada_en_la_reconstruccion_se_recalcula():
     columnas = set(pd.read_csv(archivo, nrows=1).columns) - {"date"}
     assert columnas <= SERIES_RECONSTRUIDAS, (
         f"series publicadas que nadie recalcula: {sorted(columnas - SERIES_RECONSTRUIDAS)}")
+
+
+def test_sigma6_no_suelta_una_posicion_por_calendario():
+    """El tope de 365 días salió: Sigma-6 rota por señal, no por calendario.
+
+    Medido antes de quitarlo: nueve salidas por tope en el recorrido 2024-2026
+    y las nueve reingresaban la semana siguiente, porque al soltarse el nombre
+    desaparecía del contador y el reloj partía de cero. Dieciocho operaciones
+    que no cambiaban la cartera.
+    """
+    import src.strategy_engine as motor
+    from src.strategy_engine import sigma6
+    assert not hasattr(motor, "TOPE_TENENCIA_SIGMA")
+    fechas = pd.bdate_range("2023-01-02", "2026-09-17")
+    serie = pd.Series(range(100, 100 + len(fechas)), index=fechas, dtype=float)
+    precios = pd.DataFrame({"date": fechas, "alphadata_ticker": "VIEJA",
+                            "adjusted_close": serie.to_numpy(), "close": serie.to_numpy(),
+                            "volume": 1e6})
+    recomendacion = pd.DataFrame([{"ticker": "VIEJA", "broker_normalized": "Credicorp Capital",
+                                   "signal": 1, "row_number": 1,
+                                   "available_at_parsed": pd.Timestamp("2026-09-01")}])
+    # Tres años y medio en cartera: con el tope habría salido tres veces.
+    estado = {"sigma_entries": {"VIEJA": "2023-01-02"}}
+    cartera, _, _ = sigma6(recomendacion, precios, pd.Timestamp("2026-09-17"), estado)
+    assert "VIEJA" in set(cartera.ticker)
