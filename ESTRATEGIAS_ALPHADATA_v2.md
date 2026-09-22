@@ -83,6 +83,25 @@ Con el cierre ajustado en dólares de la última sesión del mes (`t`):
 
 Cada retorno se estandariza entre las acciones elegibles (z-score transversal) y el puntaje es `(2·z(Retorno3m) + z(Retorno6-1) + z(Retorno12-1)) / 4`. El horizonte de tres meses pesa el doble.
 
+### Qué pasa con un nombre que no se puede operar
+
+**Salta al siguiente elegible.** La intención de Gamma-6 es tener los seis
+mejores **que se puedan comprar**; dejar el cupo en caja cambiaría en silencio
+la exposición de la estrategia a algo que nadie midió.
+
+El filtro que decide qué es operable es la **puerta de símbolos**
+(`src/cdv.py`): un nombre estadounidense sólo es elegible si su CDV tiene
+símbolo verificado. La regla en el código es una sola —sin símbolo, no
+elegible— y cubre los dos casos: el que nunca tuvo CDV en el proveedor, como
+XOM, y el que la puerta rechace, porque la corrida le borra el símbolo antes de
+rankear. En la auditoría queda con `reason = "sin CDV operable"` y su score
+intacto, así que se ve que quedó fuera por no poder comprarse y no por rankear
+mal.
+
+**El oro no tiene esta salida**, y es a propósito: es una posición única. Si
+IAUCL dejara de ser operable, la pieza no tiene siguiente a quien ascender y
+eso es una decisión, no una regla automática.
+
 ### Entrada
 
 Una acción entra cuando se cumplen simultáneamente:
@@ -144,6 +163,34 @@ conjunto reparte entre las que sí lo tienen en esa fecha.
 
 El reparto vive en `config/runtime.v2.json`, bajo `capital.reparto`, y no está
 escrito a mano en ninguna parte del código.
+
+### El criterio para admitir o retirar una pieza
+
+**Una estrategia no tiene que ser buena por sí sola. Tiene que aportar al
+conjunto.** Una que rinde 50% con 50% de caída propia es buena pieza si al
+conjunto le suma 10 puntos de retorno y sólo 3 de caída máxima.
+
+Y el corolario, que es la razón por la que el oro se queda: **una pieza se
+juzga por lo que le hace al retorno del conjunto Y por lo que le hace a la
+caída del conjunto.** Rendir menos que las otras no es motivo de salida si su
+función es amortiguar. El oro rinde cerca de 7% anual contra 24% de las otras
+dos y eso, por sí solo, no dice nada sobre si debe estar.
+
+**Sin el corolario, el test de aporte marginal poda la cartera hasta dejar una
+sola pieza**, porque cualquier pieza que rinda menos que el promedio baja el
+retorno del conjunto. La pregunta correcta no es «¿rinde menos?» sino «¿qué
+queda si la saco?».
+
+**Sigma-6 salió porque no amortiguaba, no porque rindiera menos.** Compartía
+dos de sus tres peores caídas con Delta-12 —octubre de 2023 y marzo de 2026—,
+o sea que su caída llegaba justo cuando el conjunto ya estaba cayendo. El
+control que reparte su cuarto entre las otras ganó las tres ventanas y mantener
+la pieza costaba $4.658.161 sobre $20 millones en cinco años. Ver
+`research/carteras_en_pesos/` y `research/aporte_marginal/`.
+
+El protocolo se fija **antes de mirar**: aporte marginal al conjunto, en pesos y
+en peor caída, en las dos ventanas, contra el control que reparte su parte entre
+las piezas que quedan. Eso vale tanto para retirar como para admitir.
 
 ## 5. Consenso-6 (histórica, no oficial)
 

@@ -131,3 +131,60 @@ def test_oro_es_una_posicion_fija_y_no_contamina_el_universo_de_gamma6():
 
     corta, auditoria_corta = oro(con_oro[con_oro.date <= fechas[30]], universe, fechas[30])
     assert corta.empty and auditoria_corta.reason.iloc[0] == "historia insuficiente"
+
+
+def _todas_al_alza(sessions: int = 400) -> pd.DataFrame:
+    """Las ocho por encima de su SMA200, para que haya a quien ascender."""
+    dates = pd.bdate_range("2024-01-01", periods=sessions)
+    rng = np.random.default_rng(3)
+    frames = []
+    for index, ticker in enumerate(["AAA", "BBB", "CCC", "DDD", "EEE", "FFF", "GGG", "HHH"]):
+        drift = np.linspace(0, .9 - .09 * index, sessions)
+        series = 100 * np.exp(drift) * (1 + .002 * rng.standard_normal(sessions))
+        frames.append(pd.DataFrame({"date": dates, "alphadata_ticker": ticker, "adjusted_close": series,
+                                    "open": series, "high": series, "low": series, "close": series, "volume": 1e6}))
+    return pd.concat(frames, ignore_index=True)
+
+
+def _con_simbolos(universe: pd.DataFrame, sin_cdv: set[str] = frozenset()) -> pd.DataFrame:
+    u = universe.copy()
+    u["cdv_ticker"] = [("" if t in sin_cdv else f"{t}CL") if tipo in {"accion_us", "etf_us"} else ""
+                       for t, tipo in zip(u.alphadata_ticker, u.tipo)]
+    return u
+
+
+def test_un_nombre_sin_cdv_operable_cede_el_cupo_al_siguiente_elegible():
+    """La intencion de Gamma-6 es los seis mejores **que se puedan comprar**.
+
+    XOM no tiene CDV en el proveedor y la puerta de simbolos lo bloquea, pero la
+    estrategia lo rankeaba igual y la guia terminaba diciendo «no operar» sobre
+    un cupo de la cartera. **Dejar ese cupo en caja cambiaria en silencio la
+    exposicion de la estrategia a algo que nadie midio**, asi que salta al
+    siguiente elegible.
+    """
+    # Las ocho suben, asi que las ocho son elegibles y hay a quien ascender.
+    prices, universe = _todas_al_alza(), _universe()
+    completa, _ = gamma6(prices, _con_simbolos(universe), prices.date.max())
+    assert list(completa.ticker) == ["AAA", "BBB", "CCC", "DDD", "EEE", "FFF"]
+
+    # AAA es la mas fuerte de las ocho: si no se puede comprar, entra GGG.
+    sin_aaa, audit = gamma6(prices, _con_simbolos(universe, {"AAA"}), prices.date.max())
+    assert list(sin_aaa.ticker) == ["BBB", "CCC", "DDD", "EEE", "FFF", "GGG"]
+    assert len(sin_aaa) == 6, "el cupo no puede quedar vacio"
+    assert sin_aaa.target_weight.sum() == pytest.approx(1.0)
+
+    # Y queda dicho por que quedo fuera, en vez de desaparecer de la auditoria.
+    fila = audit[audit.ticker == "AAA"].iloc[0]
+    assert not fila.eligible and fila.reason == "sin CDV operable"
+    assert fila.score == pytest.approx(audit.score.max())   # seguia siendo la mejor
+
+
+def test_sin_columna_de_simbolos_no_se_bloquea_a_nadie():
+    """Los estudios congelados llaman a gamma6 con universos sin esa columna.
+
+    Que la ausencia de la columna se lea como «nadie es operable» habria
+    vaciado la cartera de cada estudio sin avisar.
+    """
+    prices, universe = _prices(), _universe()
+    portfolio, _ = gamma6(prices, universe, prices.date.max())
+    assert len(portfolio) == 6

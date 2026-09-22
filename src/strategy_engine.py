@@ -228,6 +228,18 @@ def gamma6(prices: pd.DataFrame, universe: pd.DataFrame, as_of: pd.Timestamp) ->
     un factor común y no altera el orden entre acciones).
     """
     us=set(universe.loc[universe.tipo=="accion_us","alphadata_ticker"])
+    # Un nombre sin símbolo de CDV **no se puede comprar**, así que tampoco se
+    # puede rankear: la intención de Gamma-6 es tener los seis mejores *que se
+    # puedan comprar*. Dejar el cupo en caja cambiaría en silencio la exposición
+    # de la estrategia a algo que nadie midió, y saltar al siguiente elegible es
+    # lo que conserva la intención.
+    #
+    # La regla es una sola —sin símbolo, no elegible— y sirve para los dos
+    # casos: XOM, que no tiene CDV en el proveedor, y uno que la puerta de
+    # símbolos rechace, porque producción le borra el símbolo antes de llegar
+    # acá. Ver src/cdv.py y run_pipeline.
+    operable=set(universe.loc[universe.cdv_ticker.fillna("").astype(str).str.strip().ne(""),
+                              "alphadata_ticker"]) if "cdv_ticker" in universe.columns else us
     p=prices[prices.alphadata_ticker.isin(us)&(prices.date<=as_of)]
     close=p.pivot(index="date",columns="alphadata_ticker",values="adjusted_close").sort_index().ffill(limit=3)
     if len(close)<252: return pd.DataFrame(columns=["ticker","target_weight"]),pd.DataFrame(columns=["ticker","reason"])
@@ -239,8 +251,9 @@ def gamma6(prices: pd.DataFrame, universe: pd.DataFrame, as_of: pd.Timestamp) ->
     base=audit[audit.history_ok].dropna(subset=["retorno_3m","retorno_6_1","retorno_12_1"])
     z=lambda x: (x-x.mean())/x.std() if len(x)>1 and x.std() else x*0.
     audit["score"]=(2*z(base.retorno_3m)+z(base.retorno_6_1)+z(base.retorno_12_1))/4 if len(base) else np.nan
-    audit["eligible"]=audit.history_ok&audit.sobre_sma200&audit.score.notna()
-    audit["reason"]=np.select([~audit.history_ok,audit.score.isna(),~audit.sobre_sma200],["historia insuficiente","indicadores incompletos","bajo SMA200"],default="elegible")
+    audit["se_puede_operar"]=audit.index.isin(operable)
+    audit["eligible"]=audit.history_ok&audit.sobre_sma200&audit.score.notna()&audit.se_puede_operar
+    audit["reason"]=np.select([~audit.se_puede_operar,~audit.history_ok,audit.score.isna(),~audit.sobre_sma200],["sin CDV operable","historia insuficiente","indicadores incompletos","bajo SMA200"],default="elegible")
     selected=audit[audit.eligible].nlargest(6,"score"); weights=capped_pro_rata(pd.Series(1.,index=selected.index),1/6+1e-9)
     portfolio=pd.DataFrame({"ticker":weights.index,"target_weight":weights.values}) if len(weights) else pd.DataFrame(columns=["ticker","target_weight"])
     return portfolio.sort_values("target_weight",ascending=False),audit.reset_index().sort_values(["eligible","score"],ascending=[False,False])
