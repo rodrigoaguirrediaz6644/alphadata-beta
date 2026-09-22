@@ -7,153 +7,11 @@
   "base_currency": "CLP",
   "status": "paper_trading",
   "official_strategies": [
-    "SIGMA6",
     "DELTA12",
     "GAMMA6",
     "ORO"
   ],
   "strategies": [
-    {
-      "id": "alphadata-sigma6",
-      "commercial_name": "Sigma-6",
-      "strategy_code": "SIGMA6",
-      "version": "2.0.0",
-      "status": "official_paper_trading",
-      "description": "Cartera semanal que combina una recomendación positiva vigente de Credicorp Capital con momentum 12-1 positivo.",
-      "universe": {
-        "market": "Chile",
-        "instrument_type": "common_equity",
-        "allowed_instruments": "acciones con recomendación de Credicorp y precios ajustados validados",
-        "minimum_price_history_trading_days": 252,
-        "survivorship_bias_allowed": false,
-        "adr_separate_from_local_share": true
-      },
-      "data": {
-        "recommendation_source": [
-          "Credicorp Capital"
-        ],
-        "recommendations_required_fields": [
-          "published_at",
-          "available_at",
-          "broker",
-          "ticker",
-          "recommendation_text"
-        ],
-        "prices_required_fields": [
-          "date",
-          "ticker",
-          "adjusted_close",
-          "open",
-          "close",
-          "volume"
-        ],
-        "prices": "adjusted_close_for_indicators_and_returns; adjusted_open_for_execution",
-        "corporate_action_adjustment_required": true,
-        "reject_without_explicit_action": true,
-        "same_broker_same_ticker_same_day_conflict": "manual_review",
-        "future_information_allowed": false,
-        "maximum_forward_fill_trading_days": 0,
-        "stale_or_invalid_price_action": "exclude_and_report"
-      },
-      "signal_mapping": {
-        "buy": 1,
-        "overweight": 1,
-        "outperform": 1,
-        "superior_al_mercado": 1,
-        "hold": 0,
-        "neutral": 0,
-        "market_perform": 0,
-        "sell": -1,
-        "underweight": -1,
-        "underperform": -1,
-        "inferior_al_mercado": -1
-      },
-      "recommendation_state": {
-        "one_effective_signal_per_broker_and_ticker": true,
-        "selection": "latest_available_at_or_before_calculation_time",
-        "maximum_age_calendar_days": 365,
-        "expired_signal_value": 0
-      },
-      "indicators": {
-        "momentum_12_1": {
-          "formula": "adjusted_close[t-21] / adjusted_close[t-252] - 1",
-          "lookback_trading_days": 252,
-          "skip_recent_trading_days": 21,
-          "minimum_observations": 252,
-          "required": "momentum_12_1 > 0"
-        }
-      },
-      "entry": {
-        "all_conditions_required": [
-          "latest_active_credicorp_signal == 1",
-          "momentum_12_1 > 0",
-          "valid_adjusted_price_history >= 252 trading days"
-        ],
-        "calculation_frequency": "weekly",
-        "signal_time": "last_trading_session_of_week_after_market_close",
-        "execution": "next_trading_day_open"
-      },
-      "sizing": {
-        "method": "equal_weight_among_eligible_positions_subject_to_cap",
-        "raw_weight_formula": "1 / eligible_count",
-        "maximum_weight_per_instrument": 0.1,
-        "maximum_positions": null,
-        "redistribution": "iterative_equal_redistribution_among_uncapped_positions",
-        "unallocated_capital": "cash",
-        "leverage_allowed": false,
-        "short_sales_allowed": false,
-        "sector_cap": null,
-        "sector_cap_status": "pending_reliable_sector_mapping"
-      },
-      "exit": {
-        "evaluation_frequency": "weekly",
-        "triggers": [
-          "latest_active_credicorp_signal <= 0",
-          "momentum_12_1 <= 0",
-          "recommendation_expired",
-          "holding_period_calendar_days >= 365",
-          "invalid_or_stale_price_data"
-        ],
-        "priority": "any_trigger",
-        "execution": "next_trading_day_open",
-        "reentry_after_365_days": "allowed_at_next_weekly_review_if_all_entry_conditions_still_hold",
-        "target_price_exit": false,
-        "intraperiod_stop_loss": false,
-        "discretionary_news_exit": false
-      },
-      "cost_model": {
-        "provider": "Trii/Racional",
-        "variable_commission_rate_before_vat": 0.0015,
-        "vat_rate": 0.19,
-        "effective_variable_commission_rate": 0.001785,
-        "minimum_fee_clp": 1990,
-        "minimum_fee_rule": "for capital-specific simulations use max(variable_commission, minimum_fee_clp) when provider low-amount tariff applies",
-        "capital_independent_backtest_rule": "apply 0.1785% to traded notional; exclude minimum fee until model capital is specified",
-        "apply_to": [
-          "entries",
-          "exits",
-          "rebalances"
-        ],
-        "slippage_model": "pending_volume_based_model"
-      },
-      "calculation_schedule": {
-        "frequency": "weekly",
-        "calculation_after": "recommendation_and_price_upload_validation",
-        "publication_day": "same_day_after_calculation",
-        "no_change_report_required": true
-      },
-      "historical_reference": {
-        "period": "2021-07-09/2026-07-15",
-        "cost_rate": 0.001785,
-        "total_return": 2.6688864491,
-        "cagr": 0.2958363798,
-        "volatility": 0.1345119703,
-        "maximum_drawdown": -0.1439884644,
-        "sharpe_zero_rf": 2.1993312496,
-        "sortino_zero_target": 3.8599456271,
-        "note": "Resultado simulado con posible sesgo de supervivencia; no constituye recomendación ni promesa de retorno."
-      }
-    },
     {
       "id": "alphadata-delta12",
       "commercial_name": "Delta-12",
@@ -579,13 +437,160 @@
     "commercial_name": "Conjunto AlphaData",
     "description": "Resultado de repartir el capital en partes iguales entre las estrategias oficiales.",
     "components": [
-      "SIGMA6",
       "DELTA12",
       "GAMMA6",
       "ORO"
     ],
-    "weights": "equal_per_strategy",
+    "weights": {
+      "DELTA12": 0.375,
+      "GAMMA6": 0.375,
+      "ORO": 0.25
+    },
     "rebalance_frequency": "monthly",
     "note": "Antes de que una estrategia tenga historial, el conjunto reparte entre las disponibles en cada fecha. Con las cuatro piezas vigentes, cada una pesa 25%."
-  }
+  },
+  "retired_strategies": [
+    {
+      "id": "alphadata-sigma6",
+      "commercial_name": "Sigma-6",
+      "strategy_code": "SIGMA6",
+      "version": "2.0.0",
+      "status": "official_paper_trading",
+      "description": "Cartera semanal que combina una recomendación positiva vigente de Credicorp Capital con momentum 12-1 positivo.",
+      "universe": {
+        "market": "Chile",
+        "instrument_type": "common_equity",
+        "allowed_instruments": "acciones con recomendación de Credicorp y precios ajustados validados",
+        "minimum_price_history_trading_days": 252,
+        "survivorship_bias_allowed": false,
+        "adr_separate_from_local_share": true
+      },
+      "data": {
+        "recommendation_source": [
+          "Credicorp Capital"
+        ],
+        "recommendations_required_fields": [
+          "published_at",
+          "available_at",
+          "broker",
+          "ticker",
+          "recommendation_text"
+        ],
+        "prices_required_fields": [
+          "date",
+          "ticker",
+          "adjusted_close",
+          "open",
+          "close",
+          "volume"
+        ],
+        "prices": "adjusted_close_for_indicators_and_returns; adjusted_open_for_execution",
+        "corporate_action_adjustment_required": true,
+        "reject_without_explicit_action": true,
+        "same_broker_same_ticker_same_day_conflict": "manual_review",
+        "future_information_allowed": false,
+        "maximum_forward_fill_trading_days": 0,
+        "stale_or_invalid_price_action": "exclude_and_report"
+      },
+      "signal_mapping": {
+        "buy": 1,
+        "overweight": 1,
+        "outperform": 1,
+        "superior_al_mercado": 1,
+        "hold": 0,
+        "neutral": 0,
+        "market_perform": 0,
+        "sell": -1,
+        "underweight": -1,
+        "underperform": -1,
+        "inferior_al_mercado": -1
+      },
+      "recommendation_state": {
+        "one_effective_signal_per_broker_and_ticker": true,
+        "selection": "latest_available_at_or_before_calculation_time",
+        "maximum_age_calendar_days": 365,
+        "expired_signal_value": 0
+      },
+      "indicators": {
+        "momentum_12_1": {
+          "formula": "adjusted_close[t-21] / adjusted_close[t-252] - 1",
+          "lookback_trading_days": 252,
+          "skip_recent_trading_days": 21,
+          "minimum_observations": 252,
+          "required": "momentum_12_1 > 0"
+        }
+      },
+      "entry": {
+        "all_conditions_required": [
+          "latest_active_credicorp_signal == 1",
+          "momentum_12_1 > 0",
+          "valid_adjusted_price_history >= 252 trading days"
+        ],
+        "calculation_frequency": "weekly",
+        "signal_time": "last_trading_session_of_week_after_market_close",
+        "execution": "next_trading_day_open"
+      },
+      "sizing": {
+        "method": "equal_weight_among_eligible_positions_subject_to_cap",
+        "raw_weight_formula": "1 / eligible_count",
+        "maximum_weight_per_instrument": 0.1,
+        "maximum_positions": null,
+        "redistribution": "iterative_equal_redistribution_among_uncapped_positions",
+        "unallocated_capital": "cash",
+        "leverage_allowed": false,
+        "short_sales_allowed": false,
+        "sector_cap": null,
+        "sector_cap_status": "pending_reliable_sector_mapping"
+      },
+      "exit": {
+        "evaluation_frequency": "weekly",
+        "triggers": [
+          "latest_active_credicorp_signal <= 0",
+          "momentum_12_1 <= 0",
+          "recommendation_expired",
+          "holding_period_calendar_days >= 365",
+          "invalid_or_stale_price_data"
+        ],
+        "priority": "any_trigger",
+        "execution": "next_trading_day_open",
+        "reentry_after_365_days": "allowed_at_next_weekly_review_if_all_entry_conditions_still_hold",
+        "target_price_exit": false,
+        "intraperiod_stop_loss": false,
+        "discretionary_news_exit": false
+      },
+      "cost_model": {
+        "provider": "Trii/Racional",
+        "variable_commission_rate_before_vat": 0.0015,
+        "vat_rate": 0.19,
+        "effective_variable_commission_rate": 0.001785,
+        "minimum_fee_clp": 1990,
+        "minimum_fee_rule": "for capital-specific simulations use max(variable_commission, minimum_fee_clp) when provider low-amount tariff applies",
+        "capital_independent_backtest_rule": "apply 0.1785% to traded notional; exclude minimum fee until model capital is specified",
+        "apply_to": [
+          "entries",
+          "exits",
+          "rebalances"
+        ],
+        "slippage_model": "pending_volume_based_model"
+      },
+      "calculation_schedule": {
+        "frequency": "weekly",
+        "calculation_after": "recommendation_and_price_upload_validation",
+        "publication_day": "same_day_after_calculation",
+        "no_change_report_required": true
+      },
+      "historical_reference": {
+        "period": "2021-07-09/2026-07-15",
+        "cost_rate": 0.001785,
+        "total_return": 2.6688864491,
+        "cagr": 0.2958363798,
+        "volatility": 0.1345119703,
+        "maximum_drawdown": -0.1439884644,
+        "sharpe_zero_rf": 2.1993312496,
+        "sortino_zero_target": 3.8599456271,
+        "note": "Resultado simulado con posible sesgo de supervivencia; no constituye recomendación ni promesa de retorno."
+      }
+    }
+  ],
+  "retirement_note": "SIGMA6 salio de la asignacion el 22-09-2026. Su especificacion se conserva en retired_strategies, su codigo en src/strategy_engine.py y sus series en data/. Ver ESTRATEGIAS_ALPHADATA_v2.md y research/carteras_en_pesos/."
 }

@@ -4,29 +4,30 @@ Lo que está decidido que no se hace ahora, con lo que tendría que pasar para
 volver a mirarlo. La idea es que ninguna de estas discusiones empiece de cero,
 y que ninguna se reabra por cansancio.
 
-## La caja de Sigma-6 en un money market
+## La caja en un money market
 
-**Parqueado.** Hoy Sigma-6 tiene $3.000.000 quietos, el 15% de la cartera
-completa. Con la TPM en 4,5%, en un money market valdrían del orden de $117.000
-al año.
+**Parqueado, y con menos caja que antes.** Los $3.000.000 que motivaron esta
+discusión eran de Sigma-6, que salió de la asignación. Lo que queda es la caja
+de redondeo de las tres piezas.
 
-**No está descartado. Se reabre si ocurre cualquiera de estas dos cosas:**
-
-1. El flujo de recomendaciones se recupera y la caja **baja sola**.
-2. La caja **sube bastante por encima de los $3.000.000** actuales.
-
+**Se reabre si la caja sube bastante por encima de lo que deja el redondeo.**
 Cuando se reabra, lo ya decidido sigue valiendo: money market, serie sin
 permanencia mínima ni comisión de salida, y la remuneración hay que mirarla
 dentro de la cuenta.
 
-## El futuro de Sigma-6 como pieza
+## El futuro de Sigma-6 como pieza — **cerrado**
 
-**No se toca.** La pregunta de si conviene arreglar el insumo, suspender la
-pieza y repartir su cuarto entre las otras tres, o aceptar la caja, ya no
-depende de ninguna medición pendiente: depende de si alguien va a seguir
-dejando archivos en `data/inbox/`. Ver `CREDICORP_INSUMO.md`.
+**Salió de la asignación el 22-09-2026.** El control que reparte su cuarto
+entre Delta-12 y Gamma-6, dejando el oro en 25%, ganó las tres ventanas sin
+darse vuelta y mantenerla costaba $4.880.898 sobre $20 millones en cinco años.
+Ver `ESTRATEGIAS_ALPHADATA_v2.md` y `research/carteras_en_pesos/`.
 
-**Se reabre si la guardia de vigencia dispara dos veces seguidas.**
+El código y las series se conservan. **Se reabriría si apareciera una señal de
+corredora que aporte**, medida con el mismo protocolo: aporte al conjunto y en
+pesos, con los cortes fijados antes.
+
+Y con esto **la carga del inbox deja de ser un requisito operativo**: las tres
+piezas que quedan corren sólo con precios.
 
 ## El tope de concentración por posición, más allá del 25%
 

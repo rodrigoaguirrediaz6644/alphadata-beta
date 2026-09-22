@@ -221,7 +221,7 @@ Sigma-6,LTM,2024-08-23,,2024-09-06,calentamiento
 Sigma-6,HITES,2024-09-06,,2024-09-13,calentamiento
 Sigma-6,LTM,2024-09-13,,2024-09-27,calentamiento
 Sigma-6,SALFACORP,2024-09-13,,2024-10-11,calentamiento
-Sigma-6,BCI,2024-10-11,28195.0,,"recorrido (entrada anterior al piso, precio sin reparar)"
+Sigma-6,BCI,2024-10-11,28195.0,2026-09-21,"recorrido (entrada anterior al piso, precio sin reparar)"
 Sigma-6,LTM,2024-10-18,,2026-03-06,calentamiento
 Sigma-6,SALFACORP,2024-10-18,,2025-01-03,calentamiento
 Sigma-6,CENCOSUD,2024-11-29,,2025-10-03,calentamiento
@@ -264,10 +264,10 @@ Sigma-6,LTM,2026-05-29,24.100000381469727,2026-06-05,recorrido
 Sigma-6,CENCOMALLS,2026-06-12,2464.300048828125,2026-06-26,recorrido
 Sigma-6,ITAUCL,2026-06-12,18349.0,2026-06-19,recorrido
 Sigma-6,LTM,2026-06-12,23.940000534057617,2026-08-14,recorrido
-Sigma-6,VAPORES,2026-06-12,44.59000015258789,,recorrido
+Sigma-6,VAPORES,2026-06-12,44.59000015258789,2026-09-21,recorrido
 Sigma-6,ITAUCL,2026-06-26,18209.0,2026-07-03,recorrido
-Sigma-6,PARAUCO,2026-06-26,3827.0,,recorrido
+Sigma-6,PARAUCO,2026-06-26,3827.0,2026-09-21,recorrido
 Sigma-6,CENCOMALLS,2026-08-07,2459.6,2026-08-14,recorrido
 Sigma-6,CENCOMALLS,2026-08-28,2495.0,2026-09-11,recorrido
 Sigma-6,LTM,2026-09-04,24.5,2026-09-11,recorrido
-Sigma-6,LTM,2026-09-17,24.78,,recorrido
+Sigma-6,LTM,2026-09-17,24.78,2026-09-21,recorrido

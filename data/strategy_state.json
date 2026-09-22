@@ -3,10 +3,10 @@
   "delta_rule_version": "2.1.0",
   "gamma_rule_version": "1.0.0",
   "sigma_entries": {
-    "PARAUCO": "2026-09-17",
-    "VAPORES": "2026-09-17",
     "LTM": "2026-09-17",
-    "BCI": "2026-09-17"
+    "BCI": "2026-09-17",
+    "PARAUCO": "2026-09-17",
+    "VAPORES": "2026-09-17"
   },
   "delta_entries": {
     "PARAUCO": "2026-09-17",
@@ -33,58 +33,58 @@
     {
       "ticker": "BCI",
       "target_weight": 0.1,
-      "opened_at": "2024-10-11",
-      "entry_price": 28195.0,
-      "current_price": 65600.0,
-      "open_return": 1.4641794907846366,
+      "opened_at": null,
+      "entry_price": null,
+      "current_price": null,
+      "open_return": null,
       "con_dividendo": false,
-      "dividendos_clp": 2610.0,
+      "dividendos_clp": null,
       "peso_real": 0.1,
       "caduca": "2027-07-01",
-      "dias_para_caducar": 287,
-      "monto_clp": 500000.0
+      "dias_para_caducar": 283,
+      "monto_clp": 0.0
     },
     {
       "ticker": "LTM",
       "target_weight": 0.1,
-      "opened_at": "2026-09-17",
-      "entry_price": 24.78,
-      "current_price": 24.78,
-      "open_return": 0.0,
+      "opened_at": null,
+      "entry_price": null,
+      "current_price": null,
+      "open_return": null,
       "con_dividendo": false,
       "dividendos_clp": null,
       "peso_real": 0.1,
       "caduca": "2027-07-09",
-      "dias_para_caducar": 295,
-      "monto_clp": 500000.0
+      "dias_para_caducar": 291,
+      "monto_clp": 0.0
     },
     {
       "ticker": "PARAUCO",
       "target_weight": 0.1,
-      "opened_at": "2026-06-26",
-      "entry_price": 3827.0,
-      "current_price": 3900.0,
-      "open_return": 0.019074993467467882,
+      "opened_at": null,
+      "entry_price": null,
+      "current_price": null,
+      "open_return": null,
       "con_dividendo": false,
       "dividendos_clp": null,
       "peso_real": 0.1,
       "caduca": "2027-07-01",
-      "dias_para_caducar": 287,
-      "monto_clp": 500000.0
+      "dias_para_caducar": 283,
+      "monto_clp": 0.0
     },
     {
       "ticker": "VAPORES",
       "target_weight": 0.1,
-      "opened_at": "2026-06-12",
-      "entry_price": 44.59000015258789,
-      "current_price": 48.3,
-      "open_return": 0.0832025080671992,
+      "opened_at": null,
+      "entry_price": null,
+      "current_price": null,
+      "open_return": null,
       "con_dividendo": false,
       "dividendos_clp": null,
       "peso_real": 0.1,
       "caduca": "2026-11-24",
-      "dias_para_caducar": 68,
-      "monto_clp": 500000.0
+      "dias_para_caducar": 64,
+      "monto_clp": 0.0
     }
   ],
   "delta_portfolio": [
@@ -93,84 +93,84 @@
       "target_weight": 0.125,
       "opened_at": "2026-03-31",
       "entry_price": 3780.0,
-      "current_price": 3900.0,
-      "open_return": 0.04226273210435516,
+      "current_price": 3898.9,
+      "open_return": 0.041968760564530916,
       "con_dividendo": false,
       "dividendos_clp": 44.387047,
-      "monto_clp": 625000.0,
-      "peso_real": 0.12218785686014448
+      "monto_clp": 937500.0,
+      "peso_real": 0.12174427531206547
     },
     {
       "ticker": "BCI",
       "target_weight": 0.125,
       "opened_at": "2026-08-31",
       "entry_price": 64500.0,
-      "current_price": 65600.0,
-      "open_return": 0.01705426356589146,
+      "current_price": 66748.0,
+      "open_return": 0.034852713178294525,
       "con_dividendo": false,
       "dividendos_clp": null,
-      "monto_clp": 625000.0,
-      "peso_real": 0.1242716807755888
+      "monto_clp": 937500.0,
+      "peso_real": 0.12602293855200267
     },
     {
       "ticker": "MALLPLAZA",
       "target_weight": 0.125,
       "opened_at": "2026-02-27",
       "entry_price": 4080.0,
-      "current_price": 3900.0,
-      "open_return": -0.026912146551193894,
+      "current_price": 3802.7,
+      "open_return": -0.051189440946211584,
       "con_dividendo": false,
       "dividendos_clp": 70.0,
-      "monto_clp": 625000.0,
-      "peso_real": 0.12214056254571884
+      "monto_clp": 937500.0,
+      "peso_real": 0.11869444267340967
     },
     {
       "ticker": "ITAUCL",
       "target_weight": 0.125,
       "opened_at": "2026-02-27",
       "entry_price": 20900.0,
-      "current_price": 24200.0,
-      "open_return": 0.22933278039240412,
+      "current_price": 24149.0,
+      "open_return": 0.22674203775604007,
       "con_dividendo": false,
       "dividendos_clp": 1187.2706,
-      "monto_clp": 625000.0,
-      "peso_real": 0.1337984676930089
+      "monto_clp": 937500.0,
+      "peso_real": 0.1330693199067189
     },
     {
       "ticker": "ECL",
       "target_weight": 0.125,
       "opened_at": "2026-06-30",
       "entry_price": 1800.0,
-      "current_price": 1855.0,
-      "open_return": 0.030555555555555447,
+      "current_price": 1900.0,
+      "open_return": 0.05555555555555558,
       "con_dividendo": false,
       "dividendos_clp": null,
-      "monto_clp": 625000.0,
-      "peso_real": 0.1156420788140653
+      "monto_clp": 937500.0,
+      "peso_real": 0.1180507060942889
     },
     {
       "ticker": "CHILE",
       "target_weight": 0.125,
       "opened_at": "2026-06-30",
       "entry_price": 180.5,
-      "current_price": 197.9,
-      "open_return": 0.0963988919667591,
+      "current_price": 199.5,
+      "open_return": 0.10526315789473695,
       "con_dividendo": false,
       "dividendos_clp": null,
-      "monto_clp": 625000.0,
-      "peso_real": 0.12561546427336412
+      "monto_clp": 937500.0,
+      "peso_real": 0.12620693669716704
     },
     {
       "ticker": "BSANTANDER",
       "target_weight": 0.125,
       "opened_at": "2026-07-31",
       "entry_price": 80.99,
-      "current_price": 81.82,
-      "open_return": 0.010248178787504614,
+      "current_price": 82.3,
+      "open_return": 0.016174836399555526,
       "con_dividendo": false,
       "dividendos_clp": null,
-      "monto_clp": 625000.0,
-      "peso_real": 0.12417600854921153
+      "monto_clp": 937500.0,
+      "peso_real": 0.12448615927839989
     },
     {
       "ticker": "ANDINA-B",
@@ -181,8 +181,8 @@
       "open_return": 0.08167770419426046,
       "con_dividendo": false,
       "dividendos_clp": null,
-      "monto_clp": 625000.0,
-      "peso_real": 0.132167880488898
+      "monto_clp": 937500.0,
+      "peso_real": 0.13172522148594756
     }
   ],
   "gamma_portfolio": [
@@ -191,72 +191,72 @@
       "target_weight": 0.16666666666666666,
       "opened_at": "2026-07-31",
       "entry_price": 133660.4778176574,
-      "current_price": 152490.6108784424,
-      "open_return": 0.14963716685185435,
+      "current_price": 151704.2123413086,
+      "open_return": 0.14370845438202462,
       "con_dividendo": true,
       "dividendos_clp": null,
-      "monto_clp": 833333.0,
-      "peso_real": 0.16292889883764636
+      "monto_clp": 1250000.0,
+      "peso_real": 0.16176270753355668
     },
     {
       "ticker": "INTC",
       "target_weight": 0.16666666666666666,
       "opened_at": "2025-09-30",
       "entry_price": 32373.736345718386,
-      "current_price": 103803.90877099613,
-      "open_return": 2.2064234928732533,
+      "current_price": 104147.39853668213,
+      "open_return": 2.217033629498136,
       "con_dividendo": false,
       "dividendos_clp": null,
-      "monto_clp": 833333.0,
-      "peso_real": 0.19934219162650593
+      "monto_clp": 1250000.0,
+      "peso_real": 0.199599613992675
     },
     {
       "ticker": "MRK",
       "target_weight": 0.16666666666666666,
       "opened_at": "2026-07-31",
       "entry_price": 120441.505587616,
-      "current_price": 140392.86869152822,
-      "open_return": 0.17253253214297049,
+      "current_price": 140848.3253173828,
+      "open_return": 0.17633641275152168,
       "con_dividendo": true,
       "dividendos_clp": null,
-      "monto_clp": 833333.0,
-      "peso_real": 0.16428627831007572
+      "monto_clp": 1250000.0,
+      "peso_real": 0.16448779549055417
     },
     {
       "ticker": "BAC",
       "target_weight": 0.16666666666666666,
       "opened_at": "2026-07-31",
       "entry_price": 57306.847449531546,
-      "current_price": 55508.375685449224,
-      "open_return": -0.02644124722680763,
+      "current_price": 55363.06956100464,
+      "open_return": -0.028989764410704555,
       "con_dividendo": true,
       "dividendos_clp": null,
-      "monto_clp": 833333.0,
-      "peso_real": 0.15482981300648938
+      "monto_clp": 1250000.0,
+      "peso_real": 0.15411396035073974
     },
     {
       "ticker": "JNJ",
       "target_weight": 0.16666666666666666,
       "opened_at": "2026-08-31",
       "entry_price": 247641.9417816773,
-      "current_price": 257811.50338266604,
-      "open_return": 0.041065586579652535,
+      "current_price": 258920.40063476562,
+      "open_return": 0.045543411475231776,
       "con_dividendo": false,
       "dividendos_clp": null,
-      "monto_clp": 833333.0,
-      "peso_real": 0.166695050759511
+      "monto_clp": 1250000.0,
+      "peso_real": 0.1670753709185244
     },
     {
       "ticker": "ABT",
       "target_weight": 0.16666666666666666,
       "opened_at": "2026-08-31",
       "entry_price": 102801.44524628296,
-      "current_price": 97535.60334987799,
-      "open_return": -0.05122342282046255,
+      "current_price": 98402.99058532715,
+      "open_return": -0.04278592241984902,
       "con_dividendo": false,
       "dividendos_clp": null,
-      "monto_clp": 833333.0,
-      "peso_real": 0.15191776745977137
+      "monto_clp": 1250000.0,
+      "peso_real": 0.15296055171395
     }
   ],
   "oro_portfolio": [
@@ -265,20 +265,20 @@
       "target_weight": 1.0,
       "opened_at": "2026-01-01",
       "entry_price": 73374.63739833981,
-      "current_price": 77938.79892536625,
-      "open_return": 0.062203530931925544,
+      "current_price": 78858.57321929932,
+      "open_return": 0.07473884731025038,
       "con_dividendo": false,
       "dividendos_clp": null,
       "peso_real": 1.0,
       "monto_clp": 5000000.0
     }
   ],
-  "valuation_date": "2026-09-17",
+  "valuation_date": "2026-09-21",
   "nav": {
-    "Sigma-6": 99.892915931125,
-    "Delta-12": 99.8215,
-    "Gamma-6": 99.9,
-    "Oro": 99.9,
+    "Sigma-6": 100.63306361244523,
+    "Delta-12": 100.17551670667198,
+    "Gamma-6": 100.09934456307563,
+    "Oro": 101.0789436484889,
     "IPSA TR": 101.29570294421303
   },
   "reinicio": {
@@ -294,10 +294,10 @@
     "uploaded_files": 0,
     "history_rows": 1108
   },
-  "last_run_utc": "2026-09-21T20:26:01.020215+00:00",
+  "last_run_utc": "2026-09-22T03:37:48.004756+00:00",
   "entry_dates_version": 3,
   "delta_last_period": "2026-08",
   "gamma_last_period": "2026-08",
   "vigencia_detenida": false,
-  "dias_sin_recomendaciones": 57
+  "dias_sin_recomendaciones": 61
 }

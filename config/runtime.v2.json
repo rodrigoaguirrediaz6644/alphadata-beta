@@ -1,7 +1,6 @@
 {
   "methodology_version": "2.3.0",
   "enabled_strategies": [
-    "SIGMA6",
     "DELTA12",
     "GAMMA6",
     "ORO"
@@ -44,10 +43,9 @@
   },
   "combined_portfolio": {
     "name": "Conjunto AlphaData",
-    "weights": "equal_per_strategy",
+    "weights": "from_capital_reparto",
     "rebalance": "monthly",
     "components": [
-      "SIGMA6",
       "DELTA12",
       "GAMMA6",
       "ORO"
@@ -55,7 +53,19 @@
   },
   "capital": {
     "total_clp": 20000000,
-    "reparto": "equal_per_strategy",
-    "nota": "Capital de referencia del suscriptor. Se reparte en cuartos entre las cuatro piezas y, dentro de cada pieza, segun target_weight. Sigma-6 deja en caja lo que no alcanza a ponderar. No lo escriba a mano en el codigo: el informe lo lee de aca."
+    "reparto": {
+      "Delta-12": 0.375,
+      "Gamma-6": 0.375,
+      "Oro": 0.25
+    },
+    "nota": "Capital de referencia del suscriptor, repartido por estrategia segun `reparto`: $7.500.000 a Delta-12, $7.500.000 a Gamma-6 y $5.000.000 al oro. Dentro de cada pieza se reparte segun target_weight y lo que no alcanza a ponderarse queda en su caja. No lo escriba a mano en el codigo: el informe lo lee de aca."
+  },
+  "retired_strategies": {
+    "SIGMA6": {
+      "retirada": "2026-09-22",
+      "motivo": "Sale de la asignacion, no del repositorio. Medida contra un control que reparte su cuarto entre Delta-12 y Gamma-6 dejando el oro en 25%, costaba $4.880.898 sobre $20 millones en cinco anos, 2,2 puntos anuales, y el control gano las tres ventanas sin darse vuelta. Ver research/carteras_en_pesos/.",
+      "codigo": "se conserva; sigma6 y sigma6_historical_nav siguen en src/strategy_engine.py",
+      "series": "se conservan en data/reconstruccion_historica.csv y data/strategy_nav.csv"
+    }
   }
 }

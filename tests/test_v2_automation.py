@@ -16,8 +16,13 @@ def test_only_credicorp_is_accepted_for_sigma6():
     assert normalize_signal("Sobreponderar") == 1
 
 
-def test_registry_has_the_four_official_components():
-    assert set(load_registry()) == {"SIGMA6", "DELTA12", "GAMMA6", "ORO"}
+def test_registry_has_the_three_official_components():
+    """Sigma-6 salió de la asignación el 22-09-2026, no del repositorio.
+
+    Su código y sus series se conservan; lo que cambia es que deja de ser una
+    pieza de la cartera. Ver ESTRATEGIAS_ALPHADATA_v2.md.
+    """
+    assert set(load_registry()) == {"DELTA12", "GAMMA6", "ORO"}
 
 
 def test_methodology_document_matches_the_runtime_configuration():

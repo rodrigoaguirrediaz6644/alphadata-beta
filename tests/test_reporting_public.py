@@ -30,7 +30,7 @@ def _report(**kwargs):
         {"date": "2026-07-16", "Sigma-6": 100, "Delta-12": 100, "Gamma-6": 100, "IPSA TR": 100, "Conjunto AlphaData": 100},
         {"date": "2026-09-18", "Sigma-6": 110, "Delta-12": 105, "Gamma-6": 120, "IPSA TR": 102, "Conjunto AlphaData": 112},
     ])
-    arguments = {"sigma": portfolio, "delta": portfolio, "sigma_moves": moves, "delta_moves": pd.DataFrame(columns=["ticker", "action", "target_weight"]),
+    arguments = {"delta": portfolio, "delta_moves": pd.DataFrame(columns=["ticker", "action", "target_weight"]),
                  "coverage": coverage, "errors": pd.DataFrame(), "history": history}
     arguments.update(kwargs)
     return build_public_report(pd.Timestamp("2026-09-18"), **arguments)
@@ -40,12 +40,10 @@ def test_public_report_hides_strategy_methodology():
     _, html = build_public_report(
         pd.Timestamp("2026-09-18"),
         pd.DataFrame([{"ticker": "BCI", "target_weight": .1}]),
-        pd.DataFrame([{"ticker": "BCI", "target_weight": .1}]),
-        pd.DataFrame([{"ticker": "BCI", "action": "ENTRA", "target_weight": .1, "change": .1}]),
         pd.DataFrame([{"ticker": "BCI", "action": "ENTRA", "target_weight": .1, "change": .1}]),
         pd.DataFrame([{"status": "OK"}]),
         pd.DataFrame(),
-        pd.DataFrame([{"date": "2026-07-16", "Sigma-6": 100, "Delta-12": 100, "IPSA TR": 100}]),
+        pd.DataFrame([{"date": "2026-07-16", "Delta-12": 100, "Gamma-6": 100, "IPSA TR": 100}]),
     )
     for secret in ["momentum_12_1", "SMA200", "sma200", "RSI", "z-score", "score", "Credicorp", "252"]:
         assert secret not in html
@@ -172,9 +170,34 @@ def test_el_informe_dice_desde_cuando_corre_la_serie_nueva():
 def test_el_benchmark_roto_queda_fuera_del_grafico_vivo():
     from src.reporting_public import _series_presentes
     roto = pd.DataFrame({"date": pd.to_datetime(["2026-09-17", "2026-09-18"]),
-                         "Sigma-6": [100.0, 101.0], "IPSA TR": [100.0, 212.0]})
+                         "Delta-12": [100.0, 101.0], "IPSA TR": [100.0, 212.0]})
     presentes = _series_presentes(roto)
     # `_chart` filtra el benchmark cuando la serie no es continua; aquí se
     # comprueba que el filtro se aplica sobre la lista de series presentes.
     assert "IPSA TR" in presentes
-    assert [n for n in presentes if n != "IPSA TR"] == ["Sigma-6"]
+    assert [n for n in presentes if n != "IPSA TR"] == ["Delta-12"]
+
+
+def test_sigma6_sale_del_cuerpo_pero_se_queda_en_la_reconstruccion():
+    """Sale de la asignación, no del repositorio.
+
+    El cuerpo del informe describe tres piezas; el gráfico de la
+    reconstrucción sigue dibujando la serie de Sigma-6, que es historia del
+    proyecto y está medida.
+    """
+    from src.reporting_public import SERIES, SERIES_RECONSTRUCCION, STRATEGIES, _series_presentes
+    assert STRATEGIES == ["Delta-12", "Gamma-6", "Oro"]
+    assert "Sigma-6" not in SERIES
+    assert "Sigma-6" in SERIES_RECONSTRUCCION
+    recon = pd.DataFrame({"date": pd.to_datetime(["2021-07-08", "2021-07-09"]),
+                          "Sigma-6": [100.0, 101.0], "Delta-12": [100.0, 100.5]})
+    assert "Sigma-6" in _series_presentes(recon, SERIES_RECONSTRUCCION)
+    assert "Sigma-6" not in _series_presentes(recon)
+
+
+def test_el_reparto_del_capital_no_es_en_cuartos():
+    markdown, html = _report(capital_por_pieza={"Delta-12": 7_500_000., "Gamma-6": 7_500_000.,
+                                                "Oro": 5_000_000.})
+    for texto in (markdown, html):
+        assert "Delta-12 37,5%" in texto and "Oro 25,0%" in texto
+        assert "cuartos" not in texto and "cuatro piezas" not in texto

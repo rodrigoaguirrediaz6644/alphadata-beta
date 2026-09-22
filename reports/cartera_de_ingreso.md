@@ -1,62 +1,51 @@
 # Cartera de ingreso
 
-Lo que compra hoy el que entra, al cierre del 17-09-2026.
+Lo que compra hoy el que entra, al cierre del 21-09-2026.
 
 Se compra **la cartera vigente completa**, sin mirar si cada posición va
 arriba o abajo del precio de entrada del modelo y sin saltarse las que
 parezcan próximas a venderse. Las columnas de abajo son **información, no
 un filtro**: ver `GUIA_INGRESO.md` para por qué.
 
-## Sigma-6
-
-| acción | unidades | a gastar | residuo | en cartera hace | próxima salida | costo ida y vuelta |
-|---|---:|---:|---:|---:|---|---:|
-| BCI | 7 | $ 459.200 | $ 40.800 | 706 días | 01-07-2027 · en 287 días | $ 3.980 · 0,87% · 1,1% anual |
-| LTM | 20.177 | $ 499.986 | $ 14 | 0 días | 09-07-2027 · en 295 días | $ 3.980 · 0,80% · 1,0% anual |
-| PARAUCO | 128 | $ 499.200 | $ 800 | 83 días | 01-07-2027 · en 287 días | $ 3.980 · 0,80% · 1,0% anual |
-| VAPORES | 10.351 | $ 499.953 | $ 47 | 97 días | 24-11-2026 · en 68 días | $ 3.980 · 0,80% · 4,3% anual |
-
-Residuo de esta pieza: **$ 41.661**, que queda en su caja.
-
 ## Delta-12
 
 | acción | unidades | a gastar | residuo | en cartera hace | próxima salida | costo ida y vuelta |
 |---|---:|---:|---:|---:|---|---:|
-| PARAUCO | 160 | $ 624.000 | $ 1.000 | 170 días | por ranking, sin fecha | $ 3.980 · 0,64% |
-| BCI | 9 | $ 590.400 | $ 34.600 | 17 días | por ranking, sin fecha | $ 3.980 · 0,67% |
-| MALLPLAZA | 160 | $ 624.000 | $ 1.000 | 202 días | por ranking, sin fecha | $ 3.980 · 0,64% |
-| ITAUCL | 25 | $ 605.000 | $ 20.000 | 202 días | por ranking, sin fecha | $ 3.980 · 0,66% |
-| ECL | 336 | $ 623.280 | $ 1.720 | 79 días | por ranking, sin fecha | $ 3.980 · 0,64% |
-| CHILE | 3.158 | $ 624.968 | $ 32 | 79 días | por ranking, sin fecha | $ 3.980 · 0,64% |
-| BSANTANDER | 7.638 | $ 624.941 | $ 59 | 48 días | por ranking, sin fecha | $ 3.980 · 0,64% |
-| ANDINA-B | 127 | $ 622.300 | $ 2.700 | 17 días | por ranking, sin fecha | $ 3.980 · 0,64% |
+| PARAUCO | 240 | $ 935.736 | $ 1.764 | 174 días | por ranking, sin fecha | $ 3.980 · 0,43% |
+| BCI | 14 | $ 934.472 | $ 3.028 | 21 días | por ranking, sin fecha | $ 3.980 · 0,43% |
+| MALLPLAZA | 246 | $ 935.464 | $ 2.036 | 206 días | por ranking, sin fecha | $ 3.980 · 0,43% |
+| ITAUCL | 38 | $ 917.662 | $ 19.838 | 206 días | por ranking, sin fecha | $ 3.980 · 0,43% |
+| ECL | 493 | $ 936.700 | $ 800 | 83 días | por ranking, sin fecha | $ 3.980 · 0,42% |
+| CHILE | 4.699 | $ 937.450 | $ 50 | 83 días | por ranking, sin fecha | $ 3.980 · 0,42% |
+| BSANTANDER | 11.391 | $ 937.479 | $ 21 | 52 días | por ranking, sin fecha | $ 3.980 · 0,42% |
+| ANDINA-B | 191 | $ 935.900 | $ 1.600 | 21 días | por ranking, sin fecha | $ 3.980 · 0,43% |
 
-Residuo de esta pieza: **$ 61.111**, que queda en su caja.
+Residuo de esta pieza: **$ 29.136**, que queda en su caja.
 
 ## Gamma-6
 
 | acción | unidades | a gastar | residuo | en cartera hace | próxima salida | costo ida y vuelta |
 |---|---:|---:|---:|---:|---|---:|
-| TGT | 5 | $ 762.453 | $ 70.880 | 48 días | por ranking, sin fecha | $ 1.525 · 0,20% |
-| INTC | 8 | $ 830.431 | $ 2.902 | 352 días | por ranking, sin fecha | $ 1.661 · 0,20% |
-| MRK | 5 | $ 701.964 | $ 131.369 | 48 días | por ranking, sin fecha | $ 1.404 · 0,20% |
-| BAC | 15 | $ 832.626 | $ 707 | 48 días | por ranking, sin fecha | $ 1.665 · 0,20% |
-| JNJ | 3 | $ 773.435 | $ 59.898 | 17 días | por ranking, sin fecha | $ 1.547 · 0,20% |
-| ABT | 8 | $ 780.285 | $ 53.048 | 17 días | por ranking, sin fecha | $ 1.561 · 0,20% |
+| TGT | 8 | $ 1.213.634 | $ 36.366 | 52 días | por ranking, sin fecha | $ 2.427 · 0,20% |
+| INTC | 12 | $ 1.249.769 | $ 231 | 356 días | por ranking, sin fecha | $ 2.500 · 0,20% |
+| MRK | 8 | $ 1.126.787 | $ 123.213 | 52 días | por ranking, sin fecha | $ 2.254 · 0,20% |
+| BAC | 22 | $ 1.217.988 | $ 32.012 | 52 días | por ranking, sin fecha | $ 2.436 · 0,20% |
+| JNJ | 4 | $ 1.035.682 | $ 214.318 | 21 días | por ranking, sin fecha | $ 2.071 · 0,20% |
+| ABT | 12 | $ 1.180.836 | $ 69.164 | 21 días | por ranking, sin fecha | $ 2.362 · 0,20% |
 
-Residuo de esta pieza: **$ 318.804**, que queda en su caja.
+Residuo de esta pieza: **$ 475.306**, que queda en su caja.
 
 ## Oro
 
 | acción | unidades | a gastar | residuo | en cartera hace | próxima salida | costo ida y vuelta |
 |---|---:|---:|---:|---:|---|---:|
-| IAU | 64 | $ 4.988.083 | $ 11.917 | 259 días | posición permanente | $ 9.976 · 0,20% |
+| IAU | 63 | $ 4.968.090 | $ 31.910 | 263 días | posición permanente | $ 9.936 · 0,20% |
 
-Residuo de esta pieza: **$ 11.917**, que queda en su caja.
+Residuo de esta pieza: **$ 31.910**, que queda en su caja.
 
 ## El residuo del redondeo
 
-Las acciones se transan por **unidades enteras, hacia abajo, residuo a la caja de la pieza**. De $ 16.999.998 de referencia se gastan $ 16.566.505 y quedan **$ 433.493** en caja, un 2,5%.
+Las acciones se transan por **unidades enteras, hacia abajo, residuo a la caja de la pieza**. De $ 20.000.000 de referencia se gastan $ 19.463.648 y quedan **$ 536.352** en caja, un 2,7%.
 
 **Los pesos efectivos del primer día no van a calzar con los de referencia, y eso
 es esperado, no un error.** Cuanto más caro el instrumento, mayor el residuo: una

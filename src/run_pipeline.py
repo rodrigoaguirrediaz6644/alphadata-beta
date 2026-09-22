@@ -21,7 +21,11 @@ ROOT=Path(__file__).resolve().parents[1]; DATA=ROOT/'data'; REPORTS=ROOT/'report
 US_COST_RATE=.001  # spread de Trii para acciones de EE.UU. (0,1% por lado)
 CONFIG=ROOT/'config'/'runtime.v2.json'
 GAMMA_RULE_VERSION='1.0.0'
-STRATEGY_SERIES=['Sigma-6','Delta-12','Gamma-6','Oro']
+# Sigma-6 salió de la asignación el 22-09-2026, no del repositorio: su código y
+# sus series se conservan. Ver ESTRATEGIAS_ALPHADATA_v2.md y
+# research/carteras_en_pesos/.
+STRATEGY_SERIES=['Delta-12','Gamma-6','Oro']
+SERIES_RETIRADAS=['Sigma-6']
 CONJUNTO='Conjunto AlphaData'
 BENCHMARK_RECONSTRUIDO='IPSA Total Return'
 # Toda columna de data/reconstruccion_historica.csv tiene que recalcularse en
@@ -29,7 +33,7 @@ BENCHMARK_RECONSTRUIDO='IPSA Total Return'
 # se detiene: es exactamente la forma en que la serie de Sigma-6 publicó
 # +28,75% durante meses sin que nadie la volviera a calcular. Ver
 # CENSO_DE_SERIES.md.
-SERIES_RECONSTRUIDAS={*STRATEGY_SERIES,BENCHMARK_RECONSTRUIDO,CONJUNTO}
+SERIES_RECONSTRUIDAS={*STRATEGY_SERIES,*SERIES_RETIRADAS,BENCHMARK_RECONSTRUIDO,CONJUNTO}
 
 def load_state()->dict:
     if STATE.exists():
@@ -359,7 +363,12 @@ def main()->None:
     fx_libro = prices_us_clp if len(prices_us_clp) else prices
     precios_mostrados = pd.concat([prices, prices_us_clp, prices_oro_clp], ignore_index=True)
     anotados = []
-    for nombre, cartera, senal in [('Sigma-6', sigma, as_of), ('Delta-12', delta, delta_cutoff),
+    # Sigma-6 salió de la asignación: se le anota la cartera vacía, que cierra
+    # sus posiciones en el libro con la fecha de esta corrida. No es un cierre
+    # por señal, es el retiro de la pieza, y queda registrado como cualquier
+    # otra venta.
+    vacia=pd.DataFrame(columns=['ticker','target_weight'])
+    for nombre, cartera, senal in [('Sigma-6', vacia, as_of), ('Delta-12', delta, delta_cutoff),
                                    ('Gamma-6', gamma, gamma_cutoff), ('Oro', oro_portfolio, as_of)]:
         libro, movimientos = anotar(libro, nombre, cartera, senal, precios_mostrados)
         anotados += [f'{nombre}: {m}' for m in movimientos]
@@ -415,18 +424,19 @@ def main()->None:
     # y uno que hay que recordar.
     renovar=(sigma.loc[sigma.caduca.notna(),['ticker','caduca','dias_para_caducar']]
              .sort_values('dias_para_caducar').to_dict('records') if len(sigma) else [])
-    vigencia={'dias':state.get('dias_sin_recomendaciones'),
-              'umbral':DIAS_VIGENCIA_RECOMENDACIONES,
-              'detenida':bool(state.get('vigencia_detenida')),
-              'renovar':renovar}
-    if vigencia['detenida']:
-        print(f"ADVERTENCIA: Sigma-6 detenida por vigencia: la recomendación más reciente tiene "
-              f"{vigencia['dias']} días. Conserva la cartera y no abre posiciones.")
+    # Sigma-6 salió de la asignación, así que la vigencia de las recomendaciones
+    # deja de ser un riesgo operativo: que caduquen no apaga nada. Se sigue
+    # calculando para el registro y no va al informe.
+    vigencia=None
+    if state.get('vigencia_detenida'):
+        print(f"Sigma-6 (retirada) detenida por vigencia: la recomendación más reciente tiene "
+              f"{state.get('dias_sin_recomendaciones')} días. No afecta la cartera publicada.")
     # Cuántos pesos es cada posición, con el capital de la configuración.
     capital=json.loads(CONFIG.read_text(encoding='utf-8')).get('capital',{})
-    por_pieza=float(capital.get('total_clp',0))/len(STRATEGY_SERIES)
-    for cartera in (sigma,delta,gamma,oro_portfolio):
-        if len(cartera): cartera['monto_clp']=(cartera.target_weight.astype(float)*por_pieza).round()
+    reparto=capital.get('reparto') or {n:1/len(STRATEGY_SERIES) for n in STRATEGY_SERIES}
+    por_pieza={n:float(capital.get('total_clp',0))*float(w) for n,w in reparto.items()}
+    for pieza,cartera in [('Sigma-6',sigma),('Delta-12',delta),('Gamma-6',gamma),('Oro',oro_portfolio)]:
+        if len(cartera): cartera['monto_clp']=(cartera.target_weight.astype(float)*por_pieza.get(pieza,0.)).round()
     # Qué cambió desde el informe anterior, no qué hay en la fecha de señal.
     # Leer el libro en la fecha de señal dejaba invisible cualquier cambio que
     # el libro situara antes, y eso pasa cada vez que se reconstruye: el primer
@@ -452,7 +462,7 @@ def main()->None:
     history=pd.read_csv(NAV) if NAV.exists() else pd.DataFrame()
     if len(history): history=history[history.date.astype(str)!=navrow['date']]
     history=pd.concat([history,pd.DataFrame([navrow])],ignore_index=True)
-    combined=combined_equal_weight(history,STRATEGY_SERIES)
+    combined=combined_equal_weight(history,STRATEGY_SERIES,weights=reparto)
     if len(combined): history[CONJUNTO]=history.date.map({d.date().isoformat():v for d,v in combined.items()})
     history.to_csv(NAV,index=False)
     coverage=pd.read_csv(DATA/'coverage_report.csv')
@@ -480,7 +490,7 @@ def main()->None:
         if len(ipsa)<=1:
             raise RuntimeError('La serie del benchmark vino vacía. Ver CENSO_DE_SERIES.md.')
         historical[BENCHMARK_RECONSTRUIDO]=historical.date.map(ipsa/ipsa.iloc[0]*100).ffill()
-        historical_combined=combined_equal_weight(historical,STRATEGY_SERIES)
+        historical_combined=combined_equal_weight(historical,STRATEGY_SERIES,weights=reparto)
         if len(historical_combined): historical[CONJUNTO]=historical.date.map(historical_combined)
         sin_recalcular=set(historical.columns)-{'date'}-SERIES_RECONSTRUIDAS
         if sin_recalcular:
@@ -519,7 +529,7 @@ def main()->None:
     ingreso=cartera_de_ingreso({'Sigma-6':sigma,'Delta-12':delta,'Gamma-6':gamma,'Oro':oro_portfolio},as_of,costos)
     (REPORTS/'cartera_de_ingreso.md').write_text(markdown_ingreso(ingreso,as_of),encoding='utf-8')
     ingreso.to_csv(DATA/'cartera_de_ingreso.csv',index=False)
-    md,html=build_public_report(as_of,sigma,delta,smove,dmove,coverage,errors,history,gamma=gamma,gamma_moves=gmove,oro=oro_portfolio,oro_moves=omove,movimientos=movimientos_libro,capital_por_pieza=por_pieza,vigencia=vigencia,salud=salud,conocidos=conocidos);(REPORTS/'latest_report.md').write_text(md,encoding='utf-8');(REPORTS/'latest_report.html').write_text(html,encoding='utf-8')
+    md,html=build_public_report(as_of,delta,dmove,coverage,errors,history,gamma=gamma,gamma_moves=gmove,oro=oro_portfolio,oro_moves=omove,movimientos=movimientos_libro,capital_por_pieza=por_pieza,vigencia=vigencia,salud=salud,conocidos=conocidos);(REPORTS/'latest_report.md').write_text(md,encoding='utf-8');(REPORTS/'latest_report.html').write_text(html,encoding='utf-8')
     guardar_publicada(vigente,as_of,PUBLICADA)
     sigma.to_csv(DATA/'portfolio_sigma6.csv',index=False);delta.to_csv(DATA/'portfolio_delta12.csv',index=False);gamma.to_csv(DATA/'portfolio_gamma6.csv',index=False);oro_portfolio.to_csv(DATA/'portfolio_oro.csv',index=False)
     s_audit.to_csv(DATA/'audit_sigma6.csv',index=False);d_audit.to_csv(DATA/'audit_delta12.csv',index=False)

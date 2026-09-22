@@ -38,11 +38,11 @@ def test_la_columna_de_la_estrategia_dice_desde_cuando_mide(tmp_path, monkeypatc
     import src.reporting_public as rp
     monkeypatch.setattr(rp, "DIRECTORIO_GRAFICOS", tmp_path)
     historia = pd.DataFrame([
-        {"date": "2026-09-16", "Sigma-6": 100, "Delta-12": 100, "Conjunto AlphaData": 100},
-        {"date": "2026-09-18", "Sigma-6": 101, "Delta-12": 100, "Conjunto AlphaData": 100},
+        {"date": "2026-09-16", "Delta-12": 100, "Gamma-6": 100, "Conjunto AlphaData": 100},
+        {"date": "2026-09-18", "Delta-12": 101, "Gamma-6": 100, "Conjunto AlphaData": 100},
     ])
     vacio = pd.DataFrame(columns=["ticker", "action", "target_weight"])
-    _, html = rp.build_public_report(pd.Timestamp("2026-09-18"), CARTERA, CARTERA, vacio, vacio,
+    _, html = rp.build_public_report(pd.Timestamp("2026-09-18"), CARTERA, vacio,
                                      pd.DataFrame([{"status": "OK"}]), pd.DataFrame(), historia)
     assert "<th>Desde el 16-09-2026</th>" in html
     assert "Desde el inicio" not in html
@@ -72,7 +72,7 @@ def test_sin_ninguna_fila_marcada_no_se_imprime_la_nota(tmp_path, monkeypatch):
                              {"date": "2026-09-18", "Conjunto AlphaData": 101}])
     vacio = pd.DataFrame(columns=["ticker", "action", "target_weight"])
     limpia = CARTERA.assign(con_dividendo=[False])
-    _, html = rp.build_public_report(pd.Timestamp("2026-09-18"), limpia, limpia, vacio, vacio,
+    _, html = rp.build_public_report(pd.Timestamp("2026-09-18"), limpia, vacio,
                                      pd.DataFrame([{"status": "OK"}]), pd.DataFrame(), historia)
     assert "repartió dividendos" not in html
 
@@ -137,7 +137,7 @@ def test_el_informe_dice_que_las_fechas_salen_de_aplicar_las_reglas_hacia_atras(
     historia = pd.DataFrame([{"date": "2026-09-16", "Conjunto AlphaData": 100},
                              {"date": "2026-09-18", "Conjunto AlphaData": 101}])
     vacio = pd.DataFrame(columns=["ticker", "action", "target_weight"])
-    _, html = rp.build_public_report(pd.Timestamp("2026-09-18"), CARTERA, CARTERA, vacio, vacio,
+    _, html = rp.build_public_report(pd.Timestamp("2026-09-18"), CARTERA, vacio,
                                      pd.DataFrame([{"status": "OK"}]), pd.DataFrame(), historia)
     assert "no de operaciones registradas en vivo" in html
     assert "el modelo la seleccionó ese día y no la ha soltado" in html

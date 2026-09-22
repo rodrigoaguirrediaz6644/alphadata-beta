@@ -80,9 +80,11 @@ def test_el_tramo_de_calentamiento_se_conserva_y_no_se_publica():
     antes = d.loc[d.fecha_entrada < DESDE]
     assert len(antes)
     # Las cerradas no se publican y no llevan precio.
+    # Una que entró antes del piso y ya se cerró puede haber sido publicada
+    # mientras estaba abierta —BCI lo fue— así que conserva su propio origen.
     calienta = antes.loc[antes.fecha_salida.notna()]
-    assert (calienta.origen == CALENTAMIENTO).all()
-    assert calienta.precio_entrada.isna().all()
+    assert calienta.origen.isin({CALENTAMIENTO, SIN_REPARAR}).all()
+    assert calienta.loc[calienta.origen == CALENTAMIENTO, "precio_entrada"].isna().all()
     # Pero una **abierta** sí se publica, con su precio y marcada: ocultarle la
     # fecha a una posición viva es peor que mostrar una del tramo sin reparar.
     # Es el caso de BCI, en cartera desde el 11-10-2024.

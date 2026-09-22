@@ -4,134 +4,16 @@ Versión de metodología: **2.3.0**
 Vigencia: **25 de septiembre de 2026**  
 Estado: **paper trading; no publicadas como recomendación de inversión**
 
-La configuración operativa oficial es `strategies.v2.json`. Esta versión no modifica retroactivamente la metodología 1.0.0: la antigua Sigma-6 pasa a llamarse **Consenso-6** y queda como estrategia histórica no oficial. Las estrategias oficiales desde esta versión son **Sigma-6**, **Delta-12**, **Gamma-6** (incorporada en la metodología 2.2.0) y **Oro** (incorporada en la metodología 2.3.0).
+La configuración operativa oficial es `strategies.v2.json`. Las estrategias
+oficiales son **Delta-12**, **Gamma-6** (incorporada en la metodología 2.2.0) y
+**Oro** (incorporada en la metodología 2.3.0). **Sigma-6 salió de la asignación
+el 22-09-2026**; ver la sección final, que explica qué se midió y por qué.
 
-## 1. Sigma-6
+Esta versión no modifica retroactivamente la metodología 1.0.0: la antigua
+Sigma-6 pasa a llamarse **Consenso-6** y queda como estrategia histórica no
+oficial.
 
-Sigma-6 es la estrategia anteriormente evaluada como Credicorp Momentum. Combina la recomendación fundamental de Credicorp Capital con una confirmación objetiva de momentum.
-
-### Datos y señales
-
-- Única corredora utilizada: **Credicorp Capital**.
-- Se conserva sólo la recomendación más reciente conocida para cada acción.
-- Comprar, sobreponderar, outperform y superior al mercado equivalen a `+1`.
-- Mantener y neutral equivalen a `0`.
-- Vender, subponderar, underperform e inferior al mercado equivalen a `-1`.
-- Una recomendación caduca después de 365 días.
-- Una fila sin acción explícita se descarta.
-- Conflictos de una misma acción y fecha se envían a revisión manual.
-
-### Indicador
-
-`Momentum12-1 = PrecioAjustado[t-21] / PrecioAjustado[t-252] - 1`.
-
-Se requieren al menos 252 sesiones de historia y el momentum debe ser estrictamente positivo.
-
-**El precio ajustado debe estar estrictamente sobre la SMA de 200 sesiones**,
-la misma condición que usan Delta-12 y Gamma-6. Entró el 21-09-2026: hasta
-entonces Sigma-6 era la única estrategia accionaria sin ninguna condición que
-mirara el precio de hoy, y `Momentum12-1` salta las últimas 21 ruedas, así que
-una caída del último mes le era invisible. Es también condición de permanencia.
-Medición en `research/sma200_sigma6/`.
-
-### Entrada
-
-Una acción entra sólo cuando se cumplen simultáneamente:
-
-1. La última recomendación vigente de Credicorp tiene valor `+1`.
-2. `Momentum12-1 > 0`.
-3. Existen precios ajustados válidos y al menos 252 sesiones de historia.
-
-El cálculo se realiza al cierre de la última sesión bursátil de cada semana. La ejecución simulada ocurre a la apertura de la sesión bursátil siguiente.
-
-### Tamaño
-
-- Ponderación igual entre todas las acciones elegibles.
-- Máximo 10% por acción.
-- Si hay menos de diez posiciones, el capital que no puede asignarse queda en caja.
-- Si hay más de diez posiciones, se distribuye el 100% en partes iguales mientras ningún peso exceda 10%.
-- No se permiten ventas cortas ni apalancamiento.
-- No existe límite sectorial hasta contar con un mapa sectorial histórico confiable.
-
-### Salida
-
-Se vende en la siguiente apertura cuando ocurre cualquiera de estos eventos:
-
-- La recomendación vigente de Credicorp pasa a `0` o `-1`.
-- `Momentum12-1 <= 0`.
-- **`PrecioAjustado <= SMA200`.**
-- La recomendación caduca.
-- Los precios son inválidos o están vencidos.
-
-No se utilizan precio objetivo, stop-loss intraperiodo ni decisiones discrecionales por noticias.
-
-**Sigma-6 no tiene tope de tenencia: rota por señal, no por calendario.** El
-tope de 365 días salió el 21-09-2026. La consecuencia de carácter conviene
-decirla: la estrategia puede sostener un nombre por años. BCI viene desde el
-11-10-2024 y queda corriendo hasta que se caiga alguna condición de precio o
-caduque su recomendación. El único reloj que queda es el de la caducidad.
-
-### Costos
-
-Se utiliza la tarifa Trii/Racional:
-
-- Comisión variable antes de IVA: 0,15% del monto transado.
-- IVA: 19%.
-- Comisión efectiva: **0,1785%** sobre entradas, salidas y rebalanceos.
-- Tarifa mínima: $1.990 cuando corresponda a operaciones de monto bajo.
-
-Los backtests independientes del capital aplican 0,1785% al monto transado y no aplican el mínimo de $1.990. Las simulaciones con capital definido deben utilizar el mayor entre la comisión variable y la tarifa mínima cuando corresponda.
-
-### Guardia de vigencia de las recomendaciones
-
-Si en una revisión la recomendación más reciente del proveedor tiene **más de
-90 días**, Sigma-6 **no abre posiciones nuevas**. El informe lo dice, y la
-estrategia se reanuda sola en cuanto entren recomendaciones nuevas.
-
-> **La regla, en su forma corta: un insumo viejo no puede agregar riesgo, pero
-> uno fresco sí puede quitarlo.**
-
-El principio es **no actuar sobre el dato que falta**, y lo que falta son las
-recomendaciones: los precios siguen llegando. De ahí sale qué se suspende y qué
-no.
-
-| condición | durante la guardia |
-|---|---|
-| La recomendación baja de nota a `0` o `-1` | **suspendida** |
-| La recomendación caduca a los 365 días | **suspendida** |
-| Abrir una posición nueva | **suspendido** |
-| `Momentum12-1 <= 0` | **sigue viva** |
-| `PrecioAjustado <= SMA200` | **sigue viva** |
-
-No se abre nada porque abrir sobre recomendaciones de tres meses es apostar
-sobre información que ya no se confirma. Sí se cierra por precio, y hay un
-argumento concreto además del principio: **la SMA200 se encendió precisamente
-porque Sigma-6 era la única estrategia sin salida que mirara el precio de hoy.**
-Suspenderla durante la guardia reabriría ese hueco justo en el periodo en que
-nadie está mirando.
-
-Sin la guardia, las posiciones se irían soltando una a una a medida que sus
-recomendaciones cumplen 365 días, y esa liquidación sería un artefacto de que
-nadie cargó el archivo, no una señal.
-
-**Consecuencia:** durante una guardia larga la cartera sólo puede encoger hacia
-caja. Es la dirección conservadora, y la regla de los dos disparos trae la
-decisión de vuelta antes de que llegue lejos.
-
-El umbral no está ajustado a la muestra: entre 2021 y 2026 el hueco más largo
-entre recomendaciones fue de **29 días**, así que la guardia nunca se habría
-activado y no cambia ninguna serie publicada.
-
-### Límite de concentración
-
-Ninguna posición puede pasar del **25% del valor de su propia pieza** —6,25%
-del capital total, porque cada pieza es un cuarto—. Se revisa en cada revisión
-de la estrategia; al pasarse se recorta hasta 25% exacto y el excedente queda
-en la caja de la pieza. Aplica a Sigma-6, Delta-12 y Gamma-6, y **no al oro**,
-que es 100% de su pieza por diseño. Entró el 21-09-2026. Es un límite de cola,
-no una optimización: ver `POLITICA_REBALANCEO.md`.
-
-## 2. Delta-12
+## 1. Delta-12
 
 Delta-12 es una estrategia mensual independiente de las corredoras que busca tendencias persistentes mediante precio, momentum y liquidez.
 
@@ -182,7 +64,7 @@ No existen stops intrames ni decisiones por noticias.
 
 Delta-12 utiliza el mismo modelo Trii/Racional de Sigma-6: 0,1785% sobre el monto transado y tarifa mínima de $1.990 cuando corresponda. Los backtests sin capital definido no incluyen la tarifa mínima.
 
-## 3. Gamma-6
+## 2. Gamma-6
 
 Gamma-6 es una estrategia mensual sobre acciones de Estados Unidos accesibles en Chile como CDV. No usa recomendaciones de corredoras ni datos fundamentales: selecciona por fuerza relativa de precio dentro del propio universo.
 
@@ -229,7 +111,7 @@ Los indicadores se calculan sobre el precio en dólares: el tipo de cambio es un
 
 Gamma-6 proviene del estudio comparativo documentado en `research/momentum_us/`, donde se contrastaron veinte reglas alternativas en dos submuestras y excluyendo la acción de mayor crecimiento del periodo. Su resultado previo a la puesta en marcha es una reconstrucción retrospectiva. La validación prospectiva se evalúa contra la cartera igual ponderada del mismo universo.
 
-## 4. Oro
+## 3. Oro
 
 Oro es la única pieza del conjunto que no selecciona nada. Es una posición permanente en el ETF **IAU** (iShares Gold Trust), accesible en Chile como CDV, y su función no es rendir más que las otras: es sostener la cartera cuando las otras caen.
 
@@ -251,14 +133,74 @@ En el estudio de `research/etf_multiactivo/` el oro fue el único instrumento de
 
 La valorización es en pesos, convertida con el tipo de cambio diario `USDCLP` saneado por `sanear_fx`, de modo que el resultado publicado incluye el efecto cambiario que enfrenta un inversionista local. El costo es 0,1% por lado, pagado esencialmente una sola vez al abrir, porque la rotación esperada es nula. La fecha de apertura registrada es la fecha en que la posición entra en seguimiento oficial, nunca la primera fecha disponible del instrumento: fechar la compra en el nacimiento del ETF inventaría una rentabilidad que nadie obtuvo.
 
-## 5. Conjunto AlphaData
+## 4. Conjunto AlphaData
 
-El informe publica además el resultado de repartir el capital en partes iguales entre las cuatro estrategias oficiales —25% cada una—, reequilibrando al cierre de cada mes. Mientras una estrategia no tenga historial disponible, el conjunto reparte entre las que sí lo tienen en esa fecha.
+El informe publica además el resultado de repartir el capital entre las tres
+estrategias oficiales: **Delta-12 37,5%, Gamma-6 37,5% y Oro 25%**, o
+$7.500.000, $7.500.000 y $5.000.000 sobre un capital de referencia de $20
+millones. Se reequilibra al cierre de cada mes y dentro del mes los pesos se
+dejan correr. Mientras una estrategia no tenga historial disponible, el
+conjunto reparte entre las que sí lo tienen en esa fecha.
 
-## 6. Consenso-6 (histórica, no oficial)
+El reparto vive en `config/runtime.v2.json`, bajo `capital.reparto`, y no está
+escrito a mano en ninguna parte del código.
+
+## 5. Consenso-6 (histórica, no oficial)
 
 Consenso-6 es el nuevo nombre de la antigua Sigma-6 versión 1.0.0. Utilizaba la suma de señales vigentes de Credicorp, BICE, Itaú, BTG Pactual, MBI y LarrainVial Estudios. Desde la versión 2.0.0 queda registrada como **estrategia histórica no oficial**. Su configuración permanece íntegra en `strategies.v1.json` y su historial no debe reescribirse.
 
+
+## Sigma-6: qué fue, qué se midió y por qué salió
+
+Sigma-6 combinaba la recomendación vigente de Credicorp Capital con
+confirmación de momentum 12-1 y, desde el 21-09-2026, SMA200. **Salió de la
+asignación el 22-09-2026.** Su especificación completa queda en
+`data/archivo/sigma6_metodologia_v2.3.0.md`, su código en
+`src/strategy_engine.py` y sus series en `data/`. Nada de eso se borra: si
+alguna vez vuelve una señal de corredora que aporte, la maquinaria está.
+
+**Qué se midió**, en ese orden:
+
+1. **Prueba nula.** Sigma-6 sin el filtro de corredora, con todo lo demás
+   idéntico. El orden se da vuelta entre submuestras: **no se distingue**.
+2. **Catorce corredoras, con los cortes fijados de antemano.** La correlación
+   de rangos entre ventanas es **+0,47**: elegir corredora no se puede
+   anticipar. La mejor de la ventana de selección —LarrainVial— cae al quinto
+   puesto en la de evaluación. La estimación honesta de esa selección es
+   **+19,68% anual**, no el resultado de la ganadora sobre su propia ventana.
+3. **Aporte al conjunto**, que es el criterio correcto para una pieza de
+   cuatro. Contra un control de caja, mantener la corredora aportaba Sharpe de
+   forma consistente (+0,05 y +0,24).
+4. **El mismo cálculo en pesos**, sobre $20 millones, que es lo que decide.
+
+**Por qué salió.** Contra el control que reparte su cuarto entre Delta-12 y
+Gamma-6 dejando el oro en 25%:
+
+| | los $20M quedan en | anual | peor caída |
+|---|---|---|---|
+| con Sigma-6, cuatro al 25% | $48.685.107 | +18,67% | −$3.940.468 |
+| **sin Sigma-6, 37,5/37,5/25** | **$53.566.005** | **+20,88%** | −$5.784.514 |
+
+**Mantenerla costaba $4.880.898 en cinco años** —2,2 puntos anuales— y lo que
+compraba era $1,84 millones menos de caída. **El control ganó las tres ventanas
+sin darse vuelta**, que es más de lo que consiguió cualquier otra comparación
+de este proyecto.
+
+La divergencia con el Sharpe tiene explicación y conviene dejarla escrita:
+Sigma-6 era caja en su mayor parte por construcción —cuatro posiciones con tope
+de 10% son 60% en caja— así que bajaba la volatilidad del conjunto y el Sharpe
+la premiaba por eso, mientras el resultado en pesos le cobraba esa misma caja
+porque no rinde nada.
+
+**Y sale además el único insumo que el sistema no podía obtener solo.** Las
+tres piezas que quedan corren únicamente con precios: el sistema queda
+automático de punta a punta. La guardia de vigencia de las recomendaciones
+sigue existiendo en el código y deja de ser un riesgo operativo, porque que
+caduquen ya no apaga nada.
+
+Detalle de cada medición en `research/sigma6_prueba_nula/`,
+`research/corredoras/`, `research/aporte_marginal/` y
+`research/carteras_en_pesos/`.
 
 ## Controles comunes
 

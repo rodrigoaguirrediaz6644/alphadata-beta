@@ -9,12 +9,17 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 
 CONJUNTO = "Conjunto AlphaData"
-STRATEGIES = ["Sigma-6", "Delta-12", "Gamma-6", "Oro"]
+# Sigma-6 salió de la asignación el 22-09-2026 y no aparece en el cuerpo del
+# informe. Su serie histórica se conserva y se sigue dibujando en la
+# reconstrucción, que es historia del proyecto.
+STRATEGIES = ["Delta-12", "Gamma-6", "Oro"]
+RETIRADAS = ["Sigma-6"]
 BENCHMARK = "IPSA TR"
 SERIES = [CONJUNTO, *STRATEGIES, BENCHMARK]
+SERIES_RECONSTRUCCION = [CONJUNTO, *STRATEGIES, *RETIRADAS, BENCHMARK]
 COLORS = {CONJUNTO: "#101828", "Sigma-6": "#1570ef", "Delta-12": "#0e9384", "Gamma-6": "#dc6803", "Oro": "#ca8504", BENCHMARK: "#98a2b3"}
 QUE_INVIERTE = {
-    "Sigma-6": "Acciones chilenas",
+    "Sigma-6": "Acciones chilenas (retirada)",
     "Delta-12": "Acciones chilenas",
     "Gamma-6": "Acciones de EE.UU. (en pesos)",
     "Oro": "Oro, como seguro del conjunto",
@@ -124,8 +129,9 @@ def _dibujar(data: pd.DataFrame, nombres: list[str], titulo: str, archivo: str,
             f'<p class="muted">{pie}</p>')
 
 
-def _series_presentes(data: pd.DataFrame) -> list[str]:
-    return [n for n in SERIES if n in data and pd.to_numeric(data[n], errors="coerce").notna().sum() > 1]
+def _series_presentes(data: pd.DataFrame, series: list[str] | None = None) -> list[str]:
+    return [n for n in (series or SERIES)
+            if n in data and pd.to_numeric(data[n], errors="coerce").notna().sum() > 1]
 
 
 def _chart(frame: pd.DataFrame, benchmark_usable: bool = True) -> str:
@@ -152,7 +158,7 @@ def _chart(frame: pd.DataFrame, benchmark_usable: bool = True) -> str:
     if HISTORICAL.exists():
         recon = pd.read_csv(HISTORICAL, parse_dates=["date"]).rename(
             columns={"IPSA Total Return": BENCHMARK}).sort_values("date")
-        nombres = _series_presentes(recon)
+        nombres = _series_presentes(recon, SERIES_RECONSTRUCCION)
         if nombres:
             bloques.append("<h3>Reconstrucción</h3>" + _dibujar(
                 recon, nombres, "Aplicando las mismas reglas hacia atrás", "reconstruccion.png",
@@ -307,7 +313,7 @@ def _pesos(valor, moneda: str) -> str:
     return f"{moneda} {float(valor):,.0f}".replace(",", ".")
 
 
-def _caja(portfolio: pd.DataFrame, capital_por_pieza: float | None) -> str:
+def _caja(portfolio: pd.DataFrame, capital: float | None) -> str:
     """Lo que queda sin invertir en una pieza.
 
     Sigma-6 sólo compra lo que Credicorp recomienda y el momentum confirma, y
@@ -315,12 +321,12 @@ def _caja(portfolio: pd.DataFrame, capital_por_pieza: float | None) -> str:
     porcentajes eso pasaba inadvertido; en pesos son $2.500.000 quietos y hay
     que decirlo.
     """
-    if portfolio is None or portfolio.empty or not capital_por_pieza:
+    if portfolio is None or portfolio.empty or not capital:
         return ""
     libre = 1 - float(portfolio.target_weight.sum())
     if libre <= .005:
         return ""
-    return (f'<p class="muted">En caja: {_pesos(libre * capital_por_pieza, "$")} '
+    return (f'<p class="muted">En caja: {_pesos(libre * capital, "$")} '
             f'({pct(libre)} de la pieza), porque no hay más nombres que cumplan las condiciones.</p>')
 
 
@@ -347,9 +353,7 @@ def _movimientos(movimientos: pd.DataFrame | None) -> str:
 
 def build_public_report(
     as_of: pd.Timestamp,
-    sigma: pd.DataFrame,
     delta: pd.DataFrame,
-    sigma_moves: pd.DataFrame,
     delta_moves: pd.DataFrame,
     coverage: pd.DataFrame,
     errors: pd.DataFrame,
@@ -359,7 +363,7 @@ def build_public_report(
     oro: pd.DataFrame | None = None,
     oro_moves: pd.DataFrame | None = None,
     movimientos: pd.DataFrame | None = None,
-    capital_por_pieza: float | None = None,
+    capital_por_pieza: dict | None = None,
     vigencia: dict | None = None,
     salud: list | None = None,
     conocidos: list | None = None,
@@ -373,17 +377,20 @@ def build_public_report(
     history = history.copy()
     history["date"] = pd.to_datetime(history["date"])
     metrics = _series_metrics(history)
-    portfolios = {"Sigma-6": sigma, "Delta-12": delta, "Gamma-6": gamma, "Oro": oro}
-    moves = {"Sigma-6": sigma_moves, "Delta-12": delta_moves, "Gamma-6": gamma_moves, "Oro": oro_moves}
+    portfolios = {"Delta-12": delta, "Gamma-6": gamma, "Oro": oro}
+    moves = {"Delta-12": delta_moves, "Gamma-6": gamma_moves, "Oro": oro_moves}
 
     # Dos bloques separados, que el informe mezcló desde siempre bajo un mismo
     # título: lo que cambió esta semana no es lo mismo que lo que hay que
     # comprar para entrar hoy. Confundirlos es lo que produjo un «Comprar INTC»
     # en la misma página en que la tabla decía «comprada el 30-09-2025».
+    reparto_corto = (", ".join(f"{n} {pct(v / sum(capital_por_pieza.values()))}"
+                               for n, v in capital_por_pieza.items())
+                     if capital_por_pieza else "las piezas en partes iguales")
     orders_block = _movimientos(movimientos)
-    reparto = (f"Con un capital de {_pesos(capital_por_pieza * len(STRATEGIES), '$')} repartido en cuartos, "
-               f"a cada pieza le tocan {_pesos(capital_por_pieza, '$')}. La columna dice cuántos pesos va "
-               "en cada acción."
+    reparto = ((f"Con un capital de {_pesos(sum(capital_por_pieza.values()), '$')}, a cada pieza le toca "
+                + ", ".join(f"{n} {_pesos(v, '$')}" for n, v in capital_por_pieza.items())
+                + ". La columna dice cuántos pesos va en cada acción.")
                if capital_por_pieza else
                "El peso de entrada es dentro de su propia pieza, y cada pieza es un cuarto del total.")
 
@@ -400,7 +407,7 @@ def build_public_report(
     summary_rows = []
     for name in resumen:
         m = metrics[name]
-        invierte = "Partes iguales en las cuatro piezas" if name == CONJUNTO else QUE_INVIERTE[name]
+        invierte = reparto_corto if name == CONJUNTO else QUE_INVIERTE[name]
         cuantas = "—" if name in {CONJUNTO, BENCHMARK} else str(len(portfolios[name]))
         strong = ' class="row-strong"' if name == CONJUNTO else ""
         summary_rows.append(f'<tr{strong}><td>{name}</td><td>{invierte}</td><td>{_signed(m["return"])}</td><td>{_signed(m["last_year"])}</td><td>{pct(m["mdd"])}</td><td>{cuantas}</td></tr>')
@@ -435,7 +442,7 @@ def build_public_report(
     nota_dividendos = "".join(notas)
 
     positions_blocks = "".join(
-        f'<h3>{name} · {QUE_INVIERTE[name]}</h3>{_positions(portfolios[name])}{_caja(portfolios[name], capital_por_pieza)}'
+        f'<h3>{name} · {QUE_INVIERTE[name]}</h3>{_positions(portfolios[name])}{_caja(portfolios[name], (capital_por_pieza or {}).get(name))}'
         for name in STRATEGIES if name in portfolios
     )
 
@@ -463,7 +470,7 @@ def build_public_report(
     <header class="head"><div class="brand">AlphaData</div><div class="sub">Informe semanal · {as_of:%d-%m-%Y}</div></header>
 
     <section><h2>Cómo va tu dinero</h2>
-    <p class="lead">Poniendo la misma cantidad en cada una de las cuatro piezas, desde que empezó el seguimiento llevas:</p>
+    <p class="lead">Repartiendo el capital en {reparto_corto}, desde que empezó el seguimiento llevas:</p>
     <div class="hero {'up' if (conjunto['return'] or 0) >= 0 else 'down'}">{headline}</div>
     <p class="lead">{'Eso es ' + _signed(versus) + ' comparado con haber invertido en la bolsa chilena completa.' if versus is not None else 'La comparación con la bolsa chilena aparecerá cuando su serie esté completa.'}</p>
     </section>
@@ -502,7 +509,7 @@ def build_public_report(
         "",
         f"**Fecha:** {as_of:%d-%m-%Y}",
         "",
-        f"**Conjunto (partes iguales en las cuatro piezas): {headline} desde el {inicio:%d-%m-%Y}.**",
+        f"**Conjunto ({reparto_corto}): {headline} desde el {inicio:%d-%m-%Y}.**",
         "",
         "## Qué cambió desde el informe anterior",
         "",

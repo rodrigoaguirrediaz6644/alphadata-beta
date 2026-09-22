@@ -359,13 +359,18 @@ def sigma6_historical_nav(valid: pd.DataFrame, prices: pd.DataFrame, universe: p
     return nav_corrido(panel,sesiones,"W-FRI",elegir,cost_rate,"Sigma-6")
 
 
-def combined_equal_weight(frame: pd.DataFrame, columns: list[str], date_column: str = "date", freq: str = "M") -> pd.Series:
-    """Serie del conjunto: la misma ponderación en cada estrategia.
+def combined_equal_weight(frame: pd.DataFrame, columns: list[str], date_column: str = "date", freq: str = "M", weights: dict[str, float] | None = None) -> pd.Series:
+    """Serie del conjunto, con la ponderación que le toque a cada estrategia.
 
-    Se reparte el capital en partes iguales entre las estrategias disponibles en
-    cada fecha y se reequilibra al cierre de cada mes; dentro del mes los pesos
-    se dejan correr, igual que ocurriría en una cuenta real. Devuelve un índice
-    base 100 indexado por fecha.
+    Se reequilibra al cierre de cada mes; dentro del mes los pesos se dejan
+    correr, igual que ocurriría en una cuenta real. Devuelve un índice base 100
+    indexado por fecha.
+
+    `weights` es el reparto por estrategia, que desde el 22-09-2026 no es en
+    partes iguales: Delta-12 37,5%, Gamma-6 37,5% y el oro 25%. Sin `weights`
+    reparte por igual, que es lo que hacía antes y lo que sigue sirviendo para
+    estudios. Una estrategia sin dato en una fecha no entra, y las demás se
+    renormalizan entre ellas.
     """
     data=frame.copy(); data[date_column]=pd.to_datetime(data[date_column])
     present=[c for c in columns if c in data]
@@ -376,8 +381,10 @@ def combined_equal_weight(frame: pd.DataFrame, columns: list[str], date_column: 
     nav=[]; level=100.; previous=None
     for _,block in values.groupby(values.index.to_period(freq)):
         if previous is not None: block=pd.concat([previous.to_frame().T,block])
-        growth=block.divide(block.iloc[0])  # el mes arranca reequilibrado: las columnas sin dato quedan NaN y no entran al promedio
-        period=growth.mean(axis=1)*level  # partes iguales entre las estrategias con dato
+        growth=block.divide(block.iloc[0])  # el mes arranca reequilibrado: las columnas sin dato quedan NaN y no entran
+        w=pd.Series({c:(weights or {}).get(c,1.) for c in growth.columns},dtype=float)
+        aportes=growth.mul(w,axis=1); presentes=growth.notna().mul(w,axis=1).sum(axis=1)
+        period=(aportes.sum(axis=1)/presentes.replace(0,np.nan))*level  # renormaliza entre las que tienen dato
         nav.append(period.iloc[1:] if previous is not None else period)
         level=float(period.iloc[-1]); previous=block.iloc[-1]
     series=pd.concat(nav).sort_index()
