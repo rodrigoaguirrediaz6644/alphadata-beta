@@ -73,3 +73,28 @@ El sistema convierte los instrumentos estadounidenses multiplicando por el tipo
 de cambio, o sea asume el CDV uno a uno con la acción. No afecta porcentajes ni
 NAV, pero sí cuántas unidades se compran con $833.333. **Hay que confirmarlo
 antes de comprar en real.**
+
+## La tasa 0,1785% está escrita a mano en tres lugares
+
+El **mínimo** pasó a leerse de `config/runtime.v2.json`, pero la tasa sigue
+literal en tres puntos de `src/run_pipeline.py` —los dos `turnover_cost`
+chilenos y el defecto de `enrich_open_positions`— mientras la configuración
+también la tiene. Dos copias del mismo número es la forma en que un número se
+corrige en un lado y no en el otro. No urge: hoy las cuatro copias coinciden y
+hay una prueba de que el informe y la configuración calzan.
+
+## `reconstruccion_historica.csv` cambia sin que cambie nada
+
+Cada corrida reescribe las 1.249 filas y el diff sale de 1.027 líneas por
+diferencias en el último dígito: la máxima diferencia relativa medida es
+**1,3e-15**, precisión de flotante. El ruido tapa los cambios reales cuando los
+haya. Se arregla redondeando la salida a una precisión que tenga sentido
+—cuatro decimales sobre base 100 son diezmilésimas de punto— y no antes de que
+alguien lo necesite.
+
+## El contraste contra investing.com baja a trimestral
+
+No se puede cerrar: las guardias miran variación y el contraste detecta un
+precio que se mueve bien y está mal de nivel. Pero su valor no es detectar
+rápido —un error de nivel es persistente, no urgente— así que trimestral cubre
+lo mismo a un tercio del trabajo. Ver `DEPENDENCIAS_MANUALES.md`.
