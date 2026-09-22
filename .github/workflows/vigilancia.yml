@@ -14,6 +14,11 @@ name: Vigilancia
 # solo, mas cerca esta de apagarse en silencio.
 on:
   workflow_dispatch:
+    inputs:
+      simular_aviso:
+        description: "Forzar el aviso para comprobar que el correo llega"
+        type: boolean
+        default: false
   schedule:
     # Todos los dias a las 12:00 UTC. Diario y no semanal porque lo que vigila
     # es que algo semanal ocurra: con la misma cadencia no se distingue un
@@ -53,6 +58,7 @@ jobs:
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
           SMTP_FROM: ${{ secrets.SMTP_FROM }}
           REPORT_RECIPIENTS: ${{ secrets.REPORT_RECIPIENTS }}
+          SIMULAR_AVISO: ${{ inputs.simular_aviso }}
         run: PYTHONPATH=. python -m src.vigilancia
 
       - name: Guardar la marca de actividad si se escribio

@@ -93,8 +93,22 @@ def hay_que_avisar(dias: float | None, umbral: int = DIAS_SIN_INFORME) -> bool:
     return dias is None or dias > umbral
 
 
-def mensaje(dias: float | None) -> tuple[str, str]:
-    """Asunto y cuerpo del aviso, en el mismo lenguaje que el informe."""
+def mensaje(dias: float | None, simulado: bool = False) -> tuple[str, str]:
+    """Asunto y cuerpo del aviso, en el mismo lenguaje que el informe.
+
+    `simulado` existe porque **un aviso que nunca se disparó no está probado**.
+    Es el mismo argumento que obligó a preguntar si la corrida semanal se había
+    disparado sola alguna vez: un mecanismo que nadie vio funcionar es una
+    promesa, no una garantía. Con esto se puede comprobar de punta a punta —que
+    el correo sale, que llega, y que se entiende— sin esperar a que falle algo.
+    """
+    if simulado:
+        return ("AlphaData — ENSAYO del aviso, no pasa nada",
+                "Esto es un ensayo, lanzado a mano. **El informe está al día y no hay "
+                "ningún problema.**\n\nSirve para comprobar que el aviso llega, porque un "
+                "aviso que nunca se disparó no está probado. Si algún día llega uno de "
+                "verdad, dirá «no ha salido el informe» en el asunto y no llevará esta "
+                "línea.\n")
     if dias is None:
         cuerpo = ("No hay ningún informe publicado en el repositorio, o no se pudo leer su "
                   "fecha.\n")
@@ -145,6 +159,7 @@ def escribir_marca(ahora: datetime | None = None) -> Path:
 def main() -> None:                                             # pragma: no cover - entrada
     import os
 
+    simulado = os.getenv("SIMULAR_AVISO", "").strip().lower() in {"1", "true", "yes", "si"}
     dias = antiguedad_del_informe()
     edad = "desconocida" if dias is None else f"{dias:.1f} días"
     print(f"Antigüedad del último informe: {edad}.")
@@ -153,10 +168,10 @@ def main() -> None:                                             # pragma: no cov
         escribir_marca()
         print("Marca de actividad escrita: el repositorio llevaba demasiado tiempo quieto.")
 
-    if not hay_que_avisar(dias):
+    if not simulado and not hay_que_avisar(dias):
         print("El informe está al día; no se avisa nada.")
         return
-    asunto, cuerpo = mensaje(dias)
+    asunto, cuerpo = mensaje(dias, simulado)
     faltan = [n for n in ("SMTP_HOST", "SMTP_USER", "SMTP_PASSWORD", "REPORT_RECIPIENTS")
               if not os.getenv(n)]
     if faltan:
@@ -178,6 +193,9 @@ def main() -> None:                                             # pragma: no cov
         smtp.login(os.environ["SMTP_USER"], os.environ["SMTP_PASSWORD"])
         smtp.send_message(msg)
     print("Aviso enviado a " + os.environ["REPORT_RECIPIENTS"])
+    if simulado:
+        print("Era un ensayo: la corrida queda en verde.")
+        return
     # Y además se deja rojo en Actions: el correo se puede perder.
     raise SystemExit(asunto)
 

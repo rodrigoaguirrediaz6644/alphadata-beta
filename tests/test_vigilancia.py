@@ -105,3 +105,18 @@ def test_un_archivo_que_no_existe_no_finge_estar_al_dia(tmp_path):
     subprocess.run(["git", "init", "-q"], cwd=repo, capture_output=True, check=True)
     assert fecha_del_ultimo_commit("no_existe.md", repo=repo) is None
     assert hay_que_avisar(None)
+
+
+def test_el_ensayo_del_aviso_se_distingue_de_uno_de_verdad():
+    """Un aviso que nunca se disparo no esta probado.
+
+    Es el mismo argumento que obligo a preguntar si la corrida semanal se habia
+    disparado sola alguna vez: un mecanismo que nadie vio funcionar es una
+    promesa. Pero el ensayo no puede parecerse a la cosa real, o la primera
+    alarma de verdad se lee como otra prueba.
+    """
+    asunto, cuerpo = mensaje(1., simulado=True)
+    assert "ENSAYO" in asunto and "no ha salido" not in asunto
+    assert "no hay" in cuerpo and "problema" in cuerpo
+    real, _ = mensaje(30.)
+    assert "ENSAYO" not in real and "no ha salido el informe" in real
