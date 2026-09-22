@@ -67,15 +67,22 @@ def test_con_pocas_ruedas_frescas_no_se_afirma_nada():
     assert premio(c, p) is None
 
 
-def test_una_razon_muy_lejos_de_uno_se_descarta_por_ser_otro_instrumento():
+def test_una_razon_muy_lejos_de_uno_no_promedia_pero_si_se_conserva():
     """Asi se descubrio que el simbolo anotado para Bank of America era Boeing.
 
     BACL.SN cotizaba a 3,6 veces el teorico de BAC, de forma consistente. Eso no
-    es un premio: es otra empresa. El simbolo correcto es BACCL.
+    es un premio: es otra empresa.
+
+    El recorte no puede vivir en `frescas`, porque las dos cosas que leen de ahi
+    quieren lo contrario: para medir el premio un 3,6 es un dato roto que
+    ensucia la media, y para la puerta de simbolos es **la evidencia**.
+    Descartarlo ahi dejaba a la puerta sin con que rechazar.
     """
-    p = _precios(FECHAS, [100., 110., 120., 130.])
-    c = _cdv(FECHAS, [360_000., 400_000., 430_000., 470_000.], [3, 3, 3, 3])
-    assert frescas(c, p).empty
+    largo = [f"2026-0{m}-{d:02d}" for m in (1, 2) for d in range(1, 16)]
+    p = _precios(largo, [100. + i for i in range(len(largo))])
+    c = _cdv(largo, [(100. + i) * 1000. * 3.6 for i in range(len(largo))], [3] * len(largo))
+    assert len(frescas(c, p)) == len(largo) - 1      # se conservan
+    assert premio(c, p) is None                      # y no promedian
 
 
 def test_exxon_queda_fuera_en_vez_de_adivinarle_un_simbolo():
@@ -170,16 +177,40 @@ def test_el_simbolo_de_otra_empresa_queda_fuera_aunque_su_serie_sea_impecable():
     assert "Boeing" in p.loc["BAC", "motivo"]
 
 
-def test_una_razon_imposible_basta_para_rechazar_sin_nombre_del_proveedor():
-    """Ningun grado de precio rancio explica un 3,6.
+def test_una_razon_imposible_rechaza_con_una_sola_rueda_fresca():
+    """La red para cuando el proveedor no da el nombre: no depende de una fuente.
 
-    Es la red de seguridad para cuando el proveedor no da el nombre: el rechazo
-    no puede depender de una sola fuente.
+    Basta **una** rueda fresca, sin esperar a las diez, porque una razon de 3,5
+    no es un premio ni un desfase de horario.
     """
-    precios = [50. * 1000. * 3.6] * len(DIAS)
-    cdv = _serie("BAC", "BACL.SN", DIAS, precios, [0] * len(DIAS))
+    precios = [50. * 1000. * 3.5 + i for i in range(len(DIAS))]
+    cdv = _serie("BAC", "BACL.SN", DIAS, precios, [6] * len(DIAS))
     p = _puerta(cdv, [{"cdv": "BACL.SN", "subyacente": "BAC", "nombre_proveedor": ""}])
     assert p.loc["BAC", "estado"] == RECHAZADO
+    assert "otro instrumento" in p.loc["BAC", "motivo"]
+
+
+def test_un_precio_congelado_no_puede_rechazar_a_nadie():
+    """Esto estuvo mal y HONCL lo pago: se rechazo una posicion sana.
+
+    La red se habia tendido sobre la razon mediana de **todas** las ruedas, con
+    el argumento de que ninguna cantidad de rancio explica un numero grande. Es
+    falso. HONCL tiene once precios distintos en 480 ruedas, y estar congelado
+    mientras el subyacente se movia lo dejo con mediana 1,77 y maximo 2,08. Sus
+    ruedas frescas dan 1,005.
+
+    El tamanio del artefacto **no tiene techo**: lo fija cuanto se movio el
+    subyacente durante el congelamiento. Por eso la razon solo se mide sobre
+    ruedas frescas, nunca sobre el cierre exhibido.
+    """
+    # El CDV congelado en su precio inicial mientras el subyacente se duplica.
+    mercado = _mercado(DIAS, {"BAC": 50., "ABT": 100.})
+    congelado = _serie("ABT", "ABTCL.SN", DIAS, [100. * 1000. * 2.0] * len(DIAS), [7] * len(DIAS))
+    p = estado(UNIVERSO, congelado, mercado,
+               pd.DataFrame([{"cdv": "ABTCL.SN", "subyacente": "ABT",
+                              "nombre_proveedor": "Abbott Laboratories"}])).set_index("ticker")
+    assert p.loc["ABT", "estado"] == OPERABLE, "un precio congelado no es un instrumento equivocado"
+    assert p.loc["ABT", "ruedas"] == 0
 
 
 def test_sin_simbolo_no_se_opera_y_la_puerta_lo_dice_sola():

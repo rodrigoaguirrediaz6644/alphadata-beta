@@ -49,8 +49,10 @@ ARCHIVO = ROOT / "data" / "cdv_precios.csv"
 SIMBOLOS = ROOT / "data" / "cdv_simbolos.csv"
 COLUMNAS = ["date", "cdv", "subyacente", "cdv_clp", "volumen"]
 
-# Una razón muy lejos de 1 no es un premio, es otro instrumento o un dato roto:
-# así se descubrió que el símbolo anotado para Bank of America era el de Boeing.
+# Para **medir el premio**: una razón tan lejos de 1 no es un premio, es otro
+# instrumento o un dato roto, y no puede entrar en una media. Para la puerta de
+# símbolos es al revés —es la evidencia—, así que el recorte no vive en
+# `frescas` sino acá.
 RAZON_MAXIMA = .15
 # Cuántas ruedas frescas hace falta para decir algo. Con menos, el error
 # estándar es más grande que cualquier premio que se quiera detectar.
@@ -170,7 +172,11 @@ def frescas(cdv: pd.DataFrame, precios: pd.DataFrame) -> pd.DataFrame:
     d = d.dropna(subset=["cdv_clp", "usd", "fx"])
     d = d[(d.usd > 0) & (d.fx > 0) & (d.cdv_clp > 0) & (d.volumen.fillna(0) > 0) & d.cambio]
     d["desvio"] = (d.cdv_clp / d.usd) / d.fx - 1
-    return d.loc[d.desvio.abs() < RAZON_MAXIMA]
+    # **Sin recortar por razón.** El recorte vive en `premio`, que es de quien
+    # era: ahí un 3,5 es un dato roto que ensucia una media. Acá un 3,5 es
+    # justo la fila que la puerta necesita para rechazar un símbolo, y
+    # descartarla la dejaba sin evidencia y sin poder pronunciarse.
+    return d
 
 
 def premio(cdv: pd.DataFrame, precios: pd.DataFrame, desde=None) -> Premio | None:
@@ -180,6 +186,7 @@ def premio(cdv: pd.DataFrame, precios: pd.DataFrame, desde=None) -> Premio | Non
     la corredora cambió de régimen es demasiado viejo.
     """
     d = frescas(cdv, precios)
+    d = d.loc[d.desvio.abs() < RAZON_MAXIMA]     # un dato roto no promedia
     if desde is not None:
         d = d.loc[d.date >= pd.Timestamp(desde)]
     vivos = d.groupby("cdv").desvio.count()
@@ -202,10 +209,20 @@ def premio(cdv: pd.DataFrame, precios: pd.DataFrame, desde=None) -> Premio | Non
 BANDA_DE_RAZON = .02
 # Ruedas frescas mínimas para pronunciarse sobre la razón de un nombre.
 RUEDAS_PARA_LA_RAZON = 10
-# Una razón así de lejos de 1 no necesita ruedas frescas para ser un rechazo:
-# ninguna cantidad de precio rancio explica un 3,6. Es el umbral con el que
-# BACL queda fuera aunque no tenga una sola rueda que se pueda creer.
+# Una razón así de lejos de 1 basta para rechazar con **una sola** rueda fresca,
+# sin esperar a las diez: BACL cotizaba a 3,5 veces su teórico en la única que
+# tuvo. Pero se mide sobre ruedas frescas y nunca sobre el cierre exhibido.
+#
+# Esto estuvo mal y hay que dejarlo escrito. La red se tendió sobre la razón
+# mediana de **todas** las ruedas, con el argumento de que ninguna cantidad de
+# rancio explica un 3,6. Es falso: HONCL tiene once precios distintos en 480
+# ruedas, y estar congelado mientras el subyacente se movía lo dejó con una
+# mediana de 1,77 y un máximo de 2,08. La red lo rechazó y no había nada malo
+# con él —sus ruedas frescas dan 1,005—, o sea que iba a impedir comprar una
+# posición sana. El tamaño del artefacto no tiene techo: lo fija cuánto se
+# movió el subyacente durante el congelamiento, y eso puede ser cualquier cosa.
 RAZON_IMPOSIBLE = .25
+RUEDAS_PARA_RECHAZAR = 1
 
 OPERABLE = "operable"
 RECHAZADO = "rechazado"
@@ -256,7 +273,6 @@ def estado(universe: pd.DataFrame, cdv: pd.DataFrame, precios: pd.DataFrame,
         nombres = dict(zip(simbolos.subyacente, simbolos.nombre_proveedor))
     empresa = dict(zip(universe.alphadata_ticker, universe.nombre.astype(str).str.split(" (CDV", regex=False).str[0]))
     f = frescas(cdv, precios) if len(cdv) else pd.DataFrame(columns=["subyacente", "desvio"])
-    crudo = _razon_cruda(cdv, precios)
 
     filas = []
     for t in sorted(universe.loc[universe.tipo.isin({"accion_us", "etf_us"}), "alphadata_ticker"]):
@@ -267,16 +283,16 @@ def estado(universe: pd.DataFrame, cdv: pd.DataFrame, precios: pd.DataFrame,
         calza = mismo_nombre(empresa.get(t, t), nombres.get(t, ""))
         fila = {"ticker": t, "simbolo": simbolo, "ruedas": n, "razon": mediana,
                 "nombre_proveedor": nombres.get(t, ""), "estado": SIN_VERIFICAR, "motivo": ""}
-        bruta = crudo.get(t)
         if not simbolo:
             fila |= {"estado": SIN_SIMBOLO,
                      "motivo": "no se encontró el símbolo del CDV en el proveedor"}
         elif calza is False:
             fila |= {"estado": RECHAZADO,
                      "motivo": f"el proveedor dice que {simbolo} es «{nombres.get(t, '')}», no {empresa.get(t, t)}"}
-        elif bruta is not None and abs(bruta - 1) > RAZON_IMPOSIBLE:
+        elif n >= RUEDAS_PARA_RECHAZAR and abs(mediana - 1) > RAZON_IMPOSIBLE:
             fila |= {"estado": RECHAZADO,
-                     "motivo": f"{simbolo} cotiza a {bruta:.2f} veces su valor teórico: es otro instrumento"}
+                     "motivo": f"{simbolo} cotiza a {mediana:.2f} veces su valor teórico "
+                               f"en las {n} ruedas con negocio: es otro instrumento"}
         elif n >= RUEDAS_PARA_LA_RAZON and abs(mediana - 1) > BANDA_DE_RAZON:
             fila |= {"estado": RECHAZADO,
                      "motivo": f"la razón contra el teórico es {mediana:.4f}, fuera de "
@@ -292,24 +308,3 @@ def estado(universe: pd.DataFrame, cdv: pd.DataFrame, precios: pd.DataFrame,
             fila |= {"motivo": f"sólo {n} ruedas con negocio y el proveedor no confirma la empresa"}
         filas.append(fila)
     return pd.DataFrame(filas)
-
-
-def _razon_cruda(cdv: pd.DataFrame, precios: pd.DataFrame) -> dict[str, float]:
-    """La razón mediana sobre **todas** las ruedas, sin filtrar por frescura.
-
-    El precio rancio la ensucia en un 2% y por eso no sirve para decir que algo
-    está bien. Sirve para lo otro: ningún grado de rancio explica un 3,6, así
-    que un símbolo equivocado se delata acá aunque no tenga una sola rueda con
-    negocio.
-    """
-    if cdv.empty or precios.empty:
-        return {}
-    usd = (precios.loc[precios.alphadata_ticker.isin(cdv.subyacente.unique()),
-                       ["date", "alphadata_ticker", "close"]]
-           .rename(columns={"alphadata_ticker": "subyacente", "close": "usd"}))
-    fx = precios.loc[precios.alphadata_ticker == "USDCLP", ["date", "close"]].rename(columns={"close": "fx"})
-    d = cdv.merge(usd, on=["date", "subyacente"]).merge(fx, on="date").dropna(subset=["cdv_clp", "usd", "fx"])
-    d = d[(d.usd > 0) & (d.fx > 0) & (d.cdv_clp > 0)]
-    if d.empty:
-        return {}
-    return ((d.cdv_clp / d.usd) / d.fx).groupby(d.subyacente).median().to_dict()
