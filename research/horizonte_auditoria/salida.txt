@@ -1,0 +1,120 @@
+cuotas: 8817 dias, 2002-08-01 a 2026-09-20
+FRED:   14512 dias, 1971-02-05 a 2026-09-21
+
+######################################################################
+# 3. REPRODUCE?
+######################################################################
+          estrategia             periodo  cagr_recalculado  cagr_publicado   desvio
+Estrategia Horizonte completo_desde_2012          0.106164        0.106164 0.000000
+Estrategia Horizonte fuera_muestra_2021+          0.133243        0.133243 0.000000
+      Fondo A Cuprum completo_desde_2012          0.101274        0.101274 0.000000
+      Fondo A Cuprum fuera_muestra_2021+          0.114824        0.114824 0.000000
+      Fondo E Cuprum completo_desde_2012          0.062334        0.062334 0.000000
+      Fondo E Cuprum fuera_muestra_2021+          0.047894        0.047894 0.000000
+        Cuprum 50/50 completo_desde_2012          0.083039        0.083039 0.000000
+        Cuprum 50/50 fuera_muestra_2021+          0.082676        0.082676 0.000000
+
+Desvio maximo: 9.71e-17  ->  REPRODUCE
+
+######################################################################
+# 4. EL REZAGO DEL CAMBIO DE FONDO
+######################################################################
+Produccion ejecuta al 4o dia corrido tras la senal.
+
+ventana      completo  fuera de muestra
+rezago_dias                            
+1            10.4557%          13.0590%
+2            10.6854%          13.0597%
+3            10.6637%          13.3020%
+4            10.6164%          13.3243%
+5            10.7017%          13.3282%
+7            11.3940%          14.4217%
+10           11.2752%          13.8587%
+15           10.6466%          12.7867%
+
+######################################################################
+# 5. LA PRUEBA NULA, Y LA DECADA QUE EL BACKTEST NO MIRA
+######################################################################
+
+--- todo lo medible (2003-08+) ---
+            anual  peor_caida
+cartera                      
+Horizonte +10.82%     -26.48%
+Fondo A    +9.49%     -44.00%
+Fondo E    +6.62%     -20.81%
+50/50      +8.20%     -22.38%
+    Horizonte contra Fondo A: +1.32% anual  -> GANA
+
+--- la decada excluida (2003-2012) ---
+            anual  peor_caida
+cartera                      
+Horizonte +11.14%     -20.79%
+Fondo A    +8.51%     -44.00%
+Fondo E    +7.24%      -3.23%
+50/50      +8.05%     -22.38%
+    Horizonte contra Fondo A: +2.63% anual  -> GANA
+
+--- la crisis (2007-2010) ---
+            anual  peor_caida
+cartera                      
+Horizonte +10.48%     -20.79%
+Fondo A    +1.67%     -44.00%
+Fondo E    +7.56%      -2.77%
+50/50      +4.87%     -22.38%
+    Horizonte contra Fondo A: +8.81% anual  -> GANA
+
+--- el backtest publicado (2012-08+) ---
+            anual  peor_caida
+cartera                      
+Horizonte +10.62%     -26.48%
+Fondo A   +10.13%     -26.48%
+Fondo E    +6.23%     -20.81%
+50/50      +8.30%     -16.39%
+    Horizonte contra Fondo A: +0.49% anual  -> GANA
+
+--- fuera de muestra (2021+) ---
+            anual  peor_caida
+cartera                      
+Horizonte +13.32%     -13.97%
+Fondo A   +11.48%     -14.37%
+Fondo E    +4.79%     -20.81%
+50/50      +8.27%      -8.41%
+    Horizonte contra Fondo A: +1.84% anual  -> GANA
+
+######################################################################
+# SENSIBILIDAD DE LOS UMBRALES
+######################################################################
+Sin registro de donde salieron, la unica forma de sondear si estan
+afinados es ver si el resultado depende mucho de ellos.
+
+base (VIX 30, corte 2, MA 6, momento 12): +10.62% anual | Fondo A: +10.13%
+
+--- umbral del VIX ---
+  VIX 20         completo +10.67%   fuera de muestra +14.26%   contra Fondo A +0.55%
+  VIX 25         completo +10.43%   fuera de muestra +12.69%   contra Fondo A +0.30%
+  VIX 30         completo +10.62%   fuera de muestra +13.32%   contra Fondo A +0.49%  <- produccion
+  VIX 35         completo +10.36%   fuera de muestra +12.67%   contra Fondo A +0.23%
+  VIX 40         completo +10.36%   fuera de muestra +12.67%   contra Fondo A +0.23%
+
+--- corte del score ---
+  score >= 1     completo +9.89%   fuera de muestra +11.63%   contra Fondo A -0.23%
+  score >= 2     completo +10.62%   fuera de muestra +13.32%   contra Fondo A +0.49%  <- produccion
+  score >= 3     completo +10.49%   fuera de muestra +13.47%   contra Fondo A +0.36%
+  score >= 4     completo +10.57%   fuera de muestra +13.63%   contra Fondo A +0.44%
+
+--- ventana de la media ---
+  MA 3           completo +9.15%   fuera de muestra +11.45%   contra Fondo A -0.97%
+  MA 6           completo +10.62%   fuera de muestra +13.32%   contra Fondo A +0.49%  <- produccion
+  MA 9           completo +9.87%   fuera de muestra +11.90%   contra Fondo A -0.25%
+  MA 12          completo +10.51%   fuera de muestra +14.10%   contra Fondo A +0.39%
+
+--- ventana de momento ---
+  momento 6      completo +10.54%   fuera de muestra +13.27%   contra Fondo A +0.42%
+  momento 9      completo +10.43%   fuera de muestra +12.15%   contra Fondo A +0.30%
+  momento 12     completo +10.62%   fuera de muestra +13.32%   contra Fondo A +0.49%  <- produccion
+  momento 15     completo +9.63%   fuera de muestra +11.45%   contra Fondo A -0.50%
+
+
+######################################################################
+# Cambios de fondo en todo el backtest: 22
+######################################################################
