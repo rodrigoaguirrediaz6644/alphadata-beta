@@ -62,9 +62,18 @@ jobs:
         run: |
           git config user.name "alphadata-bot"
           git config user.email "actions@users.noreply.github.com"
+          # `git add` de una ruta que no existe aborta con codigo 128, y no
+          # existir es el caso **normal**: la marca solo se escribe cuando el
+          # repositorio lleva 45 dias quieto. Esto lo encontro la corrida en el
+          # entorno real; en local nunca se vio, porque en local el archivo se
+          # habia escrito a mano al probar.
+          if [ ! -f .github/ultimo_latido ]; then
+            echo "No se escribio marca en esta corrida; no hay nada que guardar."
+            exit 0
+          fi
           git add .github/ultimo_latido
           if git diff --cached --quiet; then
-            echo "Sin marca nueva que guardar."
+            echo "La marca no cambio."
             exit 0
           fi
           git commit -m "chore: marca de actividad para que no se apaguen los cron"
