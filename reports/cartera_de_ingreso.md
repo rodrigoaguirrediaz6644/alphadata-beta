@@ -11,14 +11,14 @@ un filtro**: ver `GUIA_INGRESO.md` para por qué.
 
 | acción | unidades | a gastar | residuo | en cartera hace | próxima salida | costo ida y vuelta |
 |---|---:|---:|---:|---:|---|---:|
-| PARAUCO | 240 | $ 935.736 | $ 1.764 | 174 días | por ranking, sin fecha | $ 3.980 · 0,43% |
-| BCI | 14 | $ 934.472 | $ 3.028 | 21 días | por ranking, sin fecha | $ 3.980 · 0,43% |
-| MALLPLAZA | 246 | $ 935.464 | $ 2.036 | 206 días | por ranking, sin fecha | $ 3.980 · 0,43% |
-| ITAUCL | 38 | $ 917.662 | $ 19.838 | 206 días | por ranking, sin fecha | $ 3.980 · 0,43% |
-| ECL | 493 | $ 936.700 | $ 800 | 83 días | por ranking, sin fecha | $ 3.980 · 0,42% |
-| CHILE | 4.699 | $ 937.450 | $ 50 | 83 días | por ranking, sin fecha | $ 3.980 · 0,42% |
-| BSANTANDER | 11.391 | $ 937.479 | $ 21 | 52 días | por ranking, sin fecha | $ 3.980 · 0,42% |
-| ANDINA-B | 191 | $ 935.900 | $ 1.600 | 21 días | por ranking, sin fecha | $ 3.980 · 0,43% |
+| PARAUCO | 240 | $ 935.736 | $ 1.764 | 174 días | por ranking, sin fecha | $ 3.341 · 0,36% |
+| BCI | 14 | $ 934.472 | $ 3.028 | 21 días | por ranking, sin fecha | $ 3.336 · 0,36% |
+| MALLPLAZA | 246 | $ 935.464 | $ 2.036 | 206 días | por ranking, sin fecha | $ 3.340 · 0,36% |
+| ITAUCL | 38 | $ 917.662 | $ 19.838 | 206 días | por ranking, sin fecha | $ 3.276 · 0,36% |
+| ECL | 493 | $ 936.700 | $ 800 | 83 días | por ranking, sin fecha | $ 3.344 · 0,36% |
+| CHILE | 4.699 | $ 937.450 | $ 50 | 83 días | por ranking, sin fecha | $ 3.347 · 0,36% |
+| BSANTANDER | 11.391 | $ 937.479 | $ 21 | 52 días | por ranking, sin fecha | $ 3.347 · 0,36% |
+| ANDINA-B | 191 | $ 935.900 | $ 1.600 | 21 días | por ranking, sin fecha | $ 3.341 · 0,36% |
 
 Residuo de esta pieza: **$ 29.136**, que queda en su caja.
 
@@ -42,6 +42,27 @@ Residuo de esta pieza: **$ 475.306**, que queda en su caja.
 | IAU | 63 | $ 4.968.090 | $ 31.910 | 263 días | posición permanente | $ 9.936 · 0,20% |
 
 Residuo de esta pieza: **$ 31.910**, que queda en su caja.
+
+## Lo que va a cobrar la corredora el primer día
+
+Comprar las 15 posiciones cuesta **$ 25.328** en comisiones.
+
+| pieza | se invierte | comisión | tarifa |
+|---|---:|---:|---|
+| Delta-12 | $ 7.470.864 | $ 13.335 | 0,1785%, con mínimo de $999,99 |
+| Gamma-6 | $ 7.024.694 | $ 7.025 | 0,1% de CDV, sin mínimo |
+| Oro | $ 4.968.090 | $ 4.968 | 0,1% de CDV, sin mínimo |
+
+**Ninguna posición paga el mínimo**: todas superan el umbral de $ 560.218, bajo el cual el mínimo sale más caro que el porcentual.
+
+**Ojo con una cuenta fácil de hacer mal:** no es el 0,1785% de los $20 millones. Sólo
+Delta-12 paga la tarifa chilena; Gamma-6 y el oro se compran como CDV y pagan 0,1% sin
+mínimo. Y el redondeo a unidades enteras deja parte del capital sin invertir, así que
+la base tampoco son $20 millones.
+
+Este número es lo primero que se puede contrastar contra la boleta de la corredora, y
+es la mejor validación del modelo de costo que hay: si Trii cobra otra cosa, el modelo
+está mal y hay que corregirlo antes de que la diferencia se acumule.
 
 ## El residuo del redondeo
 
