@@ -139,6 +139,27 @@ de las ocho caen en ese 40%. El que se salta las que "parecen" próximas a
 venderse está aplicando un criterio propio encima de la estrategia, que es
 exactamente lo que el protocolo existe para evitar.
 
+## Mientras no hayas comprado, el bloque de movimientos no te habla a ti
+
+El informe tiene dos bloques y sirven a dos lectores distintos. **«Qué cambió»
+le habla a quien ya viene siguiendo el modelo**: le dice qué vender y qué
+comprar respecto de la cartera que ya tiene. **«La cartera completa» le habla a
+quien entra hoy**, y es la única que aplica antes de la primera compra.
+
+Confundirlos produjo una instrucción imposible: al retirarse Sigma-6, el bloque
+decía «Vender BCI, LTM, PARAUCO y VAPORES» a quien no tenía ninguna de las
+cuatro, y al mismo tiempo esta guía decía comprar la cartera vigente completa.
+Cierto sobre el modelo, irrealizable como orden.
+
+**El informe ahora lo sabe.** Mientras `data/operaciones_reales.csv` no
+registre ninguna compra, el bloque cambia sus verbos —«salió», «entró» en vez
+de «vender», «comprar»—, se titula «Qué cambió **en el modelo**» y dice con
+todas sus letras que lo que corresponde es la cartera completa. Desde la
+primera compra registrada vuelve a leerse como lo que hay que hacer.
+
+Es una razón más para llenar ese archivo desde la primera operación: no sólo
+mide el deslizamiento, también decide a quién le habla el informe.
+
 ## Los relojes: lo que hay que saber antes de la primera orden
 
 La regla no cambia —se compra la cartera vigente completa— pero quien compra

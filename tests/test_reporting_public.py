@@ -201,3 +201,37 @@ def test_el_reparto_del_capital_no_es_en_cuartos():
     for texto in (markdown, html):
         assert "Delta-12 37,5%" in texto and "Oro 25,0%" in texto
         assert "cuartos" not in texto and "cuatro piezas" not in texto
+
+
+MOVIMIENTOS_RETIRO = pd.DataFrame([
+    {"estrategia": "Sigma-6", "instrumento": "BCI", "accion": "VENDER", "fecha": pd.NaT},
+    {"estrategia": "Delta-12", "instrumento": "ANDINA-B", "accion": "COMPRAR",
+     "fecha": pd.Timestamp("2026-08-31")},
+])
+
+
+def test_sin_haber_comprado_el_bloque_describe_y_no_ordena():
+    """El informe llegó a decir «Vender BCI» a quien no tenía BCI.
+
+    Era cierto sobre el modelo —la cartera publicada anterior la tenía y la
+    vigente no— e imposible de ejecutar, y al mismo tiempo la guía de ingreso
+    decía comprar la cartera completa: dos instrucciones a la vez, una de ellas
+    irrealizable.
+    """
+    markdown, html = _report(movimientos=MOVIMIENTOS_RETIRO, ha_entrado=False)
+    for texto in (markdown, html):
+        assert "Vender" not in texto and "Comprar BCI" not in texto
+        assert "Salió" in texto and "Entró" in texto
+        assert "Todavía no has comprado nada" in texto
+    assert "Qué cambió en el modelo" in html
+
+
+def test_habiendo_comprado_el_mismo_bloque_ordena():
+    markdown, html = _report(movimientos=MOVIMIENTOS_RETIRO, ha_entrado=True)
+    assert "Vender BCI" in markdown and "Comprar ANDINA-B" in markdown
+    # En el HTML el verbo y la acción van en celdas distintas.
+    assert "<strong>Vender</strong>" in html and "<strong>Comprar</strong>" in html
+    for texto in (markdown, html):
+        assert "Todavía no has comprado nada" not in texto
+        assert "Salió" not in texto and "Entró" not in texto
+    assert "Qué hacer" in html

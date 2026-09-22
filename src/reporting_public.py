@@ -330,24 +330,44 @@ def _caja(portfolio: pd.DataFrame, capital: float | None) -> str:
             f'({pct(libre)} de la pieza), porque no hay más nombres que cumplan las condiciones.</p>')
 
 
-def _movimientos(movimientos: pd.DataFrame | None) -> str:
-    """Qué cambió desde el informe anterior. No desde la fecha de señal.
+def _movimientos(movimientos: pd.DataFrame | None, ha_entrado: bool = True) -> str:
+    """Qué cambió en el modelo desde el informe anterior.
+
+    **Es una afirmación sobre el modelo, no una orden al lector**, y esa
+    distinción no es de estilo. Al retirarse Sigma-6 el bloque decía «Vender
+    BCI, LTM, PARAUCO y VAPORES» a alguien que no tenía ninguna de las cuatro
+    porque todavía no había entrado al mercado: cierto sobre el modelo,
+    imposible de ejecutar, y al mismo tiempo la guía de ingreso le decía
+    comprar la cartera completa. Dos instrucciones a la vez, una de ellas
+    irrealizable.
+
+    Por eso los verbos describen lo que hizo el modelo —entró, salió— y sólo
+    cuando hay operaciones registradas en `data/operaciones_reales.csv` el
+    bloque se lee como lo que hay que hacer. Mientras no las haya, lo que
+    corresponde es la cartera completa de más abajo.
 
     Tres de las cuatro piezas son mensuales, así que la mayoría de las semanas
     esto viene vacío. Un bloque vacío se lee como informe roto: cuando no hay
     nada, hay que decirlo con todas sus letras.
     """
+    aviso = ("" if ha_entrado else
+             '<p class="calm"><strong>Todavía no has comprado nada</strong>, así que esto es '
+             'información sobre el modelo y no una lista de órdenes. Lo que te toca hacer es '
+             'la cartera completa que viene más abajo.</p>')
     if movimientos is None or movimientos.empty:
-        return ('<p class="calm"><strong>Sin cambios desde el informe anterior.</strong> '
-                'Las carteras de abajo siguen tal cual.</p>')
+        return aviso + ('<p class="calm"><strong>Sin cambios desde el informe anterior.</strong> '
+                        'Las carteras de abajo siguen tal cual.</p>')
+    verbos = ({"COMPRAR": "Comprar", "VENDER": "Vender"} if ha_entrado
+              else {"COMPRAR": "Entró", "VENDER": "Salió"})
     filas = []
     for r in movimientos.to_dict("records"):
         fecha = pd.to_datetime(r.get("fecha"), errors="coerce")
         desde = f"desde el {fecha:%d-%m-%Y}" if pd.notna(fecha) else "—"
-        filas.append(f'<tr><td><strong>{escape(str(r["accion"]).capitalize())}</strong></td>'
+        filas.append(f'<tr><td><strong>{escape(verbos.get(str(r["accion"]), str(r["accion"])))}</strong></td>'
                      f'<td>{escape(str(r["instrumento"]))}</td>'
                      f'<td>{escape(str(r["estrategia"]))}</td><td>{desde}</td></tr>')
-    return ('<table><thead><tr><th>Qué hacer</th><th>Acción</th><th>Estrategia</th>'
+    cabecera = "Qué hacer" if ha_entrado else "Qué hizo el modelo"
+    return (aviso + f'<table><thead><tr><th>{cabecera}</th><th>Acción</th><th>Estrategia</th>'
             f'<th>En cartera</th></tr></thead><tbody>{"".join(filas)}</tbody></table>')
 
 
@@ -367,6 +387,7 @@ def build_public_report(
     vigencia: dict | None = None,
     salud: list | None = None,
     conocidos: list | None = None,
+    ha_entrado: bool = True,
 ) -> tuple[str, str]:
     vacio_cartera = pd.DataFrame(columns=["ticker", "target_weight"])
     vacio_movs = pd.DataFrame(columns=["ticker", "action", "target_weight"])
@@ -387,7 +408,7 @@ def build_public_report(
     reparto_corto = (", ".join(f"{n} {pct(v / sum(capital_por_pieza.values()))}"
                                for n, v in capital_por_pieza.items())
                      if capital_por_pieza else "las piezas en partes iguales")
-    orders_block = _movimientos(movimientos)
+    orders_block = _movimientos(movimientos, ha_entrado)
     reparto = ((f"Con un capital de {_pesos(sum(capital_por_pieza.values()), '$')}, a cada pieza le toca "
                 + ", ".join(f"{n} {_pesos(v, '$')}" for n, v in capital_por_pieza.items())
                 + ". La columna dice cuántos pesos va en cada acción.")
@@ -475,7 +496,7 @@ def build_public_report(
     <p class="lead">{'Eso es ' + _signed(versus) + ' comparado con haber invertido en la bolsa chilena completa.' if versus is not None else 'La comparación con la bolsa chilena aparecerá cuando su serie esté completa.'}</p>
     </section>
 
-    <section><h2>Qué cambió desde el informe anterior</h2>
+    <section><h2>{'Qué cambió desde el informe anterior' if ha_entrado else 'Qué cambió en el modelo desde el informe anterior'}</h2>
     {orders_block}
     </section>
 
@@ -511,17 +532,22 @@ def build_public_report(
         "",
         f"**Conjunto ({reparto_corto}): {headline} desde el {inicio:%d-%m-%Y}.**",
         "",
-        "## Qué cambió desde el informe anterior",
+        "## Qué cambió desde el informe anterior" if ha_entrado else "## Qué cambió en el modelo desde el informe anterior",
         "",
     ]
     if movimientos is not None and len(movimientos):
         for record in movimientos.to_dict("records"):
             fecha = pd.to_datetime(record.get("fecha"), errors="coerce")
             desde = f" — en cartera desde el {fecha:%d-%m-%Y}" if pd.notna(fecha) else ""
-            lines.append(f"- {str(record['accion']).capitalize()} {record['instrumento']} "
-                         f"({record['estrategia']}){desde}")
+            verbo = ({"COMPRAR": "Comprar", "VENDER": "Vender"} if ha_entrado
+                     else {"COMPRAR": "Entró", "VENDER": "Salió"}).get(str(record["accion"]),
+                                                                       str(record["accion"]))
+            lines.append(f"- {verbo} {record['instrumento']} ({record['estrategia']}){desde}")
     else:
         lines.append("- Sin cambios desde el informe anterior. Las carteras siguen tal cual.")
+    if not ha_entrado:
+        lines.append("- Todavía no has comprado nada: esto es información sobre el modelo, no una "
+                     "lista de órdenes. Lo que te toca hacer es la cartera completa.")
     lines += ["", "## Cada estrategia", ""]
     for name in resumen:
         lines.append(f"- {name}: {_signed(metrics[name]['return'])} desde el {inicio:%d-%m-%Y}; peor caída {pct(metrics[name]['mdd'])}.")

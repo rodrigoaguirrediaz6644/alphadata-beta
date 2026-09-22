@@ -442,6 +442,14 @@ def main()->None:
     # el libro situara antes, y eso pasa cada vez que se reconstruye: el primer
     # informe dijo «Comprar CENCOMALLS» y el siguiente no la tenía y nunca dijo
     # que la vendiera.
+    # ¿Ya compró algo? Mientras `operaciones_reales.csv` no tenga una compra,
+    # el bloque de movimientos es información sobre el modelo y no una lista de
+    # órdenes: al retirarse Sigma-6 decía «Vender BCI» a quien no tenía BCI.
+    REALES=DATA/'operaciones_reales.csv'
+    ha_entrado=False
+    if REALES.exists():
+        reales=pd.read_csv(REALES)
+        ha_entrado=bool(len(reales) and (reales.accion.astype(str).str.upper()=='COMPRA').any())
     PUBLICADA=DATA/'cartera_publicada.json'
     vigente={n:{t:f.date().isoformat() for t,f in libro_abiertas(libro,n).items()}
              for n in STRATEGY_SERIES}
@@ -529,7 +537,7 @@ def main()->None:
     ingreso=cartera_de_ingreso({'Sigma-6':sigma,'Delta-12':delta,'Gamma-6':gamma,'Oro':oro_portfolio},as_of,costos)
     (REPORTS/'cartera_de_ingreso.md').write_text(markdown_ingreso(ingreso,as_of),encoding='utf-8')
     ingreso.to_csv(DATA/'cartera_de_ingreso.csv',index=False)
-    md,html=build_public_report(as_of,delta,dmove,coverage,errors,history,gamma=gamma,gamma_moves=gmove,oro=oro_portfolio,oro_moves=omove,movimientos=movimientos_libro,capital_por_pieza=por_pieza,vigencia=vigencia,salud=salud,conocidos=conocidos);(REPORTS/'latest_report.md').write_text(md,encoding='utf-8');(REPORTS/'latest_report.html').write_text(html,encoding='utf-8')
+    md,html=build_public_report(as_of,delta,dmove,coverage,errors,history,gamma=gamma,gamma_moves=gmove,oro=oro_portfolio,oro_moves=omove,movimientos=movimientos_libro,capital_por_pieza=por_pieza,vigencia=vigencia,salud=salud,conocidos=conocidos,ha_entrado=ha_entrado);(REPORTS/'latest_report.md').write_text(md,encoding='utf-8');(REPORTS/'latest_report.html').write_text(html,encoding='utf-8')
     guardar_publicada(vigente,as_of,PUBLICADA)
     sigma.to_csv(DATA/'portfolio_sigma6.csv',index=False);delta.to_csv(DATA/'portfolio_delta12.csv',index=False);gamma.to_csv(DATA/'portfolio_gamma6.csv',index=False);oro_portfolio.to_csv(DATA/'portfolio_oro.csv',index=False)
     s_audit.to_csv(DATA/'audit_sigma6.csv',index=False);d_audit.to_csv(DATA/'audit_delta12.csv',index=False)
