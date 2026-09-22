@@ -21,6 +21,8 @@ from dataclasses import dataclass
 
 import pandas as pd
 
+from src.cdv import BANDA
+
 
 # Lo que está roto, anotado y no cambia de semana a semana. **Una alarma que
 # siempre está roja por una razón conocida deja de ser una alarma**, así que
@@ -48,7 +50,7 @@ def _fecha(valor) -> str:
 def revisar(*, as_of, precios_al_dia, series_detenidas, cobertura_incompleta,
             series_recalculadas, series_publicadas, carteras_reproducidas,
             dias_sin_recomendaciones, umbral_vigencia, dividendos_sin_respaldo,
-            suite_verde) -> tuple[list[Chequeo], list[str]]:
+            suite_verde, premio_cdv=None) -> tuple[list[Chequeo], list[str]]:
     """Consolida lo que ya se verificó en esta corrida. No verifica de nuevo.
 
     `cobertura_incompleta` y `dividendos_sin_respaldo` son conjuntos de claves,
@@ -89,7 +91,37 @@ def revisar(*, as_of, precios_al_dia, series_detenidas, cobertura_incompleta,
                 "todos los de las posiciones vivas, confirmados" if not dividendos_sin_respaldo
                 else f"sin respaldo de precio: {', '.join(dividendos_sin_respaldo)}"),
         Chequeo("Pruebas", bool(suite_verde), "la suite pasó" if suite_verde else "la suite no pasó"),
+        _premio(premio_cdv),
     ], conocidos
+
+
+def _premio(p) -> Chequeo:
+    """El premio del CDV sobre su valor teórico, que es plata que no se ve.
+
+    Entra al panel porque **no está en ninguna parte del modelo de costo** y sí
+    afecta lo que Rodrigo paga: el precio publicado de Gamma-6 y del oro es el
+    subyacente en dólares por el tipo de cambio, y lo que la corredora cobra es
+    el CDV. Si esa diferencia se mueve, nada más lo notaría.
+
+    La banda es ancha a propósito. Lo que hay que pillar es un cambio de
+    régimen —que la corredora meta un punto— y no el ruido de un mes flojo: el
+    premio medido tiene un error estándar de 0,05% sobre dos años y de 0,08%
+    sobre el año corrido, así que una banda estrecha sonaría sola.
+    """
+    if p is None:
+        return Chequeo("Premio del CDV", True,
+                       "sin ruedas frescas suficientes para medirlo en esta ventana")
+    cuanto = f"{p.medio:+.2%}".replace(".", ",")
+    error = f"{p.error:.2%}".replace(".", ",")
+    cierre = (f"sobre {p.ruedas} ruedas en que el CDV transó de verdad, {p.nombres} nombres")
+    if not p.dentro_de_la_banda:
+        return Chequeo("Premio del CDV", False,
+                       f"el CDV cotiza {cuanto} sobre su valor teórico, fuera de la banda "
+                       f"de ±{BANDA:.0%}; {cierre}")
+    if not p.distinguible:
+        return Chequeo("Premio del CDV", True,
+                       f"{cuanto} ± {error}, que no se distingue de cero; {cierre}")
+    return Chequeo("Premio del CDV", True, f"{cuanto} ± {error}; {cierre}")
 
 
 def _apartados(conocidos: list[str]) -> str:

@@ -19,7 +19,7 @@
 
 ## ¿Hay que preocuparse?
 
-- Los datos están sanos y los cálculos cuadran (7 verificaciones). 3 asuntos conocidos apartados: AESANDES, MALLPLAZA 2026-09-03, MULTIFOODS.
+- Los datos están sanos y los cálculos cuadran (8 verificaciones). 3 asuntos conocidos apartados: AESANDES, MALLPLAZA 2026-09-03, MULTIFOODS.
 
 
 El informe HTML incluye el gráfico y las carteras. La metodología y sus parámetros son información reservada.

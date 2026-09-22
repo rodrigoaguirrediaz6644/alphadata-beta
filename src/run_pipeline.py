@@ -11,6 +11,7 @@ import pandas as pd
 from src.fetch_prices import load_universe, operables
 from src.ingest_recommendations import ingest
 from src.ingreso import cartera_de_ingreso, markdown as markdown_ingreso
+from src.cdv import cargar as cargar_cdv, premio as premio_cdv
 from src.libro import abiertas as libro_abiertas, anotar, cargar as cargar_libro, cartera_publicada, guardar as guardar_libro, guardar_publicada, movimientos_de, precios_de_entrada
 from src.strategy_registry import validate_registry
 from src.reporting_public import build_public_report
@@ -332,6 +333,9 @@ def main()->None:
     prices_us_clp=to_clp(prices_us,universe,fx)
     prices_oro=prices[prices.alphadata_ticker.isin(etf_tickers)].copy()
     prices_oro_clp=to_clp(prices_oro,universe,fx)
+    # El almacén completo, antes de partirlo por mercado: el premio del CDV
+    # necesita el subyacente en dólares y el tipo de cambio a la vez.
+    prices_all=prices
     prices=prices[~prices.alphadata_ticker.isin(us_tickers|etf_tickers|{'USDCLP'})].copy()
     # Los ADR cotizan en Nueva York y operan en feriados chilenos: si fijaran
     # la fecha de corte, la corrida marcaría NAV y fecharía compras en un día
@@ -586,7 +590,11 @@ def main()->None:
         dias_sin_recomendaciones=state.get('dias_sin_recomendaciones'),
         umbral_vigencia=DIAS_VIGENCIA_RECOMENDACIONES,
         dividendos_sin_respaldo=sin_respaldo,
-        suite_verde=True)
+        suite_verde=True,
+        # Un año: suficientes ruedas frescas para tener error chico, y lo
+        # bastante corto para que un cambio de régimen se note en vez de
+        # diluirse en dos años de historia.
+        premio_cdv=premio_cdv(cargar_cdv(),prices_all,desde=as_of-pd.Timedelta(days=365)))
 
     # La cartera de ingreso, con sus relojes. Se regenera en cada corrida: una
     # tabla de montos y fechas escrita a mano en la guía envejece sola.

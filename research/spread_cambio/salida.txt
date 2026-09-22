@@ -1,0 +1,45 @@
+########## lo rancio que esta el dato ##########
+ruedas con volumen cero            : 71.2%
+ruedas que repiten el cierre previo: mediana entre nombres 95.5%, maximo 98.2% (ABTCL.SN)
+racha mas larga en el mismo precio :
+  ABTCL.SN       453 ruedas
+  CVXCL.SN       453 ruedas
+  HONCL.SN       439 ruedas
+  MCDCL.SN       438 ruedas
+
+ruedas frescas (volumen Y cambio): 1,535 de 14,602 (10.5%)
+
+########## la razon contra el teorico, por nombre ##########
+Si el CDV fuera uno a uno con la accion, esto da 1,00.
+              median    std  count
+cdv                               
+AAPLCL.SN     1.0001 0.0178     50
+IAUCL.SN      1.0003 0.0139     82
+BACCL.SN      1.0012 0.0185     38
+WALMARTCL.SN  1.0012 0.0161     97
+UNHCL.SN      1.0017 0.0184     47
+GOOGCL.SN     1.0018 0.0122     73
+VCL.SN        1.0020 0.0128     99
+AMZNCL.SN     1.0023 0.0150    235
+NVDACL.SN     1.0026 0.0210    321
+GOOGLCL.SN    1.0030 0.0164     92
+MSFTCL.SN     1.0036 0.0155    248
+INTCCL.SN     1.0059 0.0248     48
+
+########## el premio, con su error ##########
+dos anios      +0.301% +/- 0.044%   n=1,517  nombres= 19  distinguible de cero: si
+ultimo anio    +0.149% +/- 0.060%   n=  715  nombres= 14  distinguible de cero: si
+2026           +0.047% +/- 0.078%   n=  494  nombres= 11  distinguible de cero: NO
+
+########## y lo que de verdad le cuesta a Gamma-6 ##########
+Un premio de nivel no es un costo por lado: si se compra y se vende con
+el mismo premio, se cancela. Lo que cuesta es que cambie entre medio.
+
+meses con al menos 10 ruedas frescas: 25
+  premio medio de los meses : +0.273%
+  desviacion mes a mes      : 0.418%
+  cambio medio entre meses  : 0.439%
+
+########## los simbolos ##########
+CDV sin simbolo confirmado: ['XOM']
+(se descarta cualquier rueda con |razon - 1| > 15%: no es un premio, es otro instrumento)

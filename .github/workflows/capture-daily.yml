@@ -52,11 +52,19 @@ jobs:
       - name: Capturar el cierre del día
         run: PYTHONPATH=. python -m src.fetch_daily_close
 
+      # El precio del CDV, que es lo que Rodrigo compra de verdad. El almacen
+      # guarda el subyacente en dolares; sin esto, el premio que cobra la
+      # corredora en la conversion no se puede ni plantear. Si falla, no se
+      # detiene la captura del cierre chileno, que es lo importante del dia.
+      - name: Capturar el precio de los CDV
+        continue-on-error: true
+        run: PYTHONPATH=. python -c "from src.cdv import bajar; from src.fetch_prices import load_universe; bajar(load_universe())"
+
       - name: Guardar el cierre capturado
         run: |
           git config user.name "alphadata-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add data/market_prices_daily.csv data/revisiones_precios.csv data/ultima_captura_diaria.json
+          git add data/market_prices_daily.csv data/revisiones_precios.csv data/ultima_captura_diaria.json data/cdv_precios.csv
           if git diff --cached --quiet; then
             echo "Sin cierres nuevos que guardar."
             exit 0

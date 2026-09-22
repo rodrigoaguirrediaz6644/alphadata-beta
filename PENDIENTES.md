@@ -67,12 +67,20 @@ puede rellenar desde el archivo de investing.com que ya está validado.
 **MALLPLAZA del 03-09-2026**, el dividendo de $30 sin respaldo de precio. Ver
 más arriba.
 
-## La razón del CDV
+## La razón del CDV: **confirmada**, uno a uno
 
-El sistema convierte los instrumentos estadounidenses multiplicando por el tipo
-de cambio, o sea asume el CDV uno a uno con la acción. No afecta porcentajes ni
-NAV, pero sí cuántas unidades se compran con $833.333. **Hay que confirmarlo
-antes de comprar en real.**
+Estaba abierto «hay que confirmarlo antes de comprar en real». Se confirmó
+midiendo el precio del CDV contra su subyacente por el tipo de cambio, sobre las
+ruedas en que el CDV de verdad transó: doce nombres entre **1,0001 y 1,0059**,
+incluidos los de la cartera vigente de Gamma-6 y el oro. Ver
+`research/spread_cambio/`.
+
+Y de paso apareció un error que sí valía plata: **el símbolo anotado para Bank
+of America era el de Boeing**. Corregido.
+
+Queda una punta: **el símbolo del CDV de Exxon no se encontró** y quedó vacío en
+vez de adivinado. XOM no está hoy en Gamma-6; si entra, hay que conseguirlo
+antes de operarlo.
 
 ## `reconstruccion_historica.csv` cambia sin que cambie nada
 
