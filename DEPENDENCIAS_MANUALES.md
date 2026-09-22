@@ -1,19 +1,28 @@
-# Las tres dependencias manuales
+# Las dependencias manuales
 
 Qué se rompe si nadie las hace, en cuánto tiempo, y si existe una alternativa
 automática. Medido, no estimado.
 
-| | qué se rompe | en cuánto | alternativa automática |
-|---|---|---|---|
-| **MSCI IPSA semanal** | la comparación contra el mercado | ~4 semanas | **sí, y ya está medio construida** |
-| **Contraste mensual** | nada de inmediato; se pierde la detección de errores de nivel | indefinido | **no: cubre un defecto que las guardias no ven** |
-| **Recomendaciones de Credicorp** | Sigma-6 se apaga sola | 21-10-2026 (guardia) y julio de 2027 (vacía) | decisión de diseño pendiente |
+De las tres que había, **quedan una y media**:
+
+| | estado |
+|---|---|
+| **MSCI IPSA semanal** | **cerrada.** Publica la canasta igual peso, que sale de precios que el sistema ya baja |
+| **Contraste mensual** | **no se cierra**, y la razón es de clase: cubre un defecto que las guardias no pueden ver. Baja a trimestral |
+| **Recomendaciones de Credicorp** | **sin consecuencia.** Sigma-6 salió de la asignación; la carga sólo importa si vuelve |
+
+Lo que queda vivo es el contraste, trimestral. La sección 3 se conserva entera
+porque la decisión sobre Sigma-6 se puede revisar y entonces la dependencia
+vuelve con ella.
 
 ---
 
-## 1. El índice semanal: se puede cerrar
+## 1. El índice semanal: **cerrada**
 
-**Qué se rompe.** El benchmark del informe. Cada archivo trae cuatro semanas de
+Producción publica la canasta desde el 22-09-2026. El informe ya no espera
+ningún archivo de la Bolsa de Santiago.
+
+**Qué se rompía.** El benchmark del informe. Cada archivo trae cuatro semanas de
 solape, así que saltarse una o dos no pierde nada; a partir de la quinta semana
 la serie se queda atrás y la línea de comparación deja de avanzar.
 
@@ -54,10 +63,23 @@ ECH sí tiene un sesgo sistemático: queda por debajo en cuatro de cinco años y
 Su correlación mensual es alta (0,946) pero la diaria es 0,625, porque cotiza en
 Nueva York y el índice se calcula al cierre de Santiago. Descartado por eso.
 
-**Recomendación:** publicar la canasta igual peso como benchmark, diciendo en el
-informe que es una canasta de partes iguales del mercado chileno y no el índice
-oficial. Se gana autonomía completa; se pierde la comparación contra el índice
-exacto, que no es lo mismo que perder la comparación contra el mercado.
+**Hecho.** La canasta es el benchmark publicado, con su nombre: «Mercado chileno
+(canasta igual peso)», no «IPSA». Se ganó autonomía completa; se perdió la
+comparación contra el índice exacto, que no es lo mismo que perder la
+comparación contra el mercado.
+
+**Y hay que decir para qué lado se movió la vara.** Sobre la reconstrucción
+completa el benchmark baja de 261,39 a 235,97 en base 100, o sea unos 2 puntos
+anuales **en la dirección que halaga a las estrategias**. Es la misma objeción
+que descartó a ECH, y la diferencia es que acá está medida y no es sistemática:
+en dos de los cinco años la canasta va por encima del MSCI. Aun así, cualquier
+lectura de «le ganamos al mercado» cuenta ahora con una vara 2 puntos más baja,
+y eso pesa más que el signo del promedio.
+
+**El benchmark en vivo se recalcula entero en cada corrida, no se encadena.**
+Encadenarlo habría empalmado dos índices distintos en la misma columna —MSCI
+hasta el 21-09-2026, canasta desde el 22— y un empalme así no se ve roto, se ve
+como una serie. Es la forma exacta del defecto de Sigma-6.
 
 ---
 
@@ -93,7 +115,22 @@ del trabajo.
 
 ---
 
-## 3. Credicorp: la decisión de fondo, planteada
+## 3. Credicorp: **decidida**, y sin consecuencia mientras siga así
+
+**La decisión se tomó: opción E.** Sigma-6 salió de la asignación el 21-09-2026
+y el capital quedó en Delta-12 37,5%, Gamma-6 37,5%, Oro 25%. La estrategia
+sigue en el repositorio, con su especificación y su serie reconstruida; lo que
+no tiene es plata.
+
+Con eso **la carga manual de Credicorp dejó de tener consecuencia**: si nadie la
+hace, no se apaga nada que esté invertido. Vuelve a importar sólo si Sigma-6
+vuelve a la asignación.
+
+Lo que sigue es el expediente completo que llevó a esa decisión, que se conserva
+porque la condición de reapertura está fijada y el expediente es lo que habría
+que volver a leer.
+
+### El planteamiento original
 
 Es **el único insumo del sistema que no se puede obtener solo**. Las otras tres
 estrategias son automáticas de punta a punta: Delta-12 y Gamma-6 salen de

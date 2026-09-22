@@ -3,10 +3,10 @@
   "delta_rule_version": "2.1.0",
   "gamma_rule_version": "1.0.0",
   "sigma_entries": {
-    "VAPORES": "2026-09-17",
-    "BCI": "2026-09-17",
     "LTM": "2026-09-17",
-    "PARAUCO": "2026-09-17"
+    "PARAUCO": "2026-09-17",
+    "VAPORES": "2026-09-17",
+    "BCI": "2026-09-17"
   },
   "delta_entries": {
     "PARAUCO": "2026-09-17",
@@ -279,7 +279,7 @@
     "Delta-12": 100.17551670667198,
     "Gamma-6": 100.09934456307563,
     "Oro": 101.0789436484889,
-    "IPSA TR": 101.29570294421303
+    "Mercado chileno": 100.67573919052326
   },
   "reinicio": {
     "fecha": "2026-09-16",
@@ -294,7 +294,7 @@
     "uploaded_files": 0,
     "history_rows": 1108
   },
-  "last_run_utc": "2026-09-22T05:13:43.114138+00:00",
+  "last_run_utc": "2026-09-22T05:21:57.998233+00:00",
   "entry_dates_version": 3,
   "delta_last_period": "2026-08",
   "gamma_last_period": "2026-08",

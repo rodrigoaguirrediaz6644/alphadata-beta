@@ -27,8 +27,8 @@ def _report(**kwargs):
     moves = pd.DataFrame([{"ticker": "BCI", "action": "ENTRA", "previous_weight": 0.0, "target_weight": .1, "change": .1}])
     coverage = pd.DataFrame([{"status": "OK"}])
     history = pd.DataFrame([
-        {"date": "2026-07-16", "Sigma-6": 100, "Delta-12": 100, "Gamma-6": 100, "IPSA TR": 100, "Conjunto AlphaData": 100},
-        {"date": "2026-09-18", "Sigma-6": 110, "Delta-12": 105, "Gamma-6": 120, "IPSA TR": 102, "Conjunto AlphaData": 112},
+        {"date": "2026-07-16", "Sigma-6": 100, "Delta-12": 100, "Gamma-6": 100, "Mercado chileno": 100, "Conjunto AlphaData": 100},
+        {"date": "2026-09-18", "Sigma-6": 110, "Delta-12": 105, "Gamma-6": 120, "Mercado chileno": 102, "Conjunto AlphaData": 112},
     ])
     arguments = {"delta": portfolio, "delta_moves": pd.DataFrame(columns=["ticker", "action", "target_weight"]),
                  "coverage": coverage, "errors": pd.DataFrame(), "history": history}
@@ -43,7 +43,7 @@ def test_public_report_hides_strategy_methodology():
         pd.DataFrame([{"ticker": "BCI", "action": "ENTRA", "target_weight": .1, "change": .1}]),
         pd.DataFrame([{"status": "OK"}]),
         pd.DataFrame(),
-        pd.DataFrame([{"date": "2026-07-16", "Delta-12": 100, "Gamma-6": 100, "IPSA TR": 100}]),
+        pd.DataFrame([{"date": "2026-07-16", "Delta-12": 100, "Gamma-6": 100, "Mercado chileno": 100}]),
     )
     for secret in ["momentum_12_1", "SMA200", "sma200", "RSI", "z-score", "score", "Credicorp", "252"]:
         assert secret not in html
@@ -110,22 +110,22 @@ def test_report_refuses_to_compare_against_a_broken_benchmark():
     from src.reporting_public import is_continuous
 
     broken = pd.DataFrame([
-        {"date": "2026-07-16", "Sigma-6": 100, "Delta-12": 100, "Gamma-6": 100, "IPSA TR": 100, "Conjunto AlphaData": 100},
-        {"date": "2026-07-17", "Sigma-6": 101, "Delta-12": 101, "Gamma-6": 101, "IPSA TR": 212, "Conjunto AlphaData": 101},
-        {"date": "2026-09-18", "Sigma-6": 110, "Delta-12": 110, "Gamma-6": 110, "IPSA TR": 212, "Conjunto AlphaData": 110},
+        {"date": "2026-07-16", "Sigma-6": 100, "Delta-12": 100, "Gamma-6": 100, "Mercado chileno": 100, "Conjunto AlphaData": 100},
+        {"date": "2026-07-17", "Sigma-6": 101, "Delta-12": 101, "Gamma-6": 101, "Mercado chileno": 212, "Conjunto AlphaData": 101},
+        {"date": "2026-09-18", "Sigma-6": 110, "Delta-12": 110, "Gamma-6": 110, "Mercado chileno": 212, "Conjunto AlphaData": 110},
     ])
-    assert not is_continuous(broken["IPSA TR"])
+    assert not is_continuous(broken["Mercado chileno"])
     markdown, html = _report(history=broken)
     assert "comparado con haber invertido" not in html
     assert "La serie del IPSA tiene un salto" in html
-    assert "IPSA TR" not in html  # tampoco aparece en la tabla mientras esté rota
+    assert "Mercado chileno" not in html  # tampoco aparece en la tabla mientras esté rota
     # El markdown es la parte en texto plano del correo y queda commiteado en el
     # repositorio: publicaba el salto de 100 a 212 como si fuera rentabilidad.
-    assert "IPSA TR" not in markdown
+    assert "Mercado chileno" not in markdown
     assert "La comparación con la bolsa chilena no está disponible" in markdown
     healthy_markdown, healthy = _report()
     assert "comparado con haber invertido" in healthy
-    assert "IPSA TR" in healthy_markdown
+    assert "Mercado chileno" in healthy_markdown
 
 
 def test_el_informe_dibuja_dos_graficos_separados(_graficos_en_temporal):
@@ -170,12 +170,12 @@ def test_el_informe_dice_desde_cuando_corre_la_serie_nueva():
 def test_el_benchmark_roto_queda_fuera_del_grafico_vivo():
     from src.reporting_public import _series_presentes
     roto = pd.DataFrame({"date": pd.to_datetime(["2026-09-17", "2026-09-18"]),
-                         "Delta-12": [100.0, 101.0], "IPSA TR": [100.0, 212.0]})
+                         "Delta-12": [100.0, 101.0], "Mercado chileno": [100.0, 212.0]})
     presentes = _series_presentes(roto)
     # `_chart` filtra el benchmark cuando la serie no es continua; aquí se
     # comprueba que el filtro se aplica sobre la lista de series presentes.
-    assert "IPSA TR" in presentes
-    assert [n for n in presentes if n != "IPSA TR"] == ["Delta-12"]
+    assert "Mercado chileno" in presentes
+    assert [n for n in presentes if n != "Mercado chileno"] == ["Delta-12"]
 
 
 def test_sigma6_sale_del_cuerpo_pero_se_queda_en_la_reconstruccion():

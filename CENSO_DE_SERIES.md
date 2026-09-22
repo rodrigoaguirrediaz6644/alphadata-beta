@@ -35,12 +35,20 @@ calcular.
 | Delta-12 | recalculada | `delta12_historical_nav`, precios |
 | Gamma-6 | recalculada | `gamma6_historical_nav`, precios y tipo de cambio |
 | Oro | recalculada | `oro_historical_nav`, precios y tipo de cambio |
-| IPSA Total Return | **recalculada** desde 21-09-2026 | serie `IPSA_TR` del almacén |
+| Mercado chileno (canasta igual peso) | **recalculada** | `canasta_chilena`, los precios chilenos del almacén |
 | Conjunto AlphaData | recalculada | `combined_equal_weight` sobre las cuatro |
 
-Sigma-6 y el IPSA eran las dos guardadas. El IPSA resultó estar sano —desvío
-máximo 0,87% contra su recálculo, mismo valor final 261,39— pero estaba en la
-misma forma que falló, así que se recalcula igual.
+Sigma-6 y el benchmark eran las dos guardadas. El benchmark resultó estar sano
+—desvío máximo 0,87% contra su recálculo, mismo valor final 261,39— pero estaba
+en la misma forma que falló, así que se recalculó igual.
+
+**Desde el 22-09-2026 el benchmark ya no es el MSCI IPSA** sino una canasta de
+partes iguales del mercado chileno, que se construye con los precios que el
+sistema ya baja. Cerró la última dependencia manual con consecuencia. La vara
+baja de 261,39 a 235,97 en base 100, unos 2 puntos anuales **en la dirección
+que halaga a las estrategias**: está medido, no es sistemático, y hay que
+tenerlo presente al leer cualquier «le ganamos al mercado». Ver
+`DEPENDENCIAS_MANUALES.md`.
 
 **Hay una guardia que lo sostiene.** `SERIES_RECONSTRUIDAS` en
 `src/run_pipeline.py` enumera lo que se recalcula, y la corrida **se detiene**
@@ -49,7 +57,12 @@ serie publicada sin recalcularla deja de ser posible en silencio.
 
 ### Seguimiento en vivo — `data/strategy_nav.csv`
 
-**Guardado por diseño, y es correcto.** Es una bitácora: cada fila se calcula
+**Guardado por diseño, y es correcto**, con una excepción: la columna del
+benchmark **se recalcula entera en cada corrida** desde la canasta. Sin eso, el
+cambio de benchmark habría empalmado el MSCI y la canasta en la misma columna, y
+un empalme así no se ve roto, se ve como una serie.
+
+Las series de las estrategias sí son bitácora: cada fila se calcula
 una vez, con los precios de esa jornada, y no se vuelve a tocar. Reescribirla
 sería reescribir el pasado, que es lo que el reinicio vino a terminar.
 
@@ -139,7 +152,7 @@ instrumentos, multiplicadas por 1,30**, y la corrida completa.
 | Delta-12 | 29,25% | se movió |
 | Gamma-6 | 69,00% | se movió |
 | Oro | 69,00% | se movió |
-| IPSA Total Return | 30,00% | se movió |
+| Mercado chileno (canasta igual peso) | 30,00% | se movió, entonces como IPSA Total Return |
 | Conjunto AlphaData | 49,15% | se movió |
 
 **Las seis se movieron.** Y el primer intento tiene su propia lección: alterando

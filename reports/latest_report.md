@@ -15,7 +15,7 @@
 - Delta-12: +0,2% desde el 16-09-2026; peor caída -0,2%.
 - Gamma-6: +0,1% desde el 16-09-2026; peor caída -0,1%.
 - Oro: +1,1% desde el 16-09-2026; peor caída -0,1%.
-- IPSA TR: +1,3% desde el 16-09-2026; peor caída 0,0%.
+- Mercado chileno: +0,7% desde el 16-09-2026; peor caída 0,0%.
 
 ## ¿Hay que preocuparse?
 

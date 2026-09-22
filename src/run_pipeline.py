@@ -27,7 +27,8 @@ GAMMA_RULE_VERSION='1.0.0'
 STRATEGY_SERIES=['Delta-12','Gamma-6','Oro']
 SERIES_RETIRADAS=['Sigma-6']
 CONJUNTO='Conjunto AlphaData'
-BENCHMARK_RECONSTRUIDO='IPSA Total Return'
+BENCHMARK_VIVO='Mercado chileno'
+BENCHMARK_RECONSTRUIDO='Mercado chileno (canasta igual peso)'
 # Toda columna de data/reconstruccion_historica.csv tiene que recalcularse en
 # cada corrida desde datos primarios. Si aparece una que no está acá, la corrida
 # se detiene: es exactamente la forma en que la serie de Sigma-6 publicó
@@ -39,7 +40,7 @@ def load_state()->dict:
     if STATE.exists():
         state=json.loads(STATE.read_text(encoding='utf-8'))
         if state.get('methodology_version') in {'2.0.0','2.1.0','2.2.0','2.3.0'}: return state
-    return {'methodology_version':'2.3.0','sigma_entries':{},'delta_entries':{},'gamma_entries':{},'oro_entries':{},'sigma_portfolio':[],'delta_portfolio':[],'gamma_portfolio':[],'oro_portfolio':[],'nav':{'Sigma-6':100.,'Delta-12':100.,'Gamma-6':100.,'Oro':100.,'IPSA TR':100.}}
+    return {'methodology_version':'2.3.0','sigma_entries':{},'delta_entries':{},'gamma_entries':{},'oro_entries':{},'sigma_portfolio':[],'delta_portfolio':[],'gamma_portfolio':[],'oro_portfolio':[],'nav':{'Sigma-6':100.,'Delta-12':100.,'Gamma-6':100.,'Oro':100.,BENCHMARK_VIVO:100.}}
 
 def portfolio_return(prices:pd.DataFrame,weights:list[dict],start:pd.Timestamp,end:pd.Timestamp)->float:
     if not weights or start>=end:return 0.
@@ -175,15 +176,45 @@ def movements_for_report(current: pd.DataFrame, previous_path: Path) -> pd.DataF
     return current
 
 
+FUERA_DE_LA_CANASTA=['IPSA_TR','LTM-ADR','SQM-ADR']
+
+def canasta_chilena(prices)->pd.Series:
+    """El benchmark automático: partes iguales del mercado chileno, base 100.
+
+    Reemplaza al MSCI IPSA, que era la última dependencia manual del sistema
+    con consecuencia: había que bajar un archivo de la Bolsa de Santiago cada
+    semana y a la quinta semana sin bajarlo la línea de comparación se quedaba
+    atrás.
+
+    **Se construye con precios que el sistema ya captura todos los días y que
+    sus guardias ya validan**, así que no agrega ninguna dependencia. Contra el
+    MSCI IPSA Gross 2021-2026 su correlación diaria es 0,878 y rinde 2,5 puntos
+    anuales menos, y esa diferencia **no es sistemática**: en dos de los cinco
+    años la canasta va por encima. Es un índice distinto, no uno peor: pondera
+    igual donde el MSCI pondera por capitalización.
+
+    Se descartó ECH × USDCLP, que parecía el reemplazo obvio: su correlación
+    diaria es 0,625 —cotiza en Nueva York y el índice se calcula al cierre de
+    Santiago— y queda por debajo en cuatro de cinco años, **4,3 puntos anuales
+    en la dirección que halaga a las estrategias**. Ver
+    `DEPENDENCIAS_MANUALES.md`.
+
+    Se reequilibra a diario sobre la sección transversal que tiene precio en
+    las dos ruedas, así que una acción que se lista a mitad de camino entra sin
+    inventar un retorno y una que deja de cotizar sale sin dejar un hueco.
+    """
+    local=(prices[~prices.alphadata_ticker.isin(FUERA_DE_LA_CANASTA)]
+           .pivot(index='date',columns='alphadata_ticker',values='adjusted_close')
+           .sort_index().ffill(limit=3))
+    if local.empty:return pd.Series(dtype=float)
+    diario=local.pct_change().mean(axis=1,skipna=True).fillna(0.)
+    return (1+diario).cumprod()*100
+
 def benchmark_return(prices,start,end)->float:
-    ipsa=prices[prices.alphadata_ticker=='IPSA_TR'].sort_values('date')
-    if len(ipsa):
-        a=ipsa[ipsa.date<=start].tail(1);z=ipsa[ipsa.date<=end].tail(1)
-        if len(a) and len(z):return float(z.adjusted_close.iloc[0]/a.adjusted_close.iloc[0]-1)
-    local=prices[~prices.alphadata_ticker.isin(['IPSA_TR','LTM-ADR','SQM-ADR'])].pivot(index='date',columns='alphadata_ticker',values='adjusted_close').sort_index().ffill(limit=3)
-    a=local.loc[:start].tail(1);z=local.loc[:end].tail(1)
+    canasta=canasta_chilena(prices)
+    a=canasta.loc[:start].tail(1);z=canasta.loc[:end].tail(1)
     if a.empty or z.empty:return 0.
-    return float((z.iloc[0]/a.iloc[0]-1).dropna().mean())
+    return float(z.iloc[0]/a.iloc[0]-1)
 
 def turnover_cost(old,new,rate):
     a={x['ticker']:float(x['target_weight']) for x in old};b=dict(zip(new.ticker,new.target_weight))
@@ -228,7 +259,7 @@ def report(as_of,sigma,delta,smove,dmove,s_audit,d_audit,coverage,errors,state,n
 | --- | ---: |
 | Sigma-6 | {navrow['Sigma-6']:.2f} |
 | Delta-12 | {navrow['Delta-12']:.2f} |
-| IPSA TR proxy ETF | {navrow['IPSA TR']:.2f} |
+| Mercado chileno (canasta igual peso) | {navrow[BENCHMARK_VIVO]:.2f} |
 
 ## Sigma-6
 
@@ -268,7 +299,7 @@ Resultados de carteras modelo para evaluación interna. No constituyen asesoría
     html=f"""<!doctype html><html lang='es'><head><meta charset='utf-8'><style>
     body{{font:16px Arial;max-width:1000px;margin:36px auto;color:#17324d;line-height:1.45}}table{{border-collapse:collapse;width:100%;margin:12px 0 24px}}th,td{{border:1px solid #ccd6df;padding:8px;text-align:left}}th{{background:#147d78;color:white}}h1,h2{{color:#12304a}}.note{{background:#fff4cc;padding:14px}}
     </style></head><body><h1>Informe automático AlphaData</h1><p><strong>Fecha de corte:</strong> {as_of:%d-%m-%Y}<br><strong>Metodología:</strong> Sigma-6 v2.0.0 y Delta-12 v2.0.0</p>
-    <h2>Resumen</h2><p>{escape(intro)}</p><table><tr><th>Serie</th><th>Índice acumulado</th></tr><tr><td>Sigma-6</td><td>{navrow['Sigma-6']:.2f}</td></tr><tr><td>Delta-12</td><td>{navrow['Delta-12']:.2f}</td></tr><tr><td>IPSA TR proxy ETF</td><td>{navrow['IPSA TR']:.2f}</td></tr></table>
+    <h2>Resumen</h2><p>{escape(intro)}</p><table><tr><th>Serie</th><th>Índice acumulado</th></tr><tr><td>Sigma-6</td><td>{navrow['Sigma-6']:.2f}</td></tr><tr><td>Delta-12</td><td>{navrow['Delta-12']:.2f}</td></tr><tr><td>Mercado chileno (canasta igual peso)</td><td>{navrow[BENCHMARK_VIVO]:.2f}</td></tr></table>
     <h2>Sigma-6</h2>{html_table(sigma,['ticker','target_weight'])}<p><strong>Caja:</strong> {pct(sigma_cash)}</p><h3>Movimientos</h3>{html_table(smove,['ticker','action','previous_weight','target_weight','change'])}
     <h2>Delta-12</h2>{html_table(delta,['ticker','target_weight'])}<p><strong>Caja:</strong> {pct(delta_cash)}. Se modifica sólo una vez por mes.</p><h3>Movimientos</h3>{html_table(dmove,['ticker','action','previous_weight','target_weight','change'])}
     <h2>Calidad de datos</h2><ul><li>Filas rechazadas: {len(errors)}</li><li>Instrumentos con cobertura suficiente: {int((coverage.status=='OK').sum())}/{len(coverage)}</li><li>Último precio: {as_of:%d-%m-%Y}</li></ul>
@@ -458,18 +489,33 @@ def main()->None:
     dmove=movements_for_report(movements(old_delta,delta),DATA/'movements_delta12.csv')
     gmove=movements_for_report(movements(old_gamma,gamma),DATA/'movements_gamma6.csv')
     omove=movements_for_report(movements(old_oro,oro_portfolio),DATA/'movements_oro.csv')
-    last_date=pd.Timestamp(state.get('valuation_date',as_of.date().isoformat())); nav=state.get('nav',{'Sigma-6':100.,'Delta-12':100.,'Gamma-6':100.,'IPSA TR':100.})
-    if 'IPSA' in nav and 'IPSA TR' not in nav: nav['IPSA TR']=nav.pop('IPSA')
+    last_date=pd.Timestamp(state.get('valuation_date',as_of.date().isoformat())); nav=state.get('nav',{'Sigma-6':100.,'Delta-12':100.,'Gamma-6':100.,BENCHMARK_VIVO:100.})
+    for viejo in ('IPSA','IPSA TR'):
+        if viejo in nav and BENCHMARK_VIVO not in nav: nav[BENCHMARK_VIVO]=nav.pop(viejo)
     nav.setdefault('Gamma-6',100.); nav.setdefault('Oro',100.)
     sigma_r=portfolio_return(prices,old_sigma,last_date,as_of)-turnover_cost(old_sigma,sigma,.001785)
     delta_r=portfolio_return(prices,old_delta,last_date,as_of)-turnover_cost(old_delta,delta,.001785)
     gamma_r=portfolio_return(prices_us_clp,old_gamma,last_date,as_of)-turnover_cost(old_gamma,gamma,US_COST_RATE)
     oro_r=portfolio_return(prices_oro_clp,old_oro,last_date,as_of)-turnover_cost(old_oro,oro_portfolio,US_COST_RATE)
     ipsa_r=benchmark_return(prices,last_date,as_of)
-    navrow={'date':as_of.date().isoformat(),'Sigma-6':nav['Sigma-6']*(1+sigma_r),'Delta-12':nav['Delta-12']*(1+delta_r),'Gamma-6':nav['Gamma-6']*(1+gamma_r),'Oro':nav['Oro']*(1+oro_r),'IPSA TR':nav['IPSA TR']*(1+ipsa_r)}
+    navrow={'date':as_of.date().isoformat(),'Sigma-6':nav['Sigma-6']*(1+sigma_r),'Delta-12':nav['Delta-12']*(1+delta_r),'Gamma-6':nav['Gamma-6']*(1+gamma_r),'Oro':nav['Oro']*(1+oro_r),BENCHMARK_VIVO:nav[BENCHMARK_VIVO]*(1+ipsa_r)}
     history=pd.read_csv(NAV) if NAV.exists() else pd.DataFrame()
+    if 'IPSA TR' in history: history=history.rename(columns={'IPSA TR':BENCHMARK_VIVO})
     if len(history): history=history[history.date.astype(str)!=navrow['date']]
     history=pd.concat([history,pd.DataFrame([navrow])],ignore_index=True)
+    # El benchmark en vivo se **recalcula entero** desde la canasta, no se
+    # encadena. Encadenarlo habría empalmado dos índices distintos en la misma
+    # columna: la serie arrancó con el MSCI IPSA y desde acá es la canasta, y
+    # un empalme así no se ve roto, se ve como una serie. Es la forma exacta
+    # del defecto de Sigma-6, y la regla del proyecto es que una serie
+    # publicada se recalcula y no se guarda.
+    canasta_viva=canasta_chilena(prices)
+    if len(canasta_viva)>1:
+        fechas=pd.to_datetime(history.date)
+        nivel=canasta_viva.reindex(canasta_viva.index.union(fechas)).ffill().reindex(fechas)
+        if pd.notna(nivel.iloc[0]) and nivel.iloc[0]>0:
+            history[BENCHMARK_VIVO]=(nivel/nivel.iloc[0]*100.).to_numpy()
+            navrow[BENCHMARK_VIVO]=float(history[BENCHMARK_VIVO].iloc[-1])
     combined=combined_equal_weight(history,STRATEGY_SERIES,weights=reparto)
     if len(combined): history[CONJUNTO]=history.date.map({d.date().isoformat():v for d,v in combined.items()})
     history.to_csv(NAV,index=False)
@@ -477,6 +523,8 @@ def main()->None:
     historical_path=DATA/'reconstruccion_historica.csv'
     if historical_path.exists():
         historical=pd.read_csv(historical_path,parse_dates=['date']).sort_values('date')
+        if 'IPSA Total Return' in historical:
+            historical=historical.drop(columns=['IPSA Total Return'])
         def _reconstruir(nombre,serie):
             if not len(serie):
                 raise RuntimeError(f'La reconstrucción de {nombre} vino vacía. No se conservan los '
@@ -493,11 +541,11 @@ def main()->None:
         # reconstrucción, y una serie guardada es la forma que ya falló: la de
         # Sigma-6 sobrevivió intacta a la reparación de los precios chilenos y
         # publicó +28,75% cuando el número era diez puntos menos.
-        ipsa=prices.loc[prices.alphadata_ticker=='IPSA_TR',['date','adjusted_close']].dropna().sort_values('date')
-        ipsa=ipsa.loc[ipsa.date.between(historical.date.min(),historical.date.max())].set_index('date').adjusted_close
-        if len(ipsa)<=1:
+        canasta=canasta_chilena(prices)
+        canasta=canasta.loc[canasta.index.to_series().between(historical.date.min(),historical.date.max())]
+        if len(canasta)<=1:
             raise RuntimeError('La serie del benchmark vino vacía. Ver CENSO_DE_SERIES.md.')
-        historical[BENCHMARK_RECONSTRUIDO]=historical.date.map(ipsa/ipsa.iloc[0]*100).ffill()
+        historical[BENCHMARK_RECONSTRUIDO]=historical.date.map(canasta/canasta.iloc[0]*100).ffill()
         historical_combined=combined_equal_weight(historical,STRATEGY_SERIES,weights=reparto)
         if len(historical_combined): historical[CONJUNTO]=historical.date.map(historical_combined)
         sin_recalcular=set(historical.columns)-{'date'}-SERIES_RECONSTRUIDAS
@@ -548,7 +596,7 @@ def main()->None:
     if len(g_audit): g_audit.to_csv(DATA/'audit_gamma6.csv',index=False)
     if len(oro_audit): oro_audit.to_csv(DATA/'audit_oro.csv',index=False)
     smove.to_csv(DATA/'movements_sigma6.csv',index=False);dmove.to_csv(DATA/'movements_delta12.csv',index=False);gmove.to_csv(DATA/'movements_gamma6.csv',index=False);omove.to_csv(DATA/'movements_oro.csv',index=False)
-    state.update({'methodology_version':'2.3.0','sigma_portfolio':sigma.to_dict('records'),'delta_portfolio':delta.to_dict('records'),'gamma_portfolio':gamma.to_dict('records'),'oro_portfolio':oro_portfolio.to_dict('records'),'valuation_date':as_of.date().isoformat(),'nav':{k:navrow[k] for k in ['Sigma-6','Delta-12','Gamma-6','Oro','IPSA TR']},'ingestion':ingest_summary,'last_run_utc':datetime.now(timezone.utc).isoformat()});STATE.write_text(json.dumps(state,ensure_ascii=False,indent=2),encoding='utf-8')
+    state.update({'methodology_version':'2.3.0','sigma_portfolio':sigma.to_dict('records'),'delta_portfolio':delta.to_dict('records'),'gamma_portfolio':gamma.to_dict('records'),'oro_portfolio':oro_portfolio.to_dict('records'),'valuation_date':as_of.date().isoformat(),'nav':{k:navrow[k] for k in ['Sigma-6','Delta-12','Gamma-6','Oro',BENCHMARK_VIVO]},'ingestion':ingest_summary,'last_run_utc':datetime.now(timezone.utc).isoformat()});STATE.write_text(json.dumps(state,ensure_ascii=False,indent=2),encoding='utf-8')
     print(intro if (intro:='Informe generado: '+str(REPORTS/'latest_report.md')) else '')
     if len(errors): print(f'ADVERTENCIA: {len(errors)} recomendaciones fueron rechazadas; revisar data/recommendations_errors.csv')
 

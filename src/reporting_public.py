@@ -14,7 +14,7 @@ CONJUNTO = "Conjunto AlphaData"
 # reconstrucción, que es historia del proyecto.
 STRATEGIES = ["Delta-12", "Gamma-6", "Oro"]
 RETIRADAS = ["Sigma-6"]
-BENCHMARK = "IPSA TR"
+BENCHMARK = "Mercado chileno"
 SERIES = [CONJUNTO, *STRATEGIES, BENCHMARK]
 SERIES_RECONSTRUCCION = [CONJUNTO, *STRATEGIES, *RETIRADAS, BENCHMARK]
 COLORS = {CONJUNTO: "#101828", "Sigma-6": "#1570ef", "Delta-12": "#0e9384", "Gamma-6": "#dc6803", "Oro": "#ca8504", BENCHMARK: "#98a2b3"}
@@ -157,7 +157,7 @@ def _chart(frame: pd.DataFrame, benchmark_usable: bool = True) -> str:
 
     if HISTORICAL.exists():
         recon = pd.read_csv(HISTORICAL, parse_dates=["date"]).rename(
-            columns={"IPSA Total Return": BENCHMARK}).sort_values("date")
+            columns={"Mercado chileno (canasta igual peso)": BENCHMARK, "IPSA TR": BENCHMARK}).sort_values("date")
         nombres = _series_presentes(recon, SERIES_RECONSTRUCCION)
         if nombres:
             bloques.append("<h3>Reconstrucción</h3>" + _dibujar(
