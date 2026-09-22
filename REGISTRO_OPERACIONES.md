@@ -79,6 +79,52 @@ sacar plata del sistema. El otro —recortar un ganador dentro de una
 estrategia— es la política de rebalanceo, que es otra cosa y vive en
 `ARQUITECTURA.md`.
 
+## La primera boleta: qué contestó
+
+**Orden 11157665580442, 22-09-2026: 8 IAUCL a $77.300.** Valor $618.400, costos
+(comisión + IVA) $1.103,84, total $619.503,84.
+
+**La tarifa deja de ser una constante rara.** `618.400 × 0,001785 = 1.103,84`,
+exacto al peso, y ahora sobre una orden **ejecutada** y no una
+previsualización. Y el rótulo dice lo que faltaba —«comisión + IVA»—, así que
+la estructura es **0,15% de comisión más 19% de IVA**: `0,15% × 1,19 =
+0,1785%`. Eso cierra la pregunta de si falta algún cargo encima: no falta, el
+total pagado es exactamente eso.
+
+**La pantalla no dice a qué precio se llena.** IAUCL exhibió **$76.500 durante
+toda la jornada** —cierre anterior, máximo, mínimo y último, los cuatro
+iguales, volumen cero— y llenó a **$77.300**, un 1,05% por encima. Trii no
+llena al precio exhibido: cotiza fresco al ejecutar. El «último precio» es el
+último negocio, que puede ser de semanas antes.
+
+De ahí salen dos cosas que valen para el 30-09:
+
+**Las órdenes van a mercado, no con precio límite.** Poner un límite contra un
+precio rancio sólo agrega el riesgo de no llenar siete órdenes el mismo día, y
+no protege de nada.
+
+**Y la verificación es posterior.** Se anota el precio de llenado de cada
+posición y se contrasta contra el teórico **del día en que se ejecutó**; si
+alguna se sale de ~1%, ahí sí hay algo que mirar. La comprobación ocurre igual,
+sin riesgo operativo.
+
+**Cuidado con contra qué se contrasta**, que ya casi falla en el primer caso:
+el llenado del 22-09 queda 1,98% bajo el teórico que imprimió la guía, y eso es
+sólo que la guía es del 21-09 y usó un cierre del subyacente de dos ruedas
+antes. Contra el teórico del mismo día la diferencia es **0,05%**.
+
+**El llenado fue limpio, y hay confirmación numérica.** El tipo de cambio
+implícito en el precio pagado —`77.300 / 81,67 = 946,49`— contra los 947,57 que
+ofrecía la pantalla de conversión de Trii ese mismo día: **difieren en 0,11%**.
+El CDV se cotiza al subyacente por el tipo de cambio de Trii, en vivo y sin
+margen apreciable encima.
+
+**Y se pagó en pesos**, con saldo en dólares de $0,00. Lo más probable es que
+Trii convierta solo por detrás, y el 0,11% lo respalda. **Mientras Rodrigo no
+confirme lo contrario, la guía no lleva ningún paso de conversión**: si resulta
+opcional, lo que corresponde es una línea diciendo que no hace falta convertir,
+no una secuencia de pasos con esperas.
+
 ## La cuenta no va a calzar con el NAV publicado, y eso es esperado
 
 **Esto es lo primero que hay que leer cuando aparezca la diferencia**, porque se
@@ -109,11 +155,10 @@ guardia del panel de salud, con banda de ±1%. Ver `research/spread_cambio/`.
 - **Deslizamiento**: `precio_pagado / precio_modelo - 1`, por estrategia y por
   instrumento. Es la diferencia entre el backtest y la realidad que el backtest
   no modela.
-- **Comisión efectiva contra la modelada.** El sistema supone 0,1785% con
-  mínimo de **$999,99**, y **la misma tarifa para acción chilena y para CDV**.
-  Los tres parámetros están medidos sobre órdenes reales de Trii: cuatro
-  chilenas para la tasa y el mínimo, y una de IAUCL —$612.000 de valor,
-  $1.092,42 de comisión— para los CDV. Acá se ve si se sostienen. La primera comparación está calculada en
+- **Comisión efectiva contra la modelada.** El sistema supone **0,15% más IVA
+  = 0,1785%**, con mínimo de $999,99, y la misma tarifa para acción chilena y
+  para CDV. Ya no hay nada que verificar acá: la primera orden ejecutada la
+  confirmó al peso. Lo que queda es que siga siendo cierta. La primera comparación está calculada en
   `reports/cartera_de_ingreso.md`, bajo «lo que va a cobrar la corredora el
   primer día».
 - **Órdenes que no se llenan.** Con `estado` y `cantidad_pedida` se puede medir

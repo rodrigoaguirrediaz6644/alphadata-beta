@@ -45,7 +45,7 @@ def umbral_minimo(tasa: float, minimo: float) -> float:
     """
     return minimo / tasa if tasa else float("inf")
 # La misma para acción chilena y para CDV. Ver config/runtime.v2.json.
-TARIFA = "0,1785%, con mínimo de $999,99"
+TARIFA = "0,15% + IVA = 0,1785%, con mínimo de $999,99"
 SIN_FECHA = "por ranking, sin fecha"
 PERMANENTE = "posición permanente"
 
@@ -169,14 +169,40 @@ def markdown(tabla: pd.DataFrame, as_of: pd.Timestamp) -> str:
         "parezcan próximas a venderse. Las columnas de abajo son **información, no",
         "un filtro**: ver `GUIA_INGRESO.md` para por qué.",
         "",
+        "## Órdenes a mercado, y el precio teórico es para después",
+        "",
+        "**Las órdenes van a mercado, no con precio límite.** La pantalla de la",
+        "corredora muestra el último negocio, que puede ser de hace semanas: el día de",
+        "la primera compra IAUCL exhibió $76.500 durante toda la jornada —cierre",
+        "anterior, máximo, mínimo y último, los cuatro iguales, volumen cero— y llenó a",
+        "**$77.300**. Trii no llena al precio exhibido: cotiza fresco al ejecutar. Poner",
+        "un límite contra un precio rancio sólo agrega el riesgo de no llenar.",
+        "",
+        "**El precio teórico de la tabla es para contrastar después, no para poner un",
+        "límite.** Es el subyacente en dólares por el tipo de cambio. Después de operar,",
+        "anotar en `data/operaciones_reales.csv` el precio de llenado de cada posición:",
+        "**si alguna se sale de ~1%, ahí sí hay algo que mirar.**",
+        "",
+        "**Con una trampa que ya apareció en la primera orden.** El contraste va contra el",
+        "teórico **del día en que se ejecutó**, no contra el de esta tabla. El llenado de",
+        "IAUCL a $77.300 el 22-09 queda 1,98% bajo el teórico de esta guía, que es del",
+        "21-09 y se calculó con un cierre del subyacente de dos ruedas antes. Contra el",
+        "teórico del 22-09 la diferencia es 0,05%. **Si se contrasta contra la columna",
+        "impresa, la guardia va a sonar sola cada vez que el almacén venga un par de",
+        "ruedas atrasado.**",
+        "",
+        "Para referencia de lo que es normal: en la orden del 22-09 el tipo de cambio",
+        "implícito en el precio pagado fue 946,49 contra los 947,57 que ofrecía la",
+        "pantalla de conversión de Trii el mismo día. **Difieren en 0,11%.**",
+        "",
     ]
     for estrategia in ["Sigma-6", "Delta-12", "Gamma-6", "Oro"]:
         parte = tabla.loc[tabla.estrategia == estrategia]
         if parte.empty:
             continue
         lineas += [f"## {estrategia}", "",
-                   "| acción | símbolo a operar | unidades | a gastar | residuo | en cartera hace | próxima salida | costo ida y vuelta |",
-                   "|---|---|---:|---:|---:|---:|---|---:|"]
+                   "| acción | símbolo a operar | unidades | precio teórico | a gastar | residuo | en cartera hace | próxima salida | costo ida y vuelta |",
+                   "|---|---|---:|---:|---:|---:|---:|---|---:|"]
         for r in parte.to_dict("records"):
             salida = r["proxima_salida"]
             if pd.notna(r["dias_hasta_la_salida"]):
@@ -187,7 +213,7 @@ def markdown(tabla: pd.DataFrame, as_of: pd.Timestamp) -> str:
             dias = f"{int(r['dias_en_cartera'])} días" if pd.notna(r["dias_en_cartera"]) else "—"
             simbolo = r.get("simbolo") or "**no operar**"
             lineas.append(f"| {r['instrumento']} | {simbolo} | {r['unidades']:,} ".replace(",", ".")
-                          + f"| {_pesos(r['monto_efectivo'])} | {_pesos(r['residuo'])} "
+                          + f"| {_pesos(r['precio'])} | {_pesos(r['monto_efectivo'])} | {_pesos(r['residuo'])} "
                           + f"| {dias} | {salida} | {costo} |")
         residuo = parte.residuo.sum()
         lineas += ["", f"Residuo de esta pieza: **{_pesos(residuo)}**, que queda en su caja.", ""]

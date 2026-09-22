@@ -97,3 +97,16 @@ No se puede cerrar: las guardias miran variación y el contraste detecta un
 precio que se mueve bien y está mal de nivel. Pero su valor no es detectar
 rápido —un error de nivel es persistente, no urgente— así que trimestral cubre
 lo mismo a un tercio del trabajo. Ver `DEPENDENCIAS_MANUALES.md`.
+
+## El paso de conversión de pesos a dólares: en suspenso
+
+La primera compra real **se pagó en pesos**, con saldo en dólares de $0,00, así
+que lo más probable es que Trii convierta solo por detrás. Los números lo
+respaldan: el tipo de cambio implícito en el llenado y el que ofrecía la
+pantalla de conversión el mismo día difieren en **0,11%**, o sea que es la misma
+tasa.
+
+**No implementar un paso obligatorio de conversión hasta que Rodrigo lo
+confirme.** Si resulta opcional, lo que corresponde en la guía es una línea que
+diga que no hace falta convertir y que Trii aplica su propia tasa, y no una
+secuencia de tres pasos con espera de quince minutos.

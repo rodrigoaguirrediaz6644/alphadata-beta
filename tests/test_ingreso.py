@@ -6,8 +6,12 @@ tiene la posición, cuándo sale si tiene fecha, y qué cuesta el par
 entrada-salida en ese plazo.
 """
 
+from pathlib import Path
+
 import pandas as pd
 import pytest
+
+RAIZ = Path(__file__).resolve().parents[1]
 
 from src.ingreso import PERMANENTE, SIN_FECHA, cartera_de_ingreso, costo_del_par, markdown
 
@@ -100,6 +104,32 @@ def test_la_comision_del_primer_dia_sale_del_modelo_de_cada_pieza():
     # La chilena paga el porcentual sobre lo efectivamente invertido.
     chilena = t.loc[t.estrategia == "Delta-12"].iloc[0]
     assert abs(chilena.costo_de_entrar - .001785 * chilena.monto_efectivo) < 1e-6
+
+
+def test_la_tarifa_es_la_comision_mas_el_iva_y_no_una_constante_rara():
+    """0,15% x 1,19 = 0,1785%. El rotulo de la boleta dice «comision + IVA».
+
+    Importa escribirlo asi porque **explica** el numero en vez de dejarlo como
+    una constante sin origen, y porque cierra la pregunta de si falta algun
+    cargo encima: no falta. El total pagado en la orden ejecutada es
+    exactamente valor x 0,1785%.
+    """
+    import json
+    m = json.loads((RAIZ / "config" / "runtime.v2.json").read_text(encoding="utf-8"))["transaction_cost"]
+    assert m["comision_sin_iva"] * (1 + m["iva"]) == pytest.approx(m["rate"], rel=1e-12)
+
+
+def test_la_boleta_ejecutada_calza_al_peso_con_el_modelo():
+    """Orden 11157665580442, 22-09-2026: 8 IAUCL a $77.300.
+
+    Valor $618.400, costos (comision + IVA) $1.103,84. Es la segunda
+    confirmacion de la tarifa y la primera sobre una orden **ejecutada** y no
+    una previsualizacion.
+    """
+    from src.run_pipeline import modelo_de_costo
+    from src.ingreso import costo_de_una
+    tasa, minimo = modelo_de_costo()
+    assert costo_de_una(618_400., tasa, minimo) == pytest.approx(1_103.84, abs=.005)
 
 
 def test_el_cdv_paga_la_misma_tarifa_que_la_accion_chilena():

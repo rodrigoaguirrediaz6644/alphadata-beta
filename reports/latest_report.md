@@ -4,10 +4,9 @@
 
 **Conjunto (Delta-12 37,5%, Gamma-6 37,5%, Oro 25,0%): +0,4% desde el 16-09-2026.**
 
-## Qué cambió en el modelo desde el informe anterior
+## Qué cambió desde el informe anterior
 
 - Sin cambios desde el informe anterior. Las carteras siguen tal cual.
-- Todavía no has comprado nada: esto es información sobre el modelo, no una lista de órdenes. Lo que te toca hacer es la cartera completa.
 
 ## Cada estrategia
 
