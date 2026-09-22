@@ -127,6 +127,18 @@ justificar la única dependencia manual del sistema estaba de su lado.
 Y sin el filtro, el solape de Sigma-6 con Delta-12 casi se duplica —de 0,25 a
 0,42 de mediana— sin llegar a ser la misma cartera.
 
+### Medido: elegir corredora no es fiable, y no elegir funciona
+
+Con las 33 corredoras y los cortes fijados de antemano, **la correlación de
+rangos entre ventanas es +0,47**: hay algo de persistencia, muy lejos de ser
+fiable. La mejor de la selección —LarrainVial— cae al 5º puesto en la
+evaluación; Credicorp sube del 4º al 1º.
+
+**Consenso-6, que no elige a nadie, queda 2ª en las dos ventanas** y es la
+única estable, con cinco veces menos rotación. Ver `research/corredoras/`.
+
+Eso abre una quinta opción que antes no estaba sobre la mesa.
+
 ### Las opciones, sin implementar ni medir
 
 **A. Mantener la carga manual.** Es lo que hay. Cuesta una acción periódica y
@@ -145,7 +157,13 @@ de la estrategia: el aporte fundamental de un analista que mira balances y no
 sólo cotizaciones. **Sería una estrategia nueva con el nombre viejo**, y eso hay
 que decirlo así.
 
-**D. Suspender la pieza y repartir su cuarto entre las otras tres.** El sistema
+**D. Volver a Consenso-6.** No elige corredora, así que no hereda el problema
+de selección, y quedó 2ª en las dos ventanas con cinco veces menos rotación.
+**No resuelve la dependencia manual** —sigue necesitando que alguien cargue las
+recomendaciones, y ahora de seis fuentes en vez de una— pero sí resuelve la
+fragilidad de haber elegido una sola mirando el resultado.
+
+**E. Suspender la pieza y repartir su cuarto entre las otras tres.** El sistema
 queda en tres piezas y completamente automático. Es la opción más limpia de
 operar y la que más cambia lo que el producto es.
 

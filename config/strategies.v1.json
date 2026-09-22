@@ -1,0 +1,218 @@
+{
+  "schema_version": "1.0.0",
+  "platform": "AlphaData",
+  "timezone": "America/Santiago",
+  "base_currency": "CLP",
+  "strategies": [
+    {
+      "id": "alphadata-conviccion",
+      "commercial_name": "Sigma-6",
+      "strategy_code": "SIGMA6",
+      "name_rationale": "Sigma representa la suma de las señales vigentes de seis corredoras.",
+      "version": "1.0.0",
+      "status": "paper_trading",
+      "description": "Cartera semanal basada exclusivamente en el balance de señales vigentes de seis corredoras seleccionadas.",
+      "independent_from": ["alphadata-impulso"],
+      "universe": {
+        "market": "Chile",
+        "allowed_instruments": "acciones con precio y recomendación validados",
+        "currencies": ["CLP", "USD"],
+        "adr_separate_from_local_share": true
+      },
+      "data": {
+        "manual_input_frequency": "weekly",
+        "recommendations_required_fields": ["published_at", "available_at", "broker", "ticker", "recommendation_text"],
+        "optional_fields": ["target_price_min", "target_price_max", "currency", "source_page"],
+        "prices": "adjusted_close_for_returns_and_open_for_execution",
+        "reject_without_explicit_action": true,
+        "same_broker_same_ticker_same_day_conflict": "manual_review",
+        "future_information_allowed": false
+      },
+      "brokers": ["Credicorp Capital", "BICE", "Itaú", "BTG Pactual", "MBI", "LarrainVial Estudios"],
+      "signal_mapping": {
+        "buy": 1,
+        "overweight": 1,
+        "outperform": 1,
+        "superior_al_mercado": 1,
+        "hold": 0,
+        "neutral": 0,
+        "market_perform": 0,
+        "sell": -1,
+        "underweight": -1,
+        "underperform": -1,
+        "inferior_al_mercado": -1
+      },
+      "signal_state": {
+        "one_effective_signal_per_broker_and_ticker": true,
+        "selection": "latest_available_at",
+        "maximum_age_calendar_days": 365,
+        "expired_signal_value": 0
+      },
+      "entry": {
+        "net_score_formula": "sum(latest_active_signal_by_broker)",
+        "condition": "net_score > 0",
+        "minimum_brokers": 1,
+        "execution": "next_trading_day_open_after_weekly_calculation"
+      },
+      "sizing": {
+        "raw_weight_formula": "positive_net_score / sum(positive_net_scores)",
+        "maximum_weight_per_instrument": 0.10,
+        "redistribution": "iterative_pro_rata_among_uncapped_positions",
+        "unallocated_capital": "cash",
+        "sector_cap": null,
+        "sector_cap_status": "pending_reliable_sector_mapping"
+      },
+      "exit": {
+        "triggers": ["net_score <= 0", "holding_period_calendar_days >= 365"],
+        "priority": "first_trigger",
+        "execution": "next_trading_day_open",
+        "target_price_exit": false,
+        "stop_loss": false
+      },
+      "cost_model": {
+        "turnover_cost_rate": 0.002,
+        "apply_to": ["entries", "exits", "rebalances"],
+        "slippage_model": "pending"
+      },
+      "calculation_schedule": {
+        "frequency": "weekly",
+        "calculation_after": "manual_recommendation_upload_and_validation",
+        "publication_day": "same_day_after_calculation",
+        "no_change_report_required": true
+      },
+      "distribution": {
+        "audiences": ["internal_paper_trading", "future_subscribers"],
+        "channels": ["email", "subscriber_portal"],
+        "report_sections": ["portfolio_as_of", "entries", "exits", "holds", "weights", "cash", "performance", "drawdown", "methodology_version", "data_cutoff", "risk_disclaimer"]
+      },
+      "historical_reference": {
+        "period": "2021-07-16/2026-07-16",
+        "total_return": 1.9457159407,
+        "cagr": 0.2412264467,
+        "maximum_drawdown": -0.1623565749,
+        "sharpe": 1.2538556259,
+        "average_invested": 0.995,
+        "note": "Resultado simulado; no constituye objetivo ni promesa de retorno."
+      }
+    },
+    {
+      "id": "alphadata-impulso",
+      "commercial_name": "Delta-12",
+      "strategy_code": "DELTA12",
+      "name_rationale": "Delta representa el cambio de precio y 12 el horizonte principal de momentum.",
+      "version": "1.0.0",
+      "status": "paper_trading",
+      "description": "Cartera mensual de momentum 12-1, tendencia SMA200 y filtro de liquidez, independiente de las corredoras.",
+      "independent_from": ["alphadata-conviccion"],
+      "universe": {
+        "market": "Chile",
+        "membership": "historical_investable_universe_as_of_each_calculation_date",
+        "survivorship_bias_allowed": false,
+        "minimum_price_history_trading_days": 252,
+        "instrument_type": "common_equity"
+      },
+      "data": {
+        "frequency": "daily",
+        "required_fields": ["date", "ticker", "adjusted_close", "open", "high", "low", "volume"],
+        "corporate_action_adjustment_required": true,
+        "future_information_allowed": false,
+        "maximum_forward_fill_trading_days": 3,
+        "stale_price_action": "exclude"
+      },
+      "indicators": {
+        "momentum_12_1": {
+          "formula": "adjusted_close[t-21] / adjusted_close[t-252] - 1",
+          "lookback_trading_days": 252,
+          "skip_recent_trading_days": 21,
+          "required": "momentum_12_1 > 0"
+        },
+        "sma200": {
+          "formula": "mean(adjusted_close[t-199:t])",
+          "window_trading_days": 200,
+          "minimum_observations": 150,
+          "required": "adjusted_close[t] > sma200[t]"
+        },
+        "liquidity": {
+          "daily_turnover_formula": "adjusted_close * volume",
+          "score_formula": "median(daily_turnover, 60 trading days)",
+          "window_trading_days": 60,
+          "minimum_observations": 30,
+          "exclude_bottom_cross_section_percent": 20
+        }
+      },
+      "entry": {
+        "ranking": "momentum_12_1 descending",
+        "target_positions": 8,
+        "eligibility": ["momentum_12_1 > 0", "adjusted_close > sma200", "liquidity_percentile >= 20", "complete_required_data"],
+        "execution": "next_month_first_trading_day_open"
+      },
+      "sizing": {
+        "method": "equal_weight",
+        "raw_weight_formula": "1 / eligible_selected_count",
+        "maximum_weight_per_instrument": 0.15,
+        "maximum_positions": 8,
+        "unallocated_capital": "cash",
+        "sector_cap": null,
+        "sector_cap_status": "pending_reliable_sector_mapping"
+      },
+      "exit": {
+        "evaluation_frequency": "monthly",
+        "triggers": ["not_in_top_8", "momentum_12_1 <= 0", "adjusted_close <= sma200", "liquidity_percentile < 20", "invalid_or_stale_data"],
+        "priority": "any_trigger",
+        "execution": "next_month_first_trading_day_open",
+        "intramonth_stop_loss": false,
+        "discretionary_news_exit": false
+      },
+      "cost_model": {
+        "paper_trading_turnover_cost_rate": 0.005,
+        "historical_comparison_cost_rate": 0.002,
+        "apply_to": ["entries", "exits", "rebalances"],
+        "slippage_model": "pending_volume_based_model"
+      },
+      "calculation_schedule": {
+        "frequency": "monthly",
+        "signal_time": "last_trading_day_after_market_close",
+        "publication_time": "after_validation_before_next_market_open",
+        "execution_time": "first_trading_day_of_next_month",
+        "no_change_report_required": true
+      },
+      "distribution": {
+        "audiences": ["internal_paper_trading", "future_subscribers"],
+        "channels": ["email", "subscriber_portal"],
+        "report_sections": ["ranking", "eligibility_checks", "portfolio_as_of", "entries", "exits", "holds", "target_weights", "cash", "performance", "drawdown", "turnover", "methodology_version", "data_cutoff", "risk_disclaimer"]
+      },
+      "historical_reference": {
+        "period": "2021-07-19/2026-07-16",
+        "configuration": "monthly, 8 positions, momentum 252/21, SMA200",
+        "total_return": 1.5302,
+        "cagr": 0.2045,
+        "maximum_drawdown": -0.1380,
+        "sharpe": 1.4174,
+        "annual_turnover": 4.1597,
+        "average_invested": 0.7892,
+        "planning_return_range": [0.10, 0.16],
+        "planning_drawdown_range": [-0.30, -0.20],
+        "note": "Resultado con posible sesgo de supervivencia; requiere validación prospectiva."
+      }
+    }
+  ],
+  "common_controls": {
+    "calculation_mode": "walk_forward",
+    "signal_and_execution_dates_separate": true,
+    "version_every_methodology_change": true,
+    "recalculate_past_official_history_after_rule_change": false,
+    "maintain_audit_log": true,
+    "manual_override": {
+      "allowed": false,
+      "emergency_data_quarantine_allowed": true,
+      "quarantine_requires_reason_and_timestamp": true
+    },
+    "minimum_metrics": ["total_return", "cagr", "maximum_drawdown", "volatility", "sharpe", "turnover", "cash_weight", "benchmark_excess", "transaction_costs"],
+    "benchmark": "IPSA total-return proxy",
+    "subscriber_onboarding": {
+      "new_subscriber_receives": ["current_portfolio", "current_target_weights", "cash_weight", "next_review_date", "methodology_version"],
+      "do_not_reconstruct_original_entry_price": true,
+      "performance_reporting_basis": "official_model_portfolio_not_subscriber_personal_return"
+    }
+  }
+}
