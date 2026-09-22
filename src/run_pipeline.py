@@ -18,8 +18,18 @@ from src.salud import revisar as revisar_salud
 from src.strategy_engine import DIAS_VIGENCIA_RECOMENDACIONES, ORO_TICKER, RECOMMENDATION_COLUMNS, combined_equal_weight, delta12, delta12_historical_nav, gamma6, gamma6_historical_nav, movements, sigma6_historical_nav, oro, oro_historical_nav, reconstruct_entry_dates, sigma6, to_clp, validate_recommendations
 
 ROOT=Path(__file__).resolve().parents[1]; DATA=ROOT/'data'; REPORTS=ROOT/'reports'; STATE=DATA/'strategy_state.json'; NAV=DATA/'strategy_nav.csv'
-US_COST_RATE=.001  # spread de Trii para acciones de EE.UU. (0,1% por lado)
 CONFIG=ROOT/'config'/'runtime.v2.json'
+
+# La tarifa es **una sola** y sale de la configuración, nunca escrita acá.
+# Hubo 0,1% para los CDV durante meses, inventado, y una pantalla de orden real
+# de IAUCL lo desmintió al peso: $612.000 de valor, $1.092,42 de comisión, que
+# es 0,1785% exacto. La misma tarifa de la acción chilena. El número escrito en
+# dos lugares es la forma en que uno se corrige y el otro no, así que acá no se
+# escribe ninguno.
+def modelo_de_costo()->tuple[float,float]:
+    """Tasa y mínimo por operación, para acción chilena y CDV por igual."""
+    m=json.loads(CONFIG.read_text(encoding='utf-8'))['transaction_cost']
+    return float(m['rate']),float(m['minimum_fee_clp'])
 GAMMA_RULE_VERSION='1.0.0'
 # Sigma-6 salió de la asignación el 22-09-2026, no del repositorio: su código y
 # sus series se conservan. Ver ESTRATEGIAS_ALPHADATA_v2.md y
@@ -53,7 +63,7 @@ def portfolio_return(prices:pd.DataFrame,weights:list[dict],start:pd.Timestamp,e
         if t in matrix and pd.notna(a.iloc[0][t]) and pd.notna(z.iloc[0][t]) and a.iloc[0][t]>0: total+=w*(z.iloc[0][t]/a.iloc[0][t]-1)
     return total
 
-def enrich_open_positions(portfolio: pd.DataFrame, prices: pd.DataFrame, as_of: pd.Timestamp, buy_cost: float = .001785,
+def enrich_open_positions(portfolio: pd.DataFrame, prices: pd.DataFrame, as_of: pd.Timestamp, buy_cost: float | None = None,
                           precios_anotados: dict[str, float] | None = None,
                           dividendos: pd.DataFrame | None = None) -> pd.DataFrame:
     """Precios de entrada y de hoy, y la variación entre ambos.
@@ -427,10 +437,10 @@ def main()->None:
         for clave in ('sigma_entries','delta_entries','gamma_entries','oro_entries'):
             state[clave]={t:max(f,piso) for t,f in state.get(clave,{}).items()}
     dividendos=pd.read_csv(DATA/'dividendos.csv') if (DATA/'dividendos.csv').exists() else None
-    sigma=enrich_open_positions(sigma,prices,as_of,precios_anotados=precios_de_entrada(libro,'Sigma-6'),dividendos=dividendos)
-    delta=enrich_open_positions(delta,prices,as_of,precios_anotados=precios_de_entrada(libro,'Delta-12'),dividendos=dividendos)
-    gamma=enrich_open_positions(gamma,prices_us_clp,as_of,buy_cost=US_COST_RATE,precios_anotados=precios_de_entrada(libro,'Gamma-6'),dividendos=dividendos)
-    oro_portfolio=enrich_open_positions(oro_portfolio,prices_oro_clp,as_of,buy_cost=US_COST_RATE,precios_anotados=precios_de_entrada(libro,'Oro'),dividendos=dividendos)
+    sigma=enrich_open_positions(sigma,prices,as_of,buy_cost=modelo_de_costo()[0],precios_anotados=precios_de_entrada(libro,'Sigma-6'),dividendos=dividendos)
+    delta=enrich_open_positions(delta,prices,as_of,buy_cost=modelo_de_costo()[0],precios_anotados=precios_de_entrada(libro,'Delta-12'),dividendos=dividendos)
+    gamma=enrich_open_positions(gamma,prices_us_clp,as_of,buy_cost=modelo_de_costo()[0],precios_anotados=precios_de_entrada(libro,'Gamma-6'),dividendos=dividendos)
+    oro_portfolio=enrich_open_positions(oro_portfolio,prices_oro_clp,as_of,buy_cost=modelo_de_costo()[0],precios_anotados=precios_de_entrada(libro,'Oro'),dividendos=dividendos)
     # Peso real contra peso objetivo. El NAV supone que la cartera vuelve al
     # objetivo todos los días, gratis; una cuenta de verdad deja correr los
     # pesos entre revisiones y los ganadores se van concentrando. Sin esta
@@ -493,10 +503,10 @@ def main()->None:
     for viejo in ('IPSA','IPSA TR'):
         if viejo in nav and BENCHMARK_VIVO not in nav: nav[BENCHMARK_VIVO]=nav.pop(viejo)
     nav.setdefault('Gamma-6',100.); nav.setdefault('Oro',100.)
-    sigma_r=portfolio_return(prices,old_sigma,last_date,as_of)-turnover_cost(old_sigma,sigma,.001785)
-    delta_r=portfolio_return(prices,old_delta,last_date,as_of)-turnover_cost(old_delta,delta,.001785)
-    gamma_r=portfolio_return(prices_us_clp,old_gamma,last_date,as_of)-turnover_cost(old_gamma,gamma,US_COST_RATE)
-    oro_r=portfolio_return(prices_oro_clp,old_oro,last_date,as_of)-turnover_cost(old_oro,oro_portfolio,US_COST_RATE)
+    sigma_r=portfolio_return(prices,old_sigma,last_date,as_of)-turnover_cost(old_sigma,sigma,modelo_de_costo()[0])
+    delta_r=portfolio_return(prices,old_delta,last_date,as_of)-turnover_cost(old_delta,delta,modelo_de_costo()[0])
+    gamma_r=portfolio_return(prices_us_clp,old_gamma,last_date,as_of)-turnover_cost(old_gamma,gamma,modelo_de_costo()[0])
+    oro_r=portfolio_return(prices_oro_clp,old_oro,last_date,as_of)-turnover_cost(old_oro,oro_portfolio,modelo_de_costo()[0])
     ipsa_r=benchmark_return(prices,last_date,as_of)
     navrow={'date':as_of.date().isoformat(),'Sigma-6':nav['Sigma-6']*(1+sigma_r),'Delta-12':nav['Delta-12']*(1+delta_r),'Gamma-6':nav['Gamma-6']*(1+gamma_r),'Oro':nav['Oro']*(1+oro_r),BENCHMARK_VIVO:nav[BENCHMARK_VIVO]*(1+ipsa_r)}
     history=pd.read_csv(NAV) if NAV.exists() else pd.DataFrame()
@@ -535,8 +545,8 @@ def main()->None:
         # Sigma-6 también se reconstruye: sin esto, las otras dos cambiaban de
         # aritmética y Sigma-6 se quedaba con la serie vieja, de peso constante.
         _reconstruir('Sigma-6',sigma6_historical_nav(valid,prices,universe,historical.date.min(),historical.date.max()))
-        _reconstruir('Gamma-6',gamma6_historical_nav(prices_us,universe,fx,historical.date.min(),historical.date.max(),US_COST_RATE))
-        _reconstruir('Oro',oro_historical_nav(prices_oro,universe,fx,historical.date.min(),historical.date.max(),US_COST_RATE))
+        _reconstruir('Gamma-6',gamma6_historical_nav(prices_us,universe,fx,historical.date.min(),historical.date.max(),modelo_de_costo()[0]))
+        _reconstruir('Oro',oro_historical_nav(prices_oro,universe,fx,historical.date.min(),historical.date.max(),modelo_de_costo()[0]))
         # El benchmark también. Era la última serie guardada de la
         # reconstrucción, y una serie guardada es la forma que ya falló: la de
         # Sigma-6 sobrevivió intacta a la reparación de los precios chilenos y
@@ -582,10 +592,8 @@ def main()->None:
     # tabla de montos y fechas escrita a mano en la guía envejece sola.
     # El costo sale de la configuración, no escrito acá: los dos parámetros
     # están medidos sobre órdenes reales y el mínimo cambió de $1.990 a $999,99.
-    modelo=json.loads(CONFIG.read_text(encoding='utf-8'))
-    cl=(float(modelo['transaction_cost']['rate']),float(modelo['transaction_cost']['minimum_fee_clp']))
-    us=(float(modelo['transaction_cost_us']['rate']),0.)
-    costos={'Sigma-6':cl,'Delta-12':cl,'Gamma-6':us,'Oro':us}
+    tarifa=modelo_de_costo()
+    costos={n:tarifa for n in ('Sigma-6','Delta-12','Gamma-6','Oro')}
     ingreso=cartera_de_ingreso({'Sigma-6':sigma,'Delta-12':delta,'Gamma-6':gamma,'Oro':oro_portfolio},as_of,costos)
     (REPORTS/'cartera_de_ingreso.md').write_text(markdown_ingreso(ingreso,as_of),encoding='utf-8')
     ingreso.to_csv(DATA/'cartera_de_ingreso.csv',index=False)

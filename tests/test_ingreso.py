@@ -7,12 +7,13 @@ entrada-salida en ese plazo.
 """
 
 import pandas as pd
+import pytest
 
 from src.ingreso import PERMANENTE, SIN_FECHA, cartera_de_ingreso, costo_del_par, markdown
 
 AS_OF = pd.Timestamp("2026-09-17")
-COSTOS = {"Sigma-6": (.001785, 999.99), "Delta-12": (.001785, 999.99),
-          "Gamma-6": (.001, 0.), "Oro": (.001, 0.)}
+# Una sola tarifa, acción chilena y CDV por igual: es lo que hace producción.
+COSTOS = {n: (.001785, 999.99) for n in ("Sigma-6", "Delta-12", "Gamma-6", "Oro")}
 
 
 def _cartera(**kwargs):
@@ -71,21 +72,44 @@ def test_sin_fecha_se_dice_y_no_se_deja_la_celda_vacia():
 def test_la_comision_del_primer_dia_sale_del_modelo_de_cada_pieza():
     """Es lo primero que se puede contrastar contra la boleta de la corredora.
 
-    Y no es el 0,1785% de los $20 millones: sólo lo chileno paga esa tarifa,
-    los CDV pagan 0,1% sin mínimo, y el redondeo deja parte sin invertir.
+    Y no es el 0,1785% de los $20 millones, pero **no porque haya dos tarifas**:
+    la tarifa es una sola para acción chilena y CDV. Es porque el redondeo a
+    unidades enteras deja parte del capital sin invertir, así que la base no son
+    $20 millones.
     """
     from src.ingreso import UMBRAL_MINIMO, costo_de_una
     # Sobre el umbral manda el porcentual; bajo el umbral manda el mínimo.
     assert costo_de_una(UMBRAL_MINIMO + 1000, .001785, 999.99) > 999.99
     assert costo_de_una(300_000., .001785, 999.99) == 999.99
-    assert costo_de_una(300_000., .001, 0.) == 300.
     carteras = {"Delta-12": _cartera(monto_clp=937_500.),
                 "Gamma-6": _cartera(ticker="TGT", monto_clp=1_250_000., current_price=152_490.)}
     t = cartera_de_ingreso(carteras, AS_OF, COSTOS)
     texto = markdown(t, AS_OF)
     assert "Lo que va a cobrar la corredora el primer día" in texto
-    assert "0,1785%, con mínimo" in texto and "0,1% de CDV, sin mínimo" in texto
+    # Una sola tarifa en el desglose. El 0,1% sólo puede aparecer contado como
+    # el supuesto que fue, nunca como la tarifa de una pieza.
+    assert texto.count("0,1785%, con mínimo de $999,99") == len(carteras)
+    assert "0,1% de CDV" not in texto
+    # La comisión total es la tarifa sobre lo efectivamente invertido, no sobre
+    # el monto de referencia.
+    assert float(t.costo_de_entrar.sum()) == pytest.approx(.001785 * float(t.monto_efectivo.sum()))
     assert "no es el 0,1785% de los $20 millones" in texto
     # La chilena paga el porcentual sobre lo efectivamente invertido.
     chilena = t.loc[t.estrategia == "Delta-12"].iloc[0]
     assert abs(chilena.costo_de_entrar - .001785 * chilena.monto_efectivo) < 1e-6
+
+
+def test_el_cdv_paga_la_misma_tarifa_que_la_accion_chilena():
+    """La orden real de IAUCL, al peso, contra el modelo de costo de produccion.
+
+    Durante meses el sistema supuso 0,1785% para la accion chilena y 0,1% para
+    los CDV. La pantalla de una orden de IAUCL lo desmintio: $612.000 de valor,
+    $1.092,42 de comision. No hay tarifa aparte para EE.UU.
+
+    Esta prueba lee la tarifa de `config/runtime.v2.json`, no una copia, asi que
+    si alguien vuelve a poner un 0,1% inventado ahi, falla aca.
+    """
+    from src.run_pipeline import modelo_de_costo
+    from src.ingreso import costo_de_una
+    tasa, minimo = modelo_de_costo()
+    assert costo_de_una(612_000., tasa, minimo) == pytest.approx(1_092.42, abs=.005)

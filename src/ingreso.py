@@ -37,6 +37,8 @@ REDONDEO = "unidades enteras, hacia abajo, residuo a la caja de la pieza"
 # Bajo este monto la comisión mínima sale más cara que el porcentual:
 # minimo / tasa, con los dos medidos sobre órdenes reales de Trii.
 UMBRAL_MINIMO = 560_218
+# La misma para acción chilena y para CDV. Ver config/runtime.v2.json.
+TARIFA = "0,1785%, con mínimo de $999,99"
 SIN_FECHA = "por ranking, sin fecha"
 PERMANENTE = "posición permanente"
 
@@ -143,6 +145,7 @@ def markdown(tabla: pd.DataFrame, as_of: pd.Timestamp) -> str:
         residuo = parte.residuo.sum()
         lineas += ["", f"Residuo de esta pieza: **{_pesos(residuo)}**, que queda en su caja.", ""]
     entrada = float(tabla.costo_de_entrar.sum())
+    total, efectivo = tabla.monto_referencia.sum(), tabla.monto_efectivo.sum()
     por_pieza = tabla.groupby("estrategia").agg(
         invertido=("monto_efectivo", "sum"), comision=("costo_de_entrar", "sum"),
         bajo_umbral=("sobre_el_umbral", lambda x: int((~x.astype(bool)).sum())))
@@ -155,9 +158,7 @@ def markdown(tabla: pd.DataFrame, as_of: pd.Timestamp) -> str:
         "|---|---:|---:|---|",
     ]
     for estrategia, r in por_pieza.iterrows():
-        tarifa = ("0,1785%, con mínimo de $999,99" if estrategia in {"Sigma-6", "Delta-12"}
-                  else "0,1% de CDV, sin mínimo")
-        lineas.append(f"| {estrategia} | {_pesos(r.invertido)} | {_pesos(r.comision)} | {tarifa} |")
+        lineas.append(f"| {estrategia} | {_pesos(r.invertido)} | {_pesos(r.comision)} | {TARIFA} |")
     bajo = int(por_pieza.bajo_umbral.sum())
     lineas += [
         "",
@@ -167,17 +168,19 @@ def markdown(tabla: pd.DataFrame, as_of: pd.Timestamp) -> str:
          f"**{bajo} posiciones quedan bajo el umbral de {_pesos(UMBRAL_MINIMO)} y pagan el "
          "mínimo en vez del porcentual.**"),
         "",
-        "**Ojo con una cuenta fácil de hacer mal:** no es el 0,1785% de los $20 millones. Sólo",
-        "Delta-12 paga la tarifa chilena; Gamma-6 y el oro se compran como CDV y pagan 0,1% sin",
-        "mínimo. Y el redondeo a unidades enteras deja parte del capital sin invertir, así que",
-        "la base tampoco son $20 millones.",
+        "**La tarifa es la misma para las tres piezas**, acción chilena o CDV. El sistema supuso",
+        "durante meses un 0,1% para los CDV, y una pantalla de orden real de IAUCL lo desmintió",
+        "al peso: $612.000 de valor, $1.092,42 de comisión, que es 0,1785% exacto.",
+        "",
+        "**Ojo con una cuenta fácil de hacer mal:** no es el 0,1785% de los $20 millones, porque",
+        f"la base no son $20 millones. El redondeo a unidades enteras deja {_pesos(total - efectivo)} sin",
+        "invertir, y sobre lo que sí se invierte la cuenta da exacta.",
         "",
         "Este número es lo primero que se puede contrastar contra la boleta de la corredora, y",
         "es la mejor validación del modelo de costo que hay: si Trii cobra otra cosa, el modelo",
         "está mal y hay que corregirlo antes de que la diferencia se acumule.",
         "",
     ]
-    total, efectivo = tabla.monto_referencia.sum(), tabla.monto_efectivo.sum()
     lineas += [
         "## El residuo del redondeo",
         "",

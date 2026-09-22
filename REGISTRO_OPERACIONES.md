@@ -85,9 +85,10 @@ estrategia— es la política de rebalanceo, que es otra cosa y vive en
   instrumento. Es la diferencia entre el backtest y la realidad que el backtest
   no modela.
 - **Comisión efectiva contra la modelada.** El sistema supone 0,1785% con
-  mínimo de **$999,99** en lo chileno y 0,1% sin mínimo en lo estadounidense.
-  Los dos parámetros están medidos sobre cuatro órdenes reales de Trii; acá se
-  ve si se sostienen. La primera comparación está calculada en
+  mínimo de **$999,99**, y **la misma tarifa para acción chilena y para CDV**.
+  Los tres parámetros están medidos sobre órdenes reales de Trii: cuatro
+  chilenas para la tasa y el mínimo, y una de IAUCL —$612.000 de valor,
+  $1.092,42 de comisión— para los CDV. Acá se ve si se sostienen. La primera comparación está calculada en
   `reports/cartera_de_ingreso.md`, bajo «lo que va a cobrar la corredora el
   primer día».
 - **Órdenes que no se llenan.** Con `estado` y `cantidad_pedida` se puede medir

@@ -26,12 +26,12 @@ Residuo de esta pieza: **$ 29.136**, que queda en su caja.
 
 | acción | unidades | a gastar | residuo | en cartera hace | próxima salida | costo ida y vuelta |
 |---|---:|---:|---:|---:|---|---:|
-| TGT | 8 | $ 1.213.634 | $ 36.366 | 52 días | por ranking, sin fecha | $ 2.427 · 0,20% |
-| INTC | 12 | $ 1.249.769 | $ 231 | 356 días | por ranking, sin fecha | $ 2.500 · 0,20% |
-| MRK | 8 | $ 1.126.787 | $ 123.213 | 52 días | por ranking, sin fecha | $ 2.254 · 0,20% |
-| BAC | 22 | $ 1.217.988 | $ 32.012 | 52 días | por ranking, sin fecha | $ 2.436 · 0,20% |
-| JNJ | 4 | $ 1.035.682 | $ 214.318 | 21 días | por ranking, sin fecha | $ 2.071 · 0,20% |
-| ABT | 12 | $ 1.180.836 | $ 69.164 | 21 días | por ranking, sin fecha | $ 2.362 · 0,20% |
+| TGT | 8 | $ 1.213.634 | $ 36.366 | 52 días | por ranking, sin fecha | $ 4.333 · 0,36% |
+| INTC | 12 | $ 1.249.769 | $ 231 | 356 días | por ranking, sin fecha | $ 4.462 · 0,36% |
+| MRK | 8 | $ 1.126.787 | $ 123.213 | 52 días | por ranking, sin fecha | $ 4.023 · 0,36% |
+| BAC | 22 | $ 1.217.988 | $ 32.012 | 52 días | por ranking, sin fecha | $ 4.348 · 0,36% |
+| JNJ | 4 | $ 1.035.682 | $ 214.318 | 21 días | por ranking, sin fecha | $ 3.697 · 0,36% |
+| ABT | 12 | $ 1.180.836 | $ 69.164 | 21 días | por ranking, sin fecha | $ 4.216 · 0,36% |
 
 Residuo de esta pieza: **$ 475.306**, que queda en su caja.
 
@@ -39,26 +39,29 @@ Residuo de esta pieza: **$ 475.306**, que queda en su caja.
 
 | acción | unidades | a gastar | residuo | en cartera hace | próxima salida | costo ida y vuelta |
 |---|---:|---:|---:|---:|---|---:|
-| IAU | 63 | $ 4.968.090 | $ 31.910 | 263 días | posición permanente | $ 9.936 · 0,20% |
+| IAU | 63 | $ 4.968.090 | $ 31.910 | 263 días | posición permanente | $ 17.736 · 0,36% |
 
 Residuo de esta pieza: **$ 31.910**, que queda en su caja.
 
 ## Lo que va a cobrar la corredora el primer día
 
-Comprar las 15 posiciones cuesta **$ 25.328** en comisiones.
+Comprar las 15 posiciones cuesta **$ 34.743** en comisiones.
 
 | pieza | se invierte | comisión | tarifa |
 |---|---:|---:|---|
 | Delta-12 | $ 7.470.864 | $ 13.335 | 0,1785%, con mínimo de $999,99 |
-| Gamma-6 | $ 7.024.694 | $ 7.025 | 0,1% de CDV, sin mínimo |
-| Oro | $ 4.968.090 | $ 4.968 | 0,1% de CDV, sin mínimo |
+| Gamma-6 | $ 7.024.694 | $ 12.539 | 0,1785%, con mínimo de $999,99 |
+| Oro | $ 4.968.090 | $ 8.868 | 0,1785%, con mínimo de $999,99 |
 
 **Ninguna posición paga el mínimo**: todas superan el umbral de $ 560.218, bajo el cual el mínimo sale más caro que el porcentual.
 
-**Ojo con una cuenta fácil de hacer mal:** no es el 0,1785% de los $20 millones. Sólo
-Delta-12 paga la tarifa chilena; Gamma-6 y el oro se compran como CDV y pagan 0,1% sin
-mínimo. Y el redondeo a unidades enteras deja parte del capital sin invertir, así que
-la base tampoco son $20 millones.
+**La tarifa es la misma para las tres piezas**, acción chilena o CDV. El sistema supuso
+durante meses un 0,1% para los CDV, y una pantalla de orden real de IAUCL lo desmintió
+al peso: $612.000 de valor, $1.092,42 de comisión, que es 0,1785% exacto.
+
+**Ojo con una cuenta fácil de hacer mal:** no es el 0,1785% de los $20 millones, porque
+la base no son $20 millones. El redondeo a unidades enteras deja $ 536.352 sin
+invertir, y sobre lo que sí se invierte la cuenta da exacta.
 
 Este número es lo primero que se puede contrastar contra la boleta de la corredora, y
 es la mejor validación del modelo de costo que hay: si Trii cobra otra cosa, el modelo

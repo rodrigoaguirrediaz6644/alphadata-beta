@@ -19,7 +19,12 @@
     "minimum_fee_clp": 999.99,
     "minimum_fee_requires_capital": true,
     "umbral_donde_el_minimo_deja_de_morder_clp": 560218,
-    "nota": "Los dos parametros estan **medidos sobre cuatro ordenes reales de Trii** entre $229.500 y $1.515.000, y las dos puntas del rango los confirman por separado: la orden de $229.500 pagaria $410 por porcentaje y pago el minimo; la de $1.515.000 pago el porcentaje. El minimo anterior, $1.990, era un supuesto. El umbral es minimo/tasa = 999,99 / 0,001785."
+    "aplica_a": "accion chilena y CDV por igual",
+    "evidencia": [
+      "Cuatro ordenes reales de Trii en acciones chilenas, entre $229.500 y $1.515.000. Las dos puntas confirman los dos parametros por separado: la de $229.500 pagaria $410 por porcentaje y pago el minimo; la de $1.515.000 pago el porcentaje.",
+      "Pantalla de orden de IAUCL, que es CDV: valor acciones $612.000 (8 x $76.500), comision $1.092,42. 612.000 x 0,001785 = 1.092,42, exacto al peso. No hay 0,1% ni cargo aparte para los CDV."
+    ],
+    "nota": "Hubo dos supuestos que la medicion desmintio: un minimo de $1.990, que eran $999,99, y una tarifa de 0,1% para los CDV, que es la misma 0,1785% de la accion chilena. El umbral es minimo/tasa = 999,99 / 0,001785. **No hay una tarifa aparte para EE.UU.**: si aparece una, tiene que venir con su boleta."
   },
   "strategy_modules": {
     "SIGMA6": "src.strategy_engine:sigma6",
@@ -37,11 +42,6 @@
       "target_weight"
     ],
     "registration": "add module path to strategy_modules and strategy code to enabled_strategies"
-  },
-  "transaction_cost_us": {
-    "provider": "Trii",
-    "rate": 0.001,
-    "note": "spread aplicado por lado en acciones de EE.UU. (CDV)"
   },
   "combined_portfolio": {
     "name": "Conjunto AlphaData",
