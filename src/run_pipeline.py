@@ -11,7 +11,7 @@ import pandas as pd
 from src.fetch_prices import load_universe, operables
 from src.ingest_recommendations import ingest
 from src.ingreso import cartera_de_ingreso, markdown as markdown_ingreso
-from src.cdv import cargar as cargar_cdv, premio as premio_cdv
+from src.cdv import cargar as cargar_cdv, cargar_simbolos as cargar_simbolos_cdv, estado as estado_cdv, premio as premio_cdv
 from src.libro import abiertas as libro_abiertas, anotar, cargar as cargar_libro, cartera_publicada, guardar as guardar_libro, guardar_publicada, movimientos_de, precios_de_entrada
 from src.strategy_registry import validate_registry
 from src.reporting_public import build_public_report
@@ -545,10 +545,10 @@ def main()->None:
                                    'valores anteriores: una serie que no se recalcula y se publica '
                                    'igual es el defecto de Sigma-6. Ver CENSO_DE_SERIES.md.')
             historical[nombre]=historical.date.map(serie.set_index('date')[nombre]).ffill()
-        _reconstruir('Delta-12',delta12_historical_nav(prices,universe,historical.date.min(),historical.date.max()))
+        _reconstruir('Delta-12',delta12_historical_nav(prices,universe,historical.date.min(),historical.date.max(),modelo_de_costo()[0]))
         # Sigma-6 también se reconstruye: sin esto, las otras dos cambiaban de
         # aritmética y Sigma-6 se quedaba con la serie vieja, de peso constante.
-        _reconstruir('Sigma-6',sigma6_historical_nav(valid,prices,universe,historical.date.min(),historical.date.max()))
+        _reconstruir('Sigma-6',sigma6_historical_nav(valid,prices,universe,historical.date.min(),historical.date.max(),modelo_de_costo()[0]))
         _reconstruir('Gamma-6',gamma6_historical_nav(prices_us,universe,fx,historical.date.min(),historical.date.max(),modelo_de_costo()[0]))
         _reconstruir('Oro',oro_historical_nav(prices_oro,universe,fx,historical.date.min(),historical.date.max(),modelo_de_costo()[0]))
         # El benchmark también. Era la última serie guardada de la
@@ -602,7 +602,10 @@ def main()->None:
     # están medidos sobre órdenes reales y el mínimo cambió de $1.990 a $999,99.
     tarifa=modelo_de_costo()
     costos={n:tarifa for n in ('Sigma-6','Delta-12','Gamma-6','Oro')}
-    ingreso=cartera_de_ingreso({'Sigma-6':sigma,'Delta-12':delta,'Gamma-6':gamma,'Oro':oro_portfolio},as_of,costos)
+    # La puerta de símbolos: ningún nombre estadounidense sale con símbolo en la
+    # guía si su CDV no pasó la verificación. Ver src/cdv.py.
+    puerta=estado_cdv(universe,cargar_cdv(),prices_all,cargar_simbolos_cdv())
+    ingreso=cartera_de_ingreso({'Sigma-6':sigma,'Delta-12':delta,'Gamma-6':gamma,'Oro':oro_portfolio},as_of,costos,simbolos=puerta)
     (REPORTS/'cartera_de_ingreso.md').write_text(markdown_ingreso(ingreso,as_of),encoding='utf-8')
     ingreso.to_csv(DATA/'cartera_de_ingreso.csv',index=False)
     md,html=build_public_report(as_of,delta,dmove,coverage,errors,history,gamma=gamma,gamma_moves=gmove,oro=oro_portfolio,oro_moves=omove,movimientos=movimientos_libro,capital_por_pieza=por_pieza,vigencia=vigencia,salud=salud,conocidos=conocidos,ha_entrado=ha_entrado);(REPORTS/'latest_report.md').write_text(md,encoding='utf-8');(REPORTS/'latest_report.html').write_text(html,encoding='utf-8')

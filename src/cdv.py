@@ -46,6 +46,7 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
 ARCHIVO = ROOT / "data" / "cdv_precios.csv"
+SIMBOLOS = ROOT / "data" / "cdv_simbolos.csv"
 COLUMNAS = ["date", "cdv", "subyacente", "cdv_clp", "volumen"]
 
 # Una razón muy lejos de 1 no es un premio, es otro instrumento o un dato roto:
@@ -95,14 +96,26 @@ def cdvs(universe: pd.DataFrame) -> dict[str, str]:
     return {r.alphadata_ticker: f"{str(r.cdv_ticker).strip()}.SN" for r in u.itertuples()}
 
 
-def bajar(universe: pd.DataFrame, periodo: str = "2y", ruta: Path | None = None) -> pd.DataFrame:
-    """Baja los cierres de los CDV y los guarda. Es la única parte con red."""
+def bajar(universe: pd.DataFrame, periodo: str = "2y", ruta: Path | None = None,
+          ruta_simbolos: Path | None = None) -> pd.DataFrame:
+    """Baja los cierres de los CDV y el nombre que el proveedor les pone.
+
+    El nombre es la parte que importa y no es un adorno: es lo que delató que
+    `BACL.SN` era Boeing. Es la única parte con red.
+    """
     import yfinance as yf
 
-    filas = []
+    filas, nombres = [], []
     for base, simbolo in cdvs(universe).items():
+        tk = yf.Ticker(simbolo)
         try:
-            h = yf.Ticker(simbolo).history(period=periodo, auto_adjust=False)
+            info = tk.get_info()
+        except Exception:                                       # pragma: no cover - red
+            info = {}
+        nombres.append({"cdv": simbolo, "subyacente": base,
+                        "nombre_proveedor": info.get("longName") or info.get("shortName") or ""})
+        try:
+            h = tk.history(period=periodo, auto_adjust=False)
         except Exception as e:                                  # pragma: no cover - red
             print(f"{simbolo}: {type(e).__name__}", flush=True)
             continue
@@ -118,7 +131,15 @@ def bajar(universe: pd.DataFrame, periodo: str = "2y", ruta: Path | None = None)
              else pd.DataFrame(columns=COLUMNAS))
     destino = ruta or ARCHIVO
     tabla.sort_values(["cdv", "date"]).to_csv(destino, index=False, date_format="%Y-%m-%d")
+    pd.DataFrame(nombres).sort_values("subyacente").to_csv(ruta_simbolos or SIMBOLOS, index=False)
     return tabla
+
+
+def cargar_simbolos(ruta: Path | None = None) -> pd.DataFrame:
+    destino = ruta or SIMBOLOS
+    if not Path(destino).exists():
+        return pd.DataFrame(columns=["cdv", "subyacente", "nombre_proveedor"])
+    return pd.read_csv(destino).fillna("")
 
 
 def cargar(ruta: Path | None = None) -> pd.DataFrame:
@@ -169,3 +190,126 @@ def premio(cdv: pd.DataFrame, precios: pd.DataFrame, desde=None) -> Premio | Non
                   error=float(d.desvio.std() / len(d) ** .5),
                   ruedas=int(len(d)), nombres=int(d.cdv.nunique()),
                   desde=d.date.min(), hasta=d.date.max())
+
+
+# --- La puerta de símbolos --------------------------------------------------
+
+# Un símbolo se arma pegando un sufijo a un ticker, y **cuando un ticker es
+# prefijo de otro la regla produce un instrumento real y equivocado**:
+# BA + CL = BACL, que es Boeing, y BAC + CL = BACCL, que es Bank of America.
+# No falla con ruido, falla con una serie de precios perfectamente válida de
+# otra empresa, y por eso duró dos años sin que nadie lo notara.
+BANDA_DE_RAZON = .02
+# Ruedas frescas mínimas para pronunciarse sobre la razón de un nombre.
+RUEDAS_PARA_LA_RAZON = 10
+# Una razón así de lejos de 1 no necesita ruedas frescas para ser un rechazo:
+# ninguna cantidad de precio rancio explica un 3,6. Es el umbral con el que
+# BACL queda fuera aunque no tenga una sola rueda que se pueda creer.
+RAZON_IMPOSIBLE = .25
+
+OPERABLE = "operable"
+RECHAZADO = "rechazado"
+SIN_VERIFICAR = "sin verificar"
+SIN_SIMBOLO = "sin símbolo"
+
+# Palabras que sobran al comparar el nombre de la empresa con el que publica el
+# proveedor: "Apple Inc." contra "Apple Inc.", pero también "Nike Inc." contra
+# "NIKE, Inc." y "Coca-Cola Co." contra "The Coca-Cola Company".
+_RUIDO = {"the", "inc", "corp", "corporation", "company", "co", "incorporated",
+          "ltd", "plc", "sa", "class", "a", "b", "c", "group", "trust"}
+
+
+def _palabras(nombre: str) -> set[str]:
+    limpio = "".join(ch if ch.isalnum() or ch.isspace() else " " for ch in str(nombre).lower())
+    return {w for w in limpio.split() if w and w not in _RUIDO}
+
+
+def mismo_nombre(esperado: str, del_proveedor: str) -> bool | None:
+    """¿El proveedor dice que ese símbolo es esa empresa?
+
+    None cuando no hay nombre que comparar, que es distinto de que no calce.
+    """
+    if not str(del_proveedor).strip():
+        return None
+    a, b = _palabras(esperado), _palabras(del_proveedor)
+    if not a or not b:
+        return None
+    return bool(a & b)
+
+
+def estado(universe: pd.DataFrame, cdv: pd.DataFrame, precios: pd.DataFrame,
+           simbolos: pd.DataFrame | None = None) -> pd.DataFrame:
+    """Una fila por nombre estadounidense: si su CDV se puede operar y por qué.
+
+    **Ningún nombre puede aparecer con símbolo en la guía de ingreso si no pasó
+    por acá.** Vale para los que están y para los que entren después: la puerta
+    no depende de que alguien se acuerde de revisar el que entró este mes.
+
+    Hay cuatro veredictos y no dos, porque **no se puede verificar** y **está
+    mal** son cosas distintas y merecen respuestas distintas. Tratarlas igual
+    bloquearía a ABT, que no tiene una sola rueda fresca en dos años y cuyo
+    símbolo sí está confirmado por nombre.
+    """
+    mapa = cdvs(universe)
+    nombres = {}
+    if simbolos is not None and len(simbolos):
+        nombres = dict(zip(simbolos.subyacente, simbolos.nombre_proveedor))
+    empresa = dict(zip(universe.alphadata_ticker, universe.nombre.astype(str).str.split(" (CDV", regex=False).str[0]))
+    f = frescas(cdv, precios) if len(cdv) else pd.DataFrame(columns=["subyacente", "desvio"])
+    crudo = _razon_cruda(cdv, precios)
+
+    filas = []
+    for t in sorted(universe.loc[universe.tipo.isin({"accion_us", "etf_us"}), "alphadata_ticker"]):
+        simbolo = mapa.get(t, "")
+        razon = f.loc[f.subyacente == t, "desvio"]
+        n = int(len(razon))
+        mediana = float(razon.median() + 1) if n else None
+        calza = mismo_nombre(empresa.get(t, t), nombres.get(t, ""))
+        fila = {"ticker": t, "simbolo": simbolo, "ruedas": n, "razon": mediana,
+                "nombre_proveedor": nombres.get(t, ""), "estado": SIN_VERIFICAR, "motivo": ""}
+        bruta = crudo.get(t)
+        if not simbolo:
+            fila |= {"estado": SIN_SIMBOLO,
+                     "motivo": "no se encontró el símbolo del CDV en el proveedor"}
+        elif calza is False:
+            fila |= {"estado": RECHAZADO,
+                     "motivo": f"el proveedor dice que {simbolo} es «{nombres.get(t, '')}», no {empresa.get(t, t)}"}
+        elif bruta is not None and abs(bruta - 1) > RAZON_IMPOSIBLE:
+            fila |= {"estado": RECHAZADO,
+                     "motivo": f"{simbolo} cotiza a {bruta:.2f} veces su valor teórico: es otro instrumento"}
+        elif n >= RUEDAS_PARA_LA_RAZON and abs(mediana - 1) > BANDA_DE_RAZON:
+            fila |= {"estado": RECHAZADO,
+                     "motivo": f"la razón contra el teórico es {mediana:.4f}, fuera de "
+                               f"1,00 ± {BANDA_DE_RAZON:.2f} sobre {n} ruedas"}
+        elif n >= RUEDAS_PARA_LA_RAZON:
+            fila |= {"estado": OPERABLE,
+                     "motivo": f"razón {mediana:.4f} sobre {n} ruedas, y el proveedor confirma la empresa"}
+        elif calza:
+            fila |= {"estado": OPERABLE,
+                     "motivo": f"el proveedor confirma la empresa; sólo {n} ruedas con negocio, "
+                               "así que la razón no se puede medir y las unidades suponen uno a uno"}
+        else:
+            fila |= {"motivo": f"sólo {n} ruedas con negocio y el proveedor no confirma la empresa"}
+        filas.append(fila)
+    return pd.DataFrame(filas)
+
+
+def _razon_cruda(cdv: pd.DataFrame, precios: pd.DataFrame) -> dict[str, float]:
+    """La razón mediana sobre **todas** las ruedas, sin filtrar por frescura.
+
+    El precio rancio la ensucia en un 2% y por eso no sirve para decir que algo
+    está bien. Sirve para lo otro: ningún grado de rancio explica un 3,6, así
+    que un símbolo equivocado se delata acá aunque no tenga una sola rueda con
+    negocio.
+    """
+    if cdv.empty or precios.empty:
+        return {}
+    usd = (precios.loc[precios.alphadata_ticker.isin(cdv.subyacente.unique()),
+                       ["date", "alphadata_ticker", "close"]]
+           .rename(columns={"alphadata_ticker": "subyacente", "close": "usd"}))
+    fx = precios.loc[precios.alphadata_ticker == "USDCLP", ["date", "close"]].rename(columns={"close": "fx"})
+    d = cdv.merge(usd, on=["date", "subyacente"]).merge(fx, on="date").dropna(subset=["cdv_clp", "usd", "fx"])
+    d = d[(d.usd > 0) & (d.fx > 0) & (d.cdv_clp > 0)]
+    if d.empty:
+        return {}
+    return ((d.cdv_clp / d.usd) / d.fx).groupby(d.subyacente).median().to_dict()

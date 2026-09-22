@@ -9,37 +9,37 @@ un filtro**: ver `GUIA_INGRESO.md` para por qué.
 
 ## Delta-12
 
-| acción | unidades | a gastar | residuo | en cartera hace | próxima salida | costo ida y vuelta |
-|---|---:|---:|---:|---:|---|---:|
-| PARAUCO | 240 | $ 935.736 | $ 1.764 | 174 días | por ranking, sin fecha | $ 3.341 · 0,36% |
-| BCI | 14 | $ 934.472 | $ 3.028 | 21 días | por ranking, sin fecha | $ 3.336 · 0,36% |
-| MALLPLAZA | 246 | $ 935.464 | $ 2.036 | 206 días | por ranking, sin fecha | $ 3.340 · 0,36% |
-| ITAUCL | 38 | $ 917.662 | $ 19.838 | 206 días | por ranking, sin fecha | $ 3.276 · 0,36% |
-| ECL | 493 | $ 936.700 | $ 800 | 83 días | por ranking, sin fecha | $ 3.344 · 0,36% |
-| CHILE | 4.699 | $ 937.450 | $ 50 | 83 días | por ranking, sin fecha | $ 3.347 · 0,36% |
-| BSANTANDER | 11.391 | $ 937.479 | $ 21 | 52 días | por ranking, sin fecha | $ 3.347 · 0,36% |
-| ANDINA-B | 191 | $ 935.900 | $ 1.600 | 21 días | por ranking, sin fecha | $ 3.341 · 0,36% |
+| acción | símbolo a operar | unidades | a gastar | residuo | en cartera hace | próxima salida | costo ida y vuelta |
+|---|---|---:|---:|---:|---:|---|---:|
+| PARAUCO | PARAUCO | 240 | $ 935.736 | $ 1.764 | 174 días | por ranking, sin fecha | $ 3.341 · 0,36% |
+| BCI | BCI | 14 | $ 934.472 | $ 3.028 | 21 días | por ranking, sin fecha | $ 3.336 · 0,36% |
+| MALLPLAZA | MALLPLAZA | 246 | $ 935.464 | $ 2.036 | 206 días | por ranking, sin fecha | $ 3.340 · 0,36% |
+| ITAUCL | ITAUCL | 38 | $ 917.662 | $ 19.838 | 206 días | por ranking, sin fecha | $ 3.276 · 0,36% |
+| ECL | ECL | 493 | $ 936.700 | $ 800 | 83 días | por ranking, sin fecha | $ 3.344 · 0,36% |
+| CHILE | CHILE | 4.699 | $ 937.450 | $ 50 | 83 días | por ranking, sin fecha | $ 3.347 · 0,36% |
+| BSANTANDER | BSANTANDER | 11.391 | $ 937.479 | $ 21 | 52 días | por ranking, sin fecha | $ 3.347 · 0,36% |
+| ANDINA-B | ANDINA-B | 191 | $ 935.900 | $ 1.600 | 21 días | por ranking, sin fecha | $ 3.341 · 0,36% |
 
 Residuo de esta pieza: **$ 29.136**, que queda en su caja.
 
 ## Gamma-6
 
-| acción | unidades | a gastar | residuo | en cartera hace | próxima salida | costo ida y vuelta |
-|---|---:|---:|---:|---:|---|---:|
-| TGT | 8 | $ 1.213.634 | $ 36.366 | 52 días | por ranking, sin fecha | $ 4.333 · 0,36% |
-| INTC | 12 | $ 1.249.769 | $ 231 | 356 días | por ranking, sin fecha | $ 4.462 · 0,36% |
-| MRK | 8 | $ 1.126.787 | $ 123.213 | 52 días | por ranking, sin fecha | $ 4.023 · 0,36% |
-| BAC | 22 | $ 1.217.988 | $ 32.012 | 52 días | por ranking, sin fecha | $ 4.348 · 0,36% |
-| JNJ | 4 | $ 1.035.682 | $ 214.318 | 21 días | por ranking, sin fecha | $ 3.697 · 0,36% |
-| ABT | 12 | $ 1.180.836 | $ 69.164 | 21 días | por ranking, sin fecha | $ 4.216 · 0,36% |
+| acción | símbolo a operar | unidades | a gastar | residuo | en cartera hace | próxima salida | costo ida y vuelta |
+|---|---|---:|---:|---:|---:|---|---:|
+| TGT | TGTCL.SN | 8 | $ 1.213.634 | $ 36.366 | 52 días | por ranking, sin fecha | $ 4.333 · 0,36% |
+| INTC | INTCCL.SN | 12 | $ 1.249.769 | $ 231 | 356 días | por ranking, sin fecha | $ 4.462 · 0,36% |
+| MRK | MRKCL.SN | 8 | $ 1.126.787 | $ 123.213 | 52 días | por ranking, sin fecha | $ 4.023 · 0,36% |
+| BAC | BACCL.SN | 22 | $ 1.217.988 | $ 32.012 | 52 días | por ranking, sin fecha | $ 4.348 · 0,36% |
+| JNJ | JNJCL.SN | 4 | $ 1.035.682 | $ 214.318 | 21 días | por ranking, sin fecha | $ 3.697 · 0,36% |
+| ABT | ABTCL.SN | 12 | $ 1.180.836 | $ 69.164 | 21 días | por ranking, sin fecha | $ 4.216 · 0,36% |
 
 Residuo de esta pieza: **$ 475.306**, que queda en su caja.
 
 ## Oro
 
-| acción | unidades | a gastar | residuo | en cartera hace | próxima salida | costo ida y vuelta |
-|---|---:|---:|---:|---:|---|---:|
-| IAU | 63 | $ 4.968.090 | $ 31.910 | 263 días | posición permanente | $ 17.736 · 0,36% |
+| acción | símbolo a operar | unidades | a gastar | residuo | en cartera hace | próxima salida | costo ida y vuelta |
+|---|---|---:|---:|---:|---:|---|---:|
+| IAU | IAUCL.SN | 63 | $ 4.968.090 | $ 31.910 | 263 días | posición permanente | $ 17.736 · 0,36% |
 
 Residuo de esta pieza: **$ 31.910**, que queda en su caja.
 

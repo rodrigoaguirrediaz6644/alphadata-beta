@@ -34,9 +34,16 @@ import pandas as pd
 # Con veinte posiciones el residuo es real y los pesos efectivos del primer día
 # no van a calzar con los de referencia: eso es esperado, no un error.
 REDONDEO = "unidades enteras, hacia abajo, residuo a la caja de la pieza"
-# Bajo este monto la comisión mínima sale más cara que el porcentual:
-# minimo / tasa, con los dos medidos sobre órdenes reales de Trii.
-UMBRAL_MINIMO = 560_218
+def umbral_minimo(tasa: float, minimo: float) -> float:
+    """Bajo este monto la comisión mínima sale más cara que el porcentual.
+
+    **Es derivado, no un dato**: mínimo / tasa. Estuvo escrito como constante y
+    también en la configuración, que son dos casas para un número que no tiene
+    ninguna: cambiar el mínimo y olvidar el umbral lo deja mintiendo. Es la
+    misma forma del defecto que ya costó dos años con el símbolo de Bank of
+    America y meses con la tarifa de los CDV.
+    """
+    return minimo / tasa if tasa else float("inf")
 # La misma para acción chilena y para CDV. Ver config/runtime.v2.json.
 TARIFA = "0,1785%, con mínimo de $999,99"
 SIN_FECHA = "por ranking, sin fecha"
@@ -54,11 +61,15 @@ def costo_del_par(monto: float, tasa: float, minimo: float) -> float:
 
 
 def cartera_de_ingreso(carteras: dict[str, pd.DataFrame], as_of: pd.Timestamp,
-                       costos: dict[str, tuple[float, float]]) -> pd.DataFrame:
+                       costos: dict[str, tuple[float, float]],
+                       simbolos: pd.DataFrame | None = None) -> pd.DataFrame:
     """Una fila por posición vigente, con su monto, sus relojes y su costo.
 
-    `costos` es `{estrategia: (tasa, minimo)}`.
+    `costos` es `{estrategia: (tasa, minimo)}`. `simbolos` es la puerta de
+    `src.cdv.estado`: sin ella, ningún nombre estadounidense trae símbolo.
     """
+    puerta = ({r.ticker: r for r in simbolos.itertuples()} if simbolos is not None
+              and len(simbolos) else {})
     filas = []
     for estrategia, cartera in carteras.items():
         if cartera is None or cartera.empty:
@@ -80,8 +91,16 @@ def cartera_de_ingreso(carteras: dict[str, pd.DataFrame], as_of: pd.Timestamp,
                 salida, plazo = f"{caduca:%d-%m-%Y}", (int(dias) if pd.notna(dias) else None)
             else:
                 salida, plazo = SIN_FECHA, None
+            g = puerta.get(fila["ticker"])
+            if g is None:                       # chilena: se opera con su propio ticker
+                simbolo, estado_s, motivo_s = fila["ticker"], "operable", ""
+            elif g.estado == "operable":
+                simbolo, estado_s, motivo_s = g.simbolo, g.estado, g.motivo
+            else:
+                simbolo, estado_s, motivo_s = "", g.estado, g.motivo
             filas.append({
                 "estrategia": estrategia, "instrumento": fila["ticker"],
+                "simbolo": simbolo, "estado_simbolo": estado_s, "motivo_simbolo": motivo_s,
                 "monto_referencia": float(monto), "precio": float(precio),
                 "unidades": unidades, "monto_efectivo": efectivo,
                 "residuo": float(monto) - efectivo,
@@ -90,6 +109,7 @@ def cartera_de_ingreso(carteras: dict[str, pd.DataFrame], as_of: pd.Timestamp,
                 "proxima_salida": salida, "dias_hasta_la_salida": plazo,
                 "costo_de_entrar": costo_de_una(efectivo, tasa, minimo) if efectivo > 0 else 0.,
                 "sobre_el_umbral": bool(tasa * efectivo >= minimo) if efectivo > 0 else False,
+                "umbral": umbral_minimo(tasa, minimo),
                 "costo_del_par": costo,
                 "costo_pct": costo / efectivo if efectivo else None,
                 "costo_anualizado": (costo / efectivo) * 365 / plazo if efectivo and plazo else None,
@@ -107,6 +127,32 @@ def _pct(valor, digits: int = 2) -> str:
     if valor is None or pd.isna(valor):
         return "—"
     return f"{float(valor):.{digits}%}".replace(".", ",")
+
+
+def _bloqueadas(tabla: pd.DataFrame) -> list[str]:
+    """Lo que la puerta de símbolos no dejó pasar, y por qué.
+
+    El símbolo del CDV se arma pegando un sufijo al ticker, y **cuando un
+    ticker es prefijo de otro la regla produce un instrumento real y
+    equivocado**: BA + CL da BACL, que es Boeing, no Bank of America. No falla
+    con ruido, falla con una serie de precios válida de otra empresa, y así
+    duró dos años. Por eso no basta con haber arreglado ese caso: ningún nombre
+    estadounidense aparece acá con símbolo si no pasó la verificación.
+    """
+    if "estado_simbolo" not in tabla.columns:
+        return []
+    malas = tabla.loc[tabla.estado_simbolo != "operable"]
+    if malas.empty:
+        return []
+    lineas = ["## Lo que no se opera, y por qué", "",
+              "**Estas posiciones no llevan símbolo**, así que no hay nada que teclear en la",
+              "corredora. El modelo las tiene y su NAV las cuenta; lo que falta es poder",
+              "comprarlas con la certeza de estar comprando la empresa correcta.", "",
+              "| acción | pieza | qué pasa |", "|---|---|---|"]
+    for r in malas.to_dict("records"):
+        lineas.append(f"| {r['instrumento']} | {r['estrategia']} | {r['motivo_simbolo']} |")
+    lineas += ["", "Mientras tanto ese monto queda en la caja de su pieza.", ""]
+    return lineas
 
 
 def markdown(tabla: pd.DataFrame, as_of: pd.Timestamp) -> str:
@@ -129,8 +175,8 @@ def markdown(tabla: pd.DataFrame, as_of: pd.Timestamp) -> str:
         if parte.empty:
             continue
         lineas += [f"## {estrategia}", "",
-                   "| acción | unidades | a gastar | residuo | en cartera hace | próxima salida | costo ida y vuelta |",
-                   "|---|---:|---:|---:|---:|---|---:|"]
+                   "| acción | símbolo a operar | unidades | a gastar | residuo | en cartera hace | próxima salida | costo ida y vuelta |",
+                   "|---|---|---:|---:|---:|---:|---|---:|"]
         for r in parte.to_dict("records"):
             salida = r["proxima_salida"]
             if pd.notna(r["dias_hasta_la_salida"]):
@@ -139,12 +185,15 @@ def markdown(tabla: pd.DataFrame, as_of: pd.Timestamp) -> str:
             if pd.notna(r["costo_anualizado"]):
                 costo += f" · {_pct(r['costo_anualizado'], 1)} anual"
             dias = f"{int(r['dias_en_cartera'])} días" if pd.notna(r["dias_en_cartera"]) else "—"
-            lineas.append(f"| {r['instrumento']} | {r['unidades']:,} ".replace(",", ".")
+            simbolo = r.get("simbolo") or "**no operar**"
+            lineas.append(f"| {r['instrumento']} | {simbolo} | {r['unidades']:,} ".replace(",", ".")
                           + f"| {_pesos(r['monto_efectivo'])} | {_pesos(r['residuo'])} "
                           + f"| {dias} | {salida} | {costo} |")
         residuo = parte.residuo.sum()
         lineas += ["", f"Residuo de esta pieza: **{_pesos(residuo)}**, que queda en su caja.", ""]
+    lineas += _bloqueadas(tabla)
     entrada = float(tabla.costo_de_entrar.sum())
+    umbral = float(tabla.umbral.dropna().iloc[0]) if tabla.umbral.notna().any() else float("nan")
     total, efectivo = tabla.monto_referencia.sum(), tabla.monto_efectivo.sum()
     por_pieza = tabla.groupby("estrategia").agg(
         invertido=("monto_efectivo", "sum"), comision=("costo_de_entrar", "sum"),
@@ -163,9 +212,9 @@ def markdown(tabla: pd.DataFrame, as_of: pd.Timestamp) -> str:
     lineas += [
         "",
         (f"**Ninguna posición paga el mínimo**: todas superan el umbral de "
-         f"{_pesos(UMBRAL_MINIMO)}, bajo el cual el mínimo sale más caro que el porcentual."
+         f"{_pesos(umbral)}, bajo el cual el mínimo sale más caro que el porcentual."
          if not bajo else
-         f"**{bajo} posiciones quedan bajo el umbral de {_pesos(UMBRAL_MINIMO)} y pagan el "
+         f"**{bajo} posiciones quedan bajo el umbral de {_pesos(umbral)} y pagan el "
          "mínimo en vez del porcentual.**"),
         "",
         "**La tarifa es la misma para las tres piezas**, acción chilena o CDV. El sistema supuso",
