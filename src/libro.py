@@ -132,18 +132,60 @@ def movimientos_de(publicada: dict[str, dict[str, str]],
     return pd.DataFrame(filas)[columnas].sort_values(["estrategia", "accion", "instrumento"])
 
 
-def cartera_publicada(ruta: str | Path) -> dict[str, dict[str, str]]:
-    """La cartera del último informe emitido, para poder comparar contra ella."""
+def cartera_publicada(ruta: str | Path, as_of=None) -> dict[str, dict[str, str]]:
+    """La cartera del último informe emitido con **otra** fecha de referencia.
+
+    Antes guardaba una sola cartera sin fecha, así que re-correr el pipeline el
+    mismo día borraba lo que había que comparar: la primera corrida escribía la
+    cartera nueva y la segunda no encontraba diferencia. **Las órdenes de venta
+    desaparecían en silencio y el informe salía igual de creíble**, porque un
+    bloque sin movimientos no se ve roto, se ve como una semana sin cambios. Es
+    la misma falla que tenían las series sin recalcular.
+
+    Ahora el archivo guarda una entrada por fecha de referencia y se compara
+    contra la última **distinta** de `as_of`. Misma fecha y mismos datos, mismo
+    informe, sin importar cuántas veces se corra.
+    """
     ruta = Path(ruta)
     if not ruta.exists():
         return {}
-    return json.loads(ruta.read_text(encoding="utf-8")).get("carteras", {})
+    guardado = json.loads(ruta.read_text(encoding="utf-8"))
+    historial = guardado.get("historial")
+    if historial is None:                      # formato antiguo, de una sola cartera
+        return guardado.get("carteras", {})
+    if as_of is None:
+        anteriores = sorted(historial)
+    else:
+        corte = pd.Timestamp(as_of).date().isoformat()
+        anteriores = sorted(f for f in historial if f < corte)
+        if not anteriores and corte in historial:
+            # Re-corrida del mismo día: la base es lo que ya se publicó hoy, no
+            # «nada». Sin esto, volver a correr listaba la cartera entera como
+            # si fuera nueva.
+            anteriores = [corte]
+    return historial[anteriores[-1]]["carteras"] if anteriores else {}
 
 
-def guardar_publicada(carteras: dict[str, dict[str, str]], fecha, ruta: str | Path) -> None:
-    Path(ruta).write_text(json.dumps(
-        {"emitido": pd.Timestamp(fecha).date().isoformat(), "carteras": carteras},
-        ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+def guardar_publicada(carteras: dict[str, dict[str, str]], fecha, ruta: str | Path,
+                      maximo: int = 12) -> None:
+    """Agrega la cartera de esta fecha sin pisar las anteriores.
+
+    Se conservan las últimas `maximo` fechas: alcanza de sobra para comparar y
+    evita que el archivo crezca sin límite.
+    """
+    ruta = Path(ruta)
+    guardado = json.loads(ruta.read_text(encoding="utf-8")) if ruta.exists() else {}
+    historial = guardado.get("historial")
+    if historial is None:
+        historial = ({guardado["emitido"]: {"carteras": guardado["carteras"],
+                                            "procedencia": guardado.get("procedencia")}}
+                     if guardado.get("emitido") and guardado.get("carteras") else {})
+    clave = pd.Timestamp(fecha).date().isoformat()
+    historial[clave] = {"carteras": carteras}
+    for viejo in sorted(historial)[:-maximo]:
+        historial.pop(viejo)
+    ruta.write_text(json.dumps({"historial": dict(sorted(historial.items()))},
+                               ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
 def precios_de_entrada(libro: pd.DataFrame, estrategia: str) -> dict[str, float]:

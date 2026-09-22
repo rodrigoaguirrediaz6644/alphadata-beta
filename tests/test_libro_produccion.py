@@ -191,3 +191,54 @@ def test_los_dos_bloques_del_informe_no_pueden_contradecirse():
         assert compras == ahora - antes, "hay una posición nueva sin orden de compra"
         assert ventas == antes - ahora, "hay una posición que salió sin orden de venta"
 
+
+
+def test_volver_a_correr_el_mismo_dia_no_borra_los_movimientos(tmp_path):
+    """Re-correr vaciaba el bloque de movimientos en silencio.
+
+    La primera corrida escribía la cartera nueva y la segunda no encontraba
+    contra qué comparar, así que las órdenes de venta desaparecían y el informe
+    salía igual de creíble: un bloque sin movimientos no se ve roto, se ve como
+    una semana sin cambios. Es la misma falla de las series sin recalcular, y
+    se arregló a mano una vez, que por la directriz es la definición de
+    defecto.
+    """
+    from src.libro import cartera_publicada, guardar_publicada, movimientos_de
+    ruta = tmp_path / "cartera_publicada.json"
+    antes = {"Sigma-6": {"BCI": "2025-10-24"}, "Delta-12": {"ECL": "2026-06-30"}}
+    ahora = {"Delta-12": {"ECL": "2026-06-30"}}
+    guardar_publicada(antes, "2026-09-17", ruta)
+
+    # Tres corridas del 21: **el mismo informe las tres veces**. Idempotente
+    # no es que el bloque quede vacío, es que no cambie.
+    for _ in range(3):
+        base = cartera_publicada(ruta, "2026-09-21")
+        assert base == antes, "la base de comparación es la última fecha distinta"
+        m = movimientos_de(base, ahora)
+        assert list(m.instrumento) == ["BCI"] and list(m.accion) == ["VENDER"]
+        guardar_publicada(ahora, "2026-09-21", ruta)
+
+    # Y el 22 se compara contra el 21, no contra el 17.
+    assert cartera_publicada(ruta, "2026-09-22") == ahora
+
+
+def test_el_historial_de_carteras_no_crece_sin_limite(tmp_path):
+    from src.libro import cartera_publicada, guardar_publicada
+    import json
+    ruta = tmp_path / "cartera_publicada.json"
+    for dia in range(1, 21):
+        guardar_publicada({"Delta-12": {"ECL": "2026-06-30"}}, f"2026-09-{dia:02d}", ruta)
+    historial = json.loads(ruta.read_text(encoding="utf-8"))["historial"]
+    assert len(historial) == 12 and max(historial) == "2026-09-20"
+    assert cartera_publicada(ruta, "2026-09-21") == {"Delta-12": {"ECL": "2026-06-30"}}
+
+
+def test_el_formato_antiguo_de_una_sola_cartera_se_sigue_leyendo(tmp_path):
+    import json
+    from src.libro import cartera_publicada, guardar_publicada
+    ruta = tmp_path / "cartera_publicada.json"
+    ruta.write_text(json.dumps({"emitido": "2026-09-10",
+                                "carteras": {"Delta-12": {"ECL": "2026-06-30"}}}), encoding="utf-8")
+    assert cartera_publicada(ruta, "2026-09-21") == {"Delta-12": {"ECL": "2026-06-30"}}
+    guardar_publicada({"Delta-12": {}}, "2026-09-21", ruta)
+    assert sorted(json.loads(ruta.read_text(encoding="utf-8"))["historial"]) == ["2026-09-10", "2026-09-21"]

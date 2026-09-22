@@ -453,7 +453,7 @@ def main()->None:
     PUBLICADA=DATA/'cartera_publicada.json'
     vigente={n:{t:f.date().isoformat() for t,f in libro_abiertas(libro,n).items()}
              for n in STRATEGY_SERIES}
-    movimientos_libro=movimientos_de(cartera_publicada(PUBLICADA),vigente)
+    movimientos_libro=movimientos_de(cartera_publicada(PUBLICADA,as_of),vigente)
     smove=movements_for_report(movements(old_sigma,sigma),DATA/'movements_sigma6.csv')
     dmove=movements_for_report(movements(old_delta,delta),DATA/'movements_delta12.csv')
     gmove=movements_for_report(movements(old_gamma,gamma),DATA/'movements_gamma6.csv')
