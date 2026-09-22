@@ -139,6 +139,28 @@ evaluación; Credicorp sube del 4º al 1º.
 
 Eso abre una quinta opción que antes no estaba sobre la mesa.
 
+### Y el criterio que de verdad decide: aporte al conjunto
+
+Sigma-6 es una de cuatro piezas, así que lo que importa no es su resultado
+individual sino lo que le suma al conjunto. Medido contra el conjunto de tres
+piezas en tercios (`research/aporte_marginal/`):
+
+| Sharpe del conjunto | selección | evaluación |
+|---|---|---|
+| tres piezas, sin cuarta | 1,05 | 1,75 |
+| + Sigma-6 actual | **1,09** | 1,98 |
+| + Consenso-6 | 1,05 | 1,95 |
+| + sin corredora | 0,94 | **2,07** |
+
+**El orden entre mantenerla y quitarla se da vuelta: no se distingue.** Y
+ninguna cuarta pieza chilena mejora el retorno del conjunto en la ventana de
+selección; lo que aportan es Sharpe, bajando la caída.
+
+Dos hechos más, que pesan sobre la opción de mantenerla: **Sigma-6 comparte dos
+de sus tres peores caídas con Delta-12** —octubre de 2023 y marzo de 2026— y la
+variante sin corredora no comparte ninguna. El argumento a favor de mantener la
+corredora ya no puede apoyarse en el aporte al conjunto.
+
 ### Las opciones, sin implementar ni medir
 
 **A. Mantener la carga manual.** Es lo que hay. Cuesta una acción periódica y

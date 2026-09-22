@@ -1,0 +1,74 @@
+4596 recomendaciones locales con precio; 14 corredoras de 100+; 263 revisiones
+  A listo
+  D listo
+  B listo
+  C listo
+ADVERTENCIA: se descartaron 1 datos imposibles del tipo de cambio: 22-12-2016=5.00
+ADVERTENCIA: se descartaron 1 datos imposibles del tipo de cambio: 22-12-2016=5.00
+  las otras tres listas
+
+#################### capital $5.000.000 por pieza ####################
+
+candidato              Delta-12    Gamma-6        Oro   solape Δ12   posiciones
+A Sigma-6 actual           0.77       0.12       0.06        0.23          7.8
+B Consenso-6               0.70      -0.05       0.03        0.23         29.7
+C Formula inicial          0.40      -0.10      -0.14        0.00          3.9
+D Sin corredora            0.81      -0.04       0.05        0.38          9.3
+
+candidato                                   peores tres caidas (fondo y magnitud)
+A Sigma-6 actual                         03-2026 -13%, 10-2023 -12%, 09-2022 -11%
+B Consenso-6                             10-2021 -22%, 06-2022 -14%, 10-2022 -12%
+C Formula inicial                        10-2021 -18%, 06-2022 -15%, 02-2022 -12%
+D Sin corredora                          11-2022 -23%, 12-2021 -20%, 02-2023 -19%
+Delta-12                                 10-2022 -15%, 10-2023 -15%, 03-2026 -13%
+Gamma-6                                  04-2025 -26%, 06-2022 -23%, 03-2023 -23%
+Oro                                        06-2026 -13%, 03-2026 -8%, 11-2025 -6%
+
+conjunto                  retorno anual   peor caida   Sharpe   aporte
+
+  --- seleccion ---
+  tres piezas (sin 4a)           +13.90%       -10.2%     1.05
+  + A Sigma-6 actual             +12.02%        -6.7%     1.09    -1.88% ret   +3.6% caida   +0.04 Sharpe
+  + B Consenso-6                 +12.72%        -7.6%     1.05    -1.18% ret   +2.7% caida   -0.00 Sharpe
+  + C Formula inicial            +10.07%        -6.9%     0.90    -3.82% ret   +3.3% caida   -0.15 Sharpe
+  + D Sin corredora              +11.32%        -9.4%     0.94    -2.58% ret   +0.9% caida   -0.11 Sharpe
+
+  --- evaluacion ---
+  tres piezas (sin 4a)           +25.55%        -6.9%     1.75
+  + A Sigma-6 actual             +25.68%        -8.1%     1.98    +0.13% ret   -1.2% caida   +0.23 Sharpe
+  + B Consenso-6                 +25.38%        -7.5%     1.95    -0.18% ret   -0.6% caida   +0.20 Sharpe
+  + C Formula inicial            +18.67%        -5.3%     1.72    -6.88% ret   +1.5% caida   -0.03 Sharpe
+  + D Sin corredora              +27.50%        -6.6%     2.07    +1.95% ret   +0.3% caida   +0.32 Sharpe
+
+#################### capital $2.500.000 por pieza ####################
+
+candidato              Delta-12    Gamma-6        Oro   solape Δ12   posiciones
+A Sigma-6 actual           0.77       0.11       0.06        0.23          7.8
+B Consenso-6               0.70      -0.05       0.03        0.23         29.7
+C Formula inicial          0.40      -0.10      -0.14        0.00          3.9
+D Sin corredora            0.81      -0.04       0.05        0.38          9.3
+
+candidato                                   peores tres caidas (fondo y magnitud)
+A Sigma-6 actual                         03-2026 -13%, 10-2023 -12%, 07-2022 -12%
+B Consenso-6                             10-2021 -22%, 06-2022 -14%, 10-2022 -12%
+C Formula inicial                        10-2021 -18%, 06-2022 -15%, 02-2022 -12%
+D Sin corredora                          11-2022 -24%, 02-2023 -21%, 12-2021 -20%
+Delta-12                                 10-2022 -15%, 10-2023 -15%, 12-2021 -13%
+Gamma-6                                  04-2025 -26%, 06-2022 -23%, 03-2023 -23%
+Oro                                        06-2026 -13%, 03-2026 -8%, 11-2025 -6%
+
+conjunto                  retorno anual   peor caida   Sharpe   aporte
+
+  --- seleccion ---
+  tres piezas (sin 4a)           +13.72%       -10.4%     1.04
+  + A Sigma-6 actual             +11.46%        -6.8%     1.05    -2.25% ret   +3.6% caida   +0.01 Sharpe
+  + B Consenso-6                 +12.53%        -7.6%     1.03    -1.18% ret   +2.7% caida   -0.00 Sharpe
+  + C Formula inicial             +9.90%        -7.0%     0.88    -3.81% ret   +3.3% caida   -0.15 Sharpe
+  + D Sin corredora              +10.49%        -9.9%     0.87    -3.22% ret   +0.4% caida   -0.16 Sharpe
+
+  --- evaluacion ---
+  tres piezas (sin 4a)           +25.51%        -6.9%     1.75
+  + A Sigma-6 actual             +25.43%        -8.1%     1.96    -0.08% ret   -1.2% caida   +0.21 Sharpe
+  + B Consenso-6                 +25.29%        -7.5%     1.95    -0.22% ret   -0.6% caida   +0.20 Sharpe
+  + C Formula inicial            +18.63%        -5.3%     1.72    -6.88% ret   +1.6% caida   -0.03 Sharpe
+  + D Sin corredora              +26.93%        -6.6%     2.03    +1.42% ret   +0.2% caida   +0.28 Sharpe
