@@ -3,9 +3,9 @@
   "delta_rule_version": "2.1.0",
   "gamma_rule_version": "1.0.0",
   "sigma_entries": {
-    "LTM": "2026-09-17",
     "VAPORES": "2026-09-17",
     "BCI": "2026-09-17",
+    "LTM": "2026-09-17",
     "PARAUCO": "2026-09-17"
   },
   "delta_entries": {
@@ -191,72 +191,72 @@
       "target_weight": 0.16666666666666666,
       "opened_at": "2026-07-31",
       "entry_price": 133660.4778176574,
-      "current_price": 151704.2123413086,
-      "open_return": 0.14370845438202462,
+      "current_price": 151388.98694953602,
+      "open_return": 0.1413319485484552,
       "con_dividendo": true,
       "dividendos_clp": null,
       "monto_clp": 1250000.0,
-      "peso_real": 0.16176270753355668
+      "peso_real": 0.15695217059502556
     },
     {
       "ticker": "INTC",
       "target_weight": 0.16666666666666666,
       "opened_at": "2025-09-30",
       "entry_price": 32373.736345718386,
-      "current_price": 104147.39853668213,
-      "open_return": 2.217033629498136,
+      "current_price": 116899.0543470215,
+      "open_return": 2.6109225422317404,
       "con_dividendo": false,
       "dividendos_clp": null,
       "monto_clp": 1250000.0,
-      "peso_real": 0.199599613992675
+      "peso_real": 0.2178284216389506
     },
     {
       "ticker": "MRK",
       "target_weight": 0.16666666666666666,
       "opened_at": "2026-07-31",
       "entry_price": 120441.505587616,
-      "current_price": 140848.3253173828,
-      "open_return": 0.17633641275152168,
+      "current_price": 143508.03744506836,
+      "open_return": 0.19854978459093253,
       "con_dividendo": true,
       "dividendos_clp": null,
       "monto_clp": 1250000.0,
-      "peso_real": 0.16448779549055417
+      "peso_real": 0.16294854754359075
     },
     {
       "ticker": "BAC",
       "target_weight": 0.16666666666666666,
       "opened_at": "2026-07-31",
       "entry_price": 57306.847449531546,
-      "current_price": 55363.06956100464,
-      "open_return": -0.028989764410704555,
+      "current_price": 55636.961330639664,
+      "open_return": -0.02418598973079411,
       "con_dividendo": true,
       "dividendos_clp": null,
       "monto_clp": 1250000.0,
-      "peso_real": 0.15411396035073974
+      "peso_real": 0.15058353846568726
     },
     {
       "ticker": "JNJ",
       "target_weight": 0.16666666666666666,
       "opened_at": "2026-08-31",
       "entry_price": 247641.9417816773,
-      "current_price": 258920.40063476562,
-      "open_return": 0.045543411475231776,
+      "current_price": 258669.63896657713,
+      "open_return": 0.044530813744878106,
       "con_dividendo": false,
       "dividendos_clp": null,
       "monto_clp": 1250000.0,
-      "peso_real": 0.1670753709185244
+      "peso_real": 0.16228706143823332
     },
     {
       "ticker": "ABT",
       "target_weight": 0.16666666666666666,
       "opened_at": "2026-08-31",
       "entry_price": 102801.44524628296,
-      "current_price": 98402.99058532715,
-      "open_return": -0.04278592241984902,
+      "current_price": 98852.56306247553,
+      "open_return": -0.038412710778015224,
       "con_dividendo": false,
       "dividendos_clp": null,
       "monto_clp": 1250000.0,
-      "peso_real": 0.15296055171395
+      "peso_real": 0.1494002603185125
     }
   ],
   "oro_portfolio": [
@@ -265,8 +265,8 @@
       "target_weight": 1.0,
       "opened_at": "2026-01-01",
       "entry_price": 73374.63739833981,
-      "current_price": 78858.57321929932,
-      "open_return": 0.07473884731025038,
+      "current_price": 78396.66324660648,
+      "open_return": 0.06844362066149445,
       "con_dividendo": false,
       "dividendos_clp": null,
       "peso_real": 1.0,
@@ -294,7 +294,7 @@
     "uploaded_files": 0,
     "history_rows": 1108
   },
-  "last_run_utc": "2026-09-22T20:32:17.163089+00:00",
+  "last_run_utc": "2026-09-22T20:38:28.752562+00:00",
   "entry_dates_version": 3,
   "delta_last_period": "2026-08",
   "gamma_last_period": "2026-08",

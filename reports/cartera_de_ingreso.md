@@ -52,32 +52,32 @@ Residuo de esta pieza: **$ 29.136**, que queda en su caja.
 
 | acción | símbolo a operar | unidades | precio teórico | a gastar | residuo | en cartera hace | próxima salida | costo ida y vuelta |
 |---|---|---:|---:|---:|---:|---:|---|---:|
-| TGT | TGTCL.SN | 8 | $ 151.704 | $ 1.213.634 | $ 36.366 | 52 días | por ranking, sin fecha | $ 4.333 · 0,36% |
-| INTC | INTCCL.SN | 12 | $ 104.147 | $ 1.249.769 | $ 231 | 356 días | por ranking, sin fecha | $ 4.462 · 0,36% |
-| MRK | MRKCL.SN | 8 | $ 140.848 | $ 1.126.787 | $ 123.213 | 52 días | por ranking, sin fecha | $ 4.023 · 0,36% |
-| BAC | BACCL.SN | 22 | $ 55.363 | $ 1.217.988 | $ 32.012 | 52 días | por ranking, sin fecha | $ 4.348 · 0,36% |
-| JNJ | JNJCL.SN | 4 | $ 258.920 | $ 1.035.682 | $ 214.318 | 21 días | por ranking, sin fecha | $ 3.697 · 0,36% |
-| ABT | ABTCL.SN | 12 | $ 98.403 | $ 1.180.836 | $ 69.164 | 21 días | por ranking, sin fecha | $ 4.216 · 0,36% |
+| TGT | TGTCL.SN | 8 | $ 151.389 | $ 1.211.112 | $ 38.888 | 52 días | por ranking, sin fecha | $ 4.324 · 0,36% |
+| INTC | INTCCL.SN | 10 | $ 116.899 | $ 1.168.991 | $ 81.009 | 356 días | por ranking, sin fecha | $ 4.173 · 0,36% |
+| MRK | MRKCL.SN | 8 | $ 143.508 | $ 1.148.064 | $ 101.936 | 52 días | por ranking, sin fecha | $ 4.099 · 0,36% |
+| BAC | BACCL.SN | 22 | $ 55.637 | $ 1.224.013 | $ 25.987 | 52 días | por ranking, sin fecha | $ 4.370 · 0,36% |
+| JNJ | JNJCL.SN | 4 | $ 258.670 | $ 1.034.679 | $ 215.321 | 21 días | por ranking, sin fecha | $ 3.694 · 0,36% |
+| ABT | ABTCL.SN | 12 | $ 98.853 | $ 1.186.231 | $ 63.769 | 21 días | por ranking, sin fecha | $ 4.235 · 0,36% |
 
-Residuo de esta pieza: **$ 475.306**, que queda en su caja.
+Residuo de esta pieza: **$ 526.911**, que queda en su caja.
 
 ## Oro
 
 | acción | símbolo a operar | unidades | precio teórico | a gastar | residuo | en cartera hace | próxima salida | costo ida y vuelta |
 |---|---|---:|---:|---:|---:|---:|---|---:|
-| IAU | IAUCL.SN | 63 | $ 78.859 | $ 4.968.090 | $ 31.910 | 263 días | posición permanente | $ 17.736 · 0,36% |
+| IAU | IAUCL.SN | 63 | $ 78.397 | $ 4.938.990 | $ 61.010 | 263 días | posición permanente | $ 17.632 · 0,36% |
 
-Residuo de esta pieza: **$ 31.910**, que queda en su caja.
+Residuo de esta pieza: **$ 61.010**, que queda en su caja.
 
 ## Lo que va a cobrar la corredora el primer día
 
-Comprar las 15 posiciones cuesta **$ 34.743** en comisiones.
+Comprar las 15 posiciones cuesta **$ 34.599** en comisiones.
 
 | pieza | se invierte | comisión | tarifa |
 |---|---:|---:|---|
 | Delta-12 | $ 7.470.864 | $ 13.335 | 0,15% + IVA = 0,1785%, con mínimo de $999,99 |
-| Gamma-6 | $ 7.024.694 | $ 12.539 | 0,15% + IVA = 0,1785%, con mínimo de $999,99 |
-| Oro | $ 4.968.090 | $ 8.868 | 0,15% + IVA = 0,1785%, con mínimo de $999,99 |
+| Gamma-6 | $ 6.973.089 | $ 12.447 | 0,15% + IVA = 0,1785%, con mínimo de $999,99 |
+| Oro | $ 4.938.990 | $ 8.816 | 0,15% + IVA = 0,1785%, con mínimo de $999,99 |
 
 **Ninguna posición paga el mínimo**: todas superan el umbral de $ 560.218, bajo el cual el mínimo sale más caro que el porcentual.
 
@@ -86,7 +86,7 @@ durante meses un 0,1% para los CDV, y una pantalla de orden real de IAUCL lo des
 al peso: $612.000 de valor, $1.092,42 de comisión, que es 0,1785% exacto.
 
 **Ojo con una cuenta fácil de hacer mal:** no es el 0,1785% de los $20 millones, porque
-la base no son $20 millones. El redondeo a unidades enteras deja $ 536.352 sin
+la base no son $20 millones. El redondeo a unidades enteras deja $ 617.057 sin
 invertir, y sobre lo que sí se invierte la cuenta da exacta.
 
 Este número es lo primero que se puede contrastar contra la boleta de la corredora, y
@@ -95,7 +95,7 @@ está mal y hay que corregirlo antes de que la diferencia se acumule.
 
 ## El residuo del redondeo
 
-Las acciones se transan por **unidades enteras, hacia abajo, residuo a la caja de la pieza**. De $ 20.000.000 de referencia se gastan $ 19.463.648 y quedan **$ 536.352** en caja, un 2,7%.
+Las acciones se transan por **unidades enteras, hacia abajo, residuo a la caja de la pieza**. De $ 20.000.000 de referencia se gastan $ 19.382.943 y quedan **$ 617.057** en caja, un 3,1%.
 
 **Los pesos efectivos del primer día no van a calzar con los de referencia, y eso
 es esperado, no un error.** Cuanto más caro el instrumento, mayor el residuo: una
