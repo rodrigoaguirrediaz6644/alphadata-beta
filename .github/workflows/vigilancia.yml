@@ -1,0 +1,80 @@
+name: Vigilancia
+
+# **La senal de afuera.** Hasta ahora un informe que no salia se veia igual que
+# una semana tranquila: el panel de salud vive dentro del informe, asi que una
+# corrida que nunca ocurre no produce ni informe ni alarma.
+#
+# Este flujo existe aparte del que produce el informe **a proposito**. Si
+# viviera adentro, la misma falla que impide el informe impediria el aviso.
+#
+# Y hace una segunda cosa que parece menor y no lo es: escribe un commit de
+# marca si el repositorio lleva 45 dias quieto. GitHub desactiva los flujos
+# programados de un repositorio publico tras 60 dias sin actividad, y lo que
+# cuenta son commits, no corridas. Sin eso, cuanto mejor funcione el sistema
+# solo, mas cerca esta de apagarse en silencio.
+on:
+  workflow_dispatch:
+  schedule:
+    # Todos los dias a las 12:00 UTC. Diario y no semanal porque lo que vigila
+    # es que algo semanal ocurra: con la misma cadencia no se distingue un
+    # atraso de una ausencia.
+    - cron: "0 12 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: alphadata-escritura-en-main
+  cancel-in-progress: false
+
+jobs:
+  vigilar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v6
+        with:
+          # El historial completo: la antiguedad del informe se lee del
+          # historial y no de la fecha del archivo en disco, que al clonar
+          # queda siempre con la fecha del clon.
+          fetch-depth: 0
+
+      - name: Preparar Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Revisar que el informe haya salido
+        env:
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          SMTP_FROM: ${{ secrets.SMTP_FROM }}
+          REPORT_RECIPIENTS: ${{ secrets.REPORT_RECIPIENTS }}
+        run: PYTHONPATH=. python -m src.vigilancia
+
+      - name: Guardar la marca de actividad si se escribio
+        # `always()` porque el paso anterior **sale en rojo** cuando avisa, y
+        # justo en esa corrida es cuando mas importa que la marca se guarde.
+        if: always()
+        run: |
+          git config user.name "alphadata-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add .github/ultimo_latido
+          if git diff --cached --quiet; then
+            echo "Sin marca nueva que guardar."
+            exit 0
+          fi
+          git commit -m "chore: marca de actividad para que no se apaguen los cron"
+          for intento in 1 2 3; do
+            git pull --rebase --autostash origin main || exit 1
+            if git push; then
+              exit 0
+            fi
+            echo "Push rechazado (intento $intento de 3); reintentando..."
+            sleep 10
+          done
+          echo "No fue posible guardar la marca tras 3 intentos." >&2
+          exit 1
