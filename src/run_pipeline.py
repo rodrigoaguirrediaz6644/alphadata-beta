@@ -532,8 +532,12 @@ def main()->None:
 
     # La cartera de ingreso, con sus relojes. Se regenera en cada corrida: una
     # tabla de montos y fechas escrita a mano en la guía envejece sola.
-    costos={'Sigma-6':(.001785,1990.),'Delta-12':(.001785,1990.),
-            'Gamma-6':(US_COST_RATE,0.),'Oro':(US_COST_RATE,0.)}
+    # El costo sale de la configuración, no escrito acá: los dos parámetros
+    # están medidos sobre órdenes reales y el mínimo cambió de $1.990 a $999,99.
+    modelo=json.loads(CONFIG.read_text(encoding='utf-8'))
+    cl=(float(modelo['transaction_cost']['rate']),float(modelo['transaction_cost']['minimum_fee_clp']))
+    us=(float(modelo['transaction_cost_us']['rate']),0.)
+    costos={'Sigma-6':cl,'Delta-12':cl,'Gamma-6':us,'Oro':us}
     ingreso=cartera_de_ingreso({'Sigma-6':sigma,'Delta-12':delta,'Gamma-6':gamma,'Oro':oro_portfolio},as_of,costos)
     (REPORTS/'cartera_de_ingreso.md').write_text(markdown_ingreso(ingreso,as_of),encoding='utf-8')
     ingreso.to_csv(DATA/'cartera_de_ingreso.csv',index=False)

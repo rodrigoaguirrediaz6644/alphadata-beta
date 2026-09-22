@@ -16,8 +16,10 @@
   "transaction_cost": {
     "provider": "Trii/Racional",
     "rate": 0.001785,
-    "minimum_fee_clp": 1990,
-    "minimum_fee_requires_capital": true
+    "minimum_fee_clp": 999.99,
+    "minimum_fee_requires_capital": true,
+    "umbral_donde_el_minimo_deja_de_morder_clp": 560218,
+    "nota": "Los dos parametros estan **medidos sobre cuatro ordenes reales de Trii** entre $229.500 y $1.515.000, y las dos puntas del rango los confirman por separado: la orden de $229.500 pagaria $410 por porcentaje y pago el minimo; la de $1.515.000 pago el porcentaje. El minimo anterior, $1.990, era un supuesto. El umbral es minimo/tasa = 999,99 / 0,001785."
   },
   "strategy_modules": {
     "SIGMA6": "src.strategy_engine:sigma6",
