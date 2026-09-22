@@ -1,112 +1,68 @@
-# Pendientes con su condición de reapertura
+# Pendientes
 
-Lo que está decidido que no se hace ahora, con lo que tendría que pasar para
-volver a mirarlo. La idea es que ninguna de estas discusiones empiece de cero,
-y que ninguna se reabra por cansancio.
+Este archivo tiene **una sola tarea recurrente y ninguna discusión abierta**. Lo
+que estaba acá se cerró, y lo que se cerró quedó escrito en su lugar en vez de
+apartado para siempre.
 
-## La caja en un money market
+La diferencia importa: una tarea recurrente con su periodicidad es parte de la
+operación, y un pendiente sin dueño es una discusión que va a empezar de cero
+cada vez que alguien la mire.
 
-**Parqueado, y con menos caja que antes.** Los $3.000.000 que motivaron esta
-discusión eran de Sigma-6, que salió de la asignación. Lo que queda es la caja
-de redondeo de las tres piezas.
+---
 
-**Se reabre si la caja sube bastante por encima de lo que deja el redondeo.**
-Cuando se reabra, lo ya decidido sigue valiendo: money market, serie sin
-permanencia mínima ni comisión de salida, y la remuneración hay que mirarla
-dentro de la cuenta.
+## La tarea recurrente: el contraste trimestral contra investing.com
 
-## El futuro de Sigma-6 como pieza — **cerrado**
+**Cada trimestre.** Bajar los archivos de referencia de investing.com y
+contrastarlos contra el almacén de precios. Los lee `src/referencia_investing.py`
+y se dejan en `data/inbox/`.
 
-**Salió de la asignación el 22-09-2026.** El control que reparte su cuarto
-entre Delta-12 y Gamma-6, dejando el oro en 25%, ganó las tres ventanas sin
-darse vuelta y mantenerla costaba $4.880.898 sobre $20 millones en cinco años.
-Ver `ESTRATEGIAS_ALPHADATA_v2.md` y `research/carteras_en_pesos/`.
+**Por qué no se puede cerrar, y no es por falta de ganas.** Las guardias del feed
+—`ruedas_sin_variacion`, `feed_detenido`, `adr_contra_local`, `ruedas_faltantes`—
+miran **variación**. El contraste detecta otra cosa: un precio que se mueve con
+normalidad todos los días y **está mal de nivel**. Es el caso de SALFACORP, cuya
+serie venía ajustada por dividendos en 2021-2024 y habría inyectado un error de
+nivel del 18% sin que ninguna guardia dijera nada.
 
-El código y las series se conservan. **Se reabriría si apareciera una señal de
-corredora que aporte**, medida con el mismo protocolo: aporte al conjunto y en
-pesos, con los cortes fijados antes.
+Y hay una segunda razón: el contraste entre fuentes es hoy **el mejor
+instrumento para confirmar dividendos**. Confirmó 101 de 112 y resultó entre
+cuatro y diez veces más preciso que el método por precio.
 
-Y con esto **la carga del inbox deja de ser un requisito operativo**: las tres
-piezas que quedan corren sólo con precios.
+**Por qué trimestral y no mensual.** Su valor no es detectar rápido —un error de
+nivel es persistente, no urgente— sino detectar. Trimestral cubre lo mismo a un
+tercio del trabajo.
 
-## El tope de concentración por posición, más allá del 25%
+**Condición para cerrarla:** que aparezca una segunda fuente de precios chilenos
+que se pueda bajar sola. No hay ninguna hoy: todo lo listado en Chile viaja por
+el mismo feed `.SN`, que está congelado desde el 17-07-2026. Ver
+`DEPENDENCIAS_MANUALES.md`.
 
-El límite del 25% está puesto como límite de cola. **No se reabre por
-resultado**: la medición dice que cuesta 1,16 puntos anuales en Gamma-6 y
-compra 2 puntos de peor caída, y eso ya se aceptó al ponerlo. Ver
-`POLITICA_REBALANCEO.md`.
+---
 
-## Las nueve fechas ex que se apartan dos o tres ruedas
+# Lo que se cerró, y dónde quedó
 
-**Cerrado, no pendiente.** El desfase está censurado en cero y la distribución
-58/34/8/1 es la forma de un instrumento con resolución de una rueda, no de dos
-poblaciones. No traen evidencia de estar mal fechadas. Ver
-`research/dividendos/CONFIRMACION_POR_CONTRASTE.md`.
+Nada de esto es un pendiente. Está acá sólo para que nadie lo reabra creyendo
+que quedó a medias.
 
-## MALLPLAZA del 03-09-2026
+| | dónde quedó |
+|---|---|
+| **Cuprum, completitud de la descarga** | Ya estaba hecha: `src/horizonte.verificar_completitud` revisa días calendario ausentes, valores nulos y rezago, y **detiene la corrida** si algo falla. Hoy: 8.813 filas de 2002 a 2026, cero problemas. |
+| **AESANDES** | Deslistada. El símbolo existe en el proveedor con el nombre «AES Andes S.A.» pero no entrega precios desde el 14-04-2025, y no hay ticker alternativo. Pasó a `estado = deslistado` en `config/tickers.csv`. |
+| **MULTIFOODS** | No es una falla: es un símbolo corregido acumulando historia, una rueda por día. La cobertura ahora lo reporta como `ACUMULANDO`. |
+| **MALLPLAZA del 03-09-2026** | **Aceptado.** Son $30 corroborados en magnitud y calendario contra la página de relación con inversionistas de Mallplaza, que no publica 2026. Su `origen` en `data/dividendos.csv` lo dice y el panel ya no lo cuenta. |
+| **La sección Horizonte** | Reescrita en el mismo lenguaje que el resto: qué se hizo con la plata y cuánto quedó de un millón, en vez de CAGR y volatilidad. |
+| **Sigma-6** | Salió de la asignación el 22-09-2026. Código y series se conservan. Se reabriría con una señal de corredora que aporte, medida con el protocolo de `ESTRATEGIAS_ALPHADATA_v2.md`. |
+| **La caja en un money market** | Parqueado: los $3.000.000 que motivaban la discusión eran de Sigma-6. Se reabre si la caja sube bastante por encima de lo que deja el redondeo; lo ya decidido sigue valiendo. |
+| **El tope de concentración del 25%** | Decidido y no se reabre por resultado: cuesta 1,16 puntos anuales en Gamma-6 y compra 2 puntos de peor caída, y eso se aceptó al ponerlo. Ver `POLITICA_REBALANCEO.md`. |
+| **Las nueve fechas ex que se apartan dos o tres ruedas** | Cerrado. El desfase está censurado en cero y la distribución 58/34/8/1 es la forma de un instrumento con resolución de una rueda, no de dos poblaciones. |
+| **La razón del CDV** | Confirmada uno a uno en doce nombres, entre 1,0001 y 1,0059. Ver `research/spread_cambio/`. |
+| **El premio del CDV** | Medido: +0,047% ± 0,078% en 2026, que no se distingue de cero. No entra al modelo de costo porque un desvío de nivel no es un cargo por lado. Vigilado en el panel de salud con banda de ±1%. |
+| **El símbolo del CDV de Exxon** | No se encontró y queda **vacío en vez de adivinado**. No hace falta buscarlo: la puerta de símbolos impide operarlo y Gamma-6 salta al siguiente elegible si XOM entra al top 6. |
+| **`reconstruccion_historica.csv` con diff de ruido** | Molestia conocida, no defecto: 1.027 líneas de diff con diferencia relativa máxima 1,3e-15. Se arregla redondeando la salida, y no antes de que alguien lo necesite. |
+| **El paso de conversión de pesos a dólares** | En suspenso a propósito, esperando que Rodrigo confirme si es obligatorio u opcional. La primera compra se pagó en pesos con saldo en dólares de $0,00 y el cambio implícito difiere 0,11% del de la pantalla. |
 
-Es el **único** dato sin respaldo de precio que sostiene una cifra publicada.
-Corroborado en magnitud y calendario contra la fuente primaria, que no tiene
-2026. **Se reabre cuando Mallplaza publique su dividendo de 2026.**
+## Y el panel de salud quedó sin nada apartado
 
-## Los tres asuntos que el panel de salud aparta
-
-El panel del informe los deja fuera a propósito: **una alarma que siempre está
-roja por una razón conocida deja de ser una alarma.** Están acá para que
-apartarlos no sea una forma de esconderlos, y hay una prueba que exige que cada
-uno tenga su entrada en este archivo.
-
-**AESANDES**, congelado desde el 14-04-2025 y generando ruido en dos informes.
-Hay que averiguar si está deslistado o renombrado y cerrarlo de una vez. No
-afecta ningún número publicado: está fuera del universo operable.
-
-**MULTIFOODS**, con una rueda de historia tras corregir el símbolo a
-`MULTI-X.SN`. Queda fuera del universo de Sigma-6 hasta acumular 252 ruedas. Se
-puede rellenar desde el archivo de investing.com que ya está validado.
-
-**MALLPLAZA del 03-09-2026**, el dividendo de $30 sin respaldo de precio. Ver
-más arriba.
-
-## La razón del CDV: **confirmada**, uno a uno
-
-Estaba abierto «hay que confirmarlo antes de comprar en real». Se confirmó
-midiendo el precio del CDV contra su subyacente por el tipo de cambio, sobre las
-ruedas en que el CDV de verdad transó: doce nombres entre **1,0001 y 1,0059**,
-incluidos los de la cartera vigente de Gamma-6 y el oro. Ver
-`research/spread_cambio/`.
-
-Y de paso apareció un error que sí valía plata: **el símbolo anotado para Bank
-of America era el de Boeing**. Corregido.
-
-Queda una punta: **el símbolo del CDV de Exxon no se encontró** y quedó vacío en
-vez de adivinado. XOM no está hoy en Gamma-6; si entra, hay que conseguirlo
-antes de operarlo.
-
-## `reconstruccion_historica.csv` cambia sin que cambie nada
-
-Cada corrida reescribe las 1.249 filas y el diff sale de 1.027 líneas por
-diferencias en el último dígito: la máxima diferencia relativa medida es
-**1,3e-15**, precisión de flotante. El ruido tapa los cambios reales cuando los
-haya. Se arregla redondeando la salida a una precisión que tenga sentido
-—cuatro decimales sobre base 100 son diezmilésimas de punto— y no antes de que
-alguien lo necesite.
-
-## El contraste contra investing.com baja a trimestral
-
-No se puede cerrar: las guardias miran variación y el contraste detecta un
-precio que se mueve bien y está mal de nivel. Pero su valor no es detectar
-rápido —un error de nivel es persistente, no urgente— así que trimestral cubre
-lo mismo a un tercio del trabajo. Ver `DEPENDENCIAS_MANUALES.md`.
-
-## El paso de conversión de pesos a dólares: en suspenso
-
-La primera compra real **se pagó en pesos**, con saldo en dólares de $0,00, así
-que lo más probable es que Trii convierta solo por detrás. Los números lo
-respaldan: el tipo de cambio implícito en el llenado y el que ofrecía la
-pantalla de conversión el mismo día difieren en **0,11%**, o sea que es la misma
-tasa.
-
-**No implementar un paso obligatorio de conversión hasta que Rodrigo lo
-confirme.** Si resulta opcional, lo que corresponde en la guía es una línea que
-diga que no hace falta convertir y que Trii aplica su propia tasa, y no una
-secuencia de tres pasos con espera de quince minutos.
+`src.salud.CONOCIDOS` está **vacío**. El mecanismo se conserva porque va a
+volver a hacer falta, junto con la prueba que exige que todo lo que se aparte
+tenga su entrada escrita acá. Pero hoy no hay ninguna alarma suprimida, que es
+la única forma de que una alarma signifique algo.

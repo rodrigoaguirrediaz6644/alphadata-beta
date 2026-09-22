@@ -18,7 +18,20 @@
 
 ## ¿Hay que preocuparse?
 
-- Los datos están sanos y los cálculos cuadran (8 verificaciones). 3 asuntos conocidos apartados: AESANDES, MALLPLAZA 2026-09-03, MULTIFOODS.
+- Los datos están sanos y los cálculos cuadran (9 verificaciones).
 
 
 El informe HTML incluye el gráfico y las carteras. La metodología y sus parámetros son información reservada.
+
+
+<!-- HORIZONTE_START -->
+## Estrategia Horizonte
+
+Horizonte decide todos los meses entre el Fondo A y el Fondo E de la AFP. No compra acciones: mueve el ahorro previsional de un fondo al otro.
+
+- Hoy está en el **Fondo A**.
+- La última revisión, del 2026-08-31, pidió el Fondo A con 5 de 5 señales a favor.
+- Los valores cuota de Cuprum están al 2026-09-20.
+- Sobre un millón, moverse entre fondos dejó **$ 182.806 más** que quedarse quieto en el Fondo A durante todo el período.
+- El detalle está en `data/horizonte_backtest_summary.csv`, `data/horizonte_annual.csv`, `data/horizonte_trades.csv` y `data/horizonte_signals.csv`.
+<!-- HORIZONTE_END -->

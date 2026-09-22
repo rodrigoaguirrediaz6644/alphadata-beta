@@ -34,9 +34,25 @@ Los precios se descargan mediante Yahoo Finance usando el catálogo `config/tick
 
 ## Costos
 
-Ambas estrategias aplican 0,1785% al monto transado, correspondiente a Trii/Racional (0,15% más IVA). La tarifa mínima de $1.990 sólo puede incorporarse cuando se define capital y tamaño de cada orden.
+Las tres piezas aplican **0,15% de comisión más 19% de IVA = 0,1785%**, con
+mínimo de **$999,99** por operación, y la misma tarifa para acción chilena y
+para CDV. Los tres parámetros están medidos sobre órdenes reales de Trii, no
+supuestos; la orden ejecutada 11157665580442 los confirma al peso. Viven en
+`config/runtime.v2.json` y en ninguna otra parte: ver `UN_VALOR_UNA_CASA.md`.
+
+*(Este archivo decía «0,15% más IVA» desde el principio, mientras el código
+llevaba la constante pelada y un mínimo de $1.990 que era un supuesto. La
+descomposición correcta estaba escrita y nadie la estaba leyendo: es el mismo
+defecto de la norma, con la copia buena en la documentación y la mala en el
+código.)*
 
 ## Incorporar estrategias futuras
+
+**El criterio primero no es técnico:** una estrategia no tiene que ser buena por
+sí sola, tiene que **aportar al conjunto**, y se juzga por lo que le hace al
+retorno del conjunto *y* por lo que le hace a su peor caída. Rendir menos que
+las otras no es motivo de salida si su función es amortiguar. Ver
+`ESTRATEGIAS_ALPHADATA_v2.md`, sección 4.
 
 1. Crear una función en `src/strategies/` o un módulo equivalente que devuelva `portfolio` y `audit`.
 2. Registrar `modulo:funcion` en `config/runtime.v2.json`.
