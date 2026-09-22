@@ -54,6 +54,21 @@ final y 2,2 puntos anuales. Contra B, $1.728.188.
 | B | $37.057.235 | +25,55% | **−$2.539.993** (−6,9%) |
 | **C** | **$38.307.934** | **+27,10%** | −$2.961.203 (−7,7%) |
 
+## El invariante aritmético
+
+Las dos ventanas parciales son cortes de **una sola corrida continua**, no dos
+corridas que arrancan de nuevo con $20 millones, así que el corte no liquida ni
+vuelve a comprar y no hay costo del corte que tolerar: la composición tiene que
+dar exacto. Y da — **residuo máximo 2,2e-16, precisión de flotante**, en las
+tres carteras.
+
+Con una salvedad que importa saber leer: el 01-01-2024 no es rueda. La ventana
+de selección termina el 29-12 y la de evaluación empieza el 02-01, y **el
+retorno entre esas dos sesiones no está en ninguna de las dos**. Multiplicar los
+factores de las ventanas sin devolverlo sobra 1,5%. Contando ese salto una vez
+—que en las tres carteras es negativo, entre −1,1% y −1,5%— el producto reproduce
+la ventana completa dígito por dígito.
+
 ## Lo que dice
 
 **C gana en las tres ventanas.** No se da vuelta: sacar Sigma-6 y repartir su

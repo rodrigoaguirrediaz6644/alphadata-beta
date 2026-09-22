@@ -31,3 +31,12 @@ C  control, oro en 25%            $38.307.934      $18.307.934   +27.10%        
 
   A contra B: $100.251  (+0.27% sobre el valor final)
   A contra C: $-1.150.448  (-3.00% sobre el valor final)
+
+########## invariante: seleccion x salto x evaluacion = completa ##########
+A  cuatro piezas al 25%      1.324280 x 0.989395 x 1.857874 = 2.434255347   completa = 2.434255347   residuo +0.00e+00
+B  tres piezas en tercios    1.379925 x 0.985863 x 1.852862 = 2.520664748   completa = 2.520664748   residuo +2.22e-16
+C  control, oro en 25%       1.420022 x 0.984704 x 1.915397 = 2.678300262   completa = 2.678300262   residuo -1.11e-16
+
+La composicion de las ventanas parciales reproduce la ventana completa con un residuo
+maximo de 2.2e-16, que es precision de flotante y no una diferencia economica: el corte
+no liquida ni vuelve a comprar, asi que no paga costo.

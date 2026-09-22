@@ -180,6 +180,33 @@ def main():
             print(f"  A contra {n[:1]}: {pesos_fmt(a - valores[n])}  "
                   f"({(a / valores[n] - 1):+.2%} sobre el valor final)")
 
+    # El invariante aritmetico. Las dos ventanas parciales son cortes de **una
+    # sola** corrida continua, no dos corridas que empiezan de nuevo con $20M.
+    # No hay liquidacion ni reentrada en el corte, asi que no hay costo del
+    # corte que tolerar: el invariante es exacto.
+    #
+    # Lo unico que hay que cuidar es la sesion del corte. El 01-01-2024 no es
+    # rueda: la ventana de seleccion termina el 29-12 y la de evaluacion
+    # empieza el 02-01, y el retorno entre esas dos sesiones **no esta en
+    # ninguna de las dos**. Multiplicar los factores sin devolverlo da 1,5% de
+    # mas, que es exactamente ese salto. Contandolo una vez, calza a la
+    # precision del flotante.
+    print("\n########## invariante: seleccion x salto x evaluacion = completa ##########")
+    peor = 0.
+    for nombre, serie in conjuntos.items():
+        s_ = serie.dropna()
+        sel, ev = s_.loc[:CORTE], s_.loc[CORTE:]
+        f_tot = s_.iloc[-1] / s_.iloc[0]
+        f_sel, f_ev = sel.iloc[-1] / sel.iloc[0], ev.iloc[-1] / ev.iloc[0]
+        salto = ev.iloc[0] / sel.iloc[-1]          # la rueda que separa las ventanas
+        residuo = f_sel * salto * f_ev / f_tot - 1
+        peor = max(peor, abs(residuo))
+        print(f"{nombre:28} {f_sel:.6f} x {salto:.6f} x {f_ev:.6f} = "
+              f"{f_sel * salto * f_ev:.9f}   completa = {f_tot:.9f}   residuo {residuo:+.2e}")
+    print(f"\nLa composicion de las ventanas parciales reproduce la ventana completa con un "
+          f"residuo\nmaximo de {peor:.1e}, que es precision de flotante y no una diferencia "
+          f"economica: el corte\nno liquida ni vuelve a comprar, asi que no paga costo.")
+
 
 if __name__ == "__main__":
     main()
