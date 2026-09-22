@@ -1,0 +1,33 @@
+ADVERTENCIA: se descartaron 1 datos imposibles del tipo de cambio: 22-12-2016=5.00
+ADVERTENCIA: se descartaron 1 datos imposibles del tipo de cambio: 22-12-2016=5.00
+objetivos listos
+  A  cuatro piezas al 25% listo
+  B  tres piezas en tercios listo
+  C  control, oro en 25% listo
+
+########## ventana completa ##########
+cartera                         parte de $20M         ganancia     anual         peor caida        %
+A  cuatro piezas al 25%           $48.685.107      $28.685.107   +18.67%        $-3.940.468    -8.1%
+B  tres piezas en tercios         $50.413.295      $30.413.295   +19.47%        $-5.165.604   -10.2%
+C  control, oro en 25%            $53.566.005      $33.566.005   +20.88%        $-5.784.514   -10.8%
+
+  A contra B: $-1.728.188  (-3.43% sobre el valor final)
+  A contra C: $-4.880.898  (-9.11% sobre el valor final)
+
+########## seleccion 21-23 ##########
+cartera                         parte de $20M         ganancia     anual         peor caida        %
+A  cuatro piezas al 25%           $26.485.606       $6.485.606   +12.02%        $-1.772.157    -6.7%
+B  tres piezas en tercios         $27.598.510       $7.598.510   +13.90%        $-2.838.236   -10.2%
+C  control, oro en 25%            $28.400.433       $8.400.433   +15.22%        $-3.077.619   -10.8%
+
+  A contra B: $-1.112.904  (-4.03% sobre el valor final)
+  A contra C: $-1.914.827  (-6.74% sobre el valor final)
+
+########## evaluacion 24-26 ##########
+cartera                         parte de $20M         ganancia     anual         peor caida        %
+A  cuatro piezas al 25%           $37.157.486      $17.157.486   +25.68%        $-3.007.447    -8.1%
+B  tres piezas en tercios         $37.057.235      $17.057.235   +25.55%        $-2.539.993    -6.9%
+C  control, oro en 25%            $38.307.934      $18.307.934   +27.10%        $-2.961.203    -7.7%
+
+  A contra B: $100.251  (+0.27% sobre el valor final)
+  A contra C: $-1.150.448  (-3.00% sobre el valor final)

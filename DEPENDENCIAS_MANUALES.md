@@ -167,6 +167,25 @@ de sus tres peores caídas con Delta-12** —octubre de 2023 y marzo de 2026— 
 variante sin corredora no comparte ninguna. El argumento a favor de mantener la
 corredora ya no puede apoyarse en el aporte al conjunto.
 
+### Y en pesos, sobre $20 millones, el signo se invierte
+
+El Sharpe premia a Sigma-6 por bajar la volatilidad del conjunto, y lo hace
+porque **es caja en su mayor parte por construcción**: cuatro posiciones con
+tope de 10% son 40% invertido y 60% en caja. El resultado en pesos le cobra esa
+misma caja, porque no rinde nada.
+
+Contra el control que saca Sigma-6 y reparte su cuarto entre Delta-12 y
+Gamma-6, dejando el oro en 25%:
+
+| | los $20M quedan en | anual | peor caída |
+|---|---|---|---|
+| con Sigma-6 (25% c/u) | $48.685.107 | +18,67% | −$3.940.468 |
+| **sin Sigma-6 (37,5/37,5/25)** | **$53.566.005** | **+20,88%** | −$5.784.514 |
+
+**Mantenerla cuesta $4.880.898 en cinco años**, 2,2 puntos anuales, y lo que
+compra es $1,84 millones menos de caída. El control gana en las tres ventanas,
+sin darse vuelta. Ver `research/carteras_en_pesos/`.
+
 ### Las opciones, sin implementar ni medir
 
 **A. Mantener la carga manual.** Es lo que hay. Cuesta una acción periódica y
