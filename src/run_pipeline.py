@@ -11,6 +11,7 @@ import pandas as pd
 from src.fetch_prices import load_universe, operables
 from src.ingest_recommendations import ingest
 from src.ingreso import cartera_de_ingreso, markdown as markdown_ingreso
+from src.operaciones import cargar as cargar_operaciones, descalce as descalce_real
 from src.cdv import cargar as cargar_cdv, cargar_simbolos as cargar_simbolos_cdv, estado as estado_cdv, premio as premio_cdv
 from src.libro import abiertas as libro_abiertas, anotar, cargar as cargar_libro, cartera_publicada, guardar as guardar_libro, guardar_publicada, movimientos_de, precios_de_entrada
 from src.strategy_registry import validate_registry
@@ -53,6 +54,28 @@ def load_state()->dict:
         if state.get('methodology_version') in {'2.0.0','2.1.0','2.2.0','2.3.0'}: return state
     return {'methodology_version':'2.3.0','sigma_entries':{},'delta_entries':{},'gamma_entries':{},'oro_entries':{},'sigma_portfolio':[],'delta_portfolio':[],'gamma_portfolio':[],'oro_portfolio':[],'nav':{'Sigma-6':100.,'Delta-12':100.,'Gamma-6':100.,'Oro':100.,BENCHMARK_VIVO:100.}}
 
+# Ninguno de los tres es una falla: uno dejó de cotizar y está escrito, y el
+# otro acumula historia al día. Una alarma que siempre está roja por una razón
+# conocida deja de ser alarma.
+COBERTURA_SANA={'OK','DESLISTADO','ACUMULANDO'}
+
+def _incompletos(coverage:pd.DataFrame)->set[str]:
+    if not len(coverage): return set()
+    return set(coverage.loc[~coverage.status.isin(COBERTURA_SANA),'alphadata_ticker'])
+
+def _solo_operables(universe:pd.DataFrame,puerta:pd.DataFrame)->pd.DataFrame:
+    """El universo con el símbolo borrado donde la puerta no dejó pasar.
+
+    Así la regla de elegibilidad de Gamma-6 queda en un solo lugar —sin
+    símbolo, no se puede comprar— y sirve igual para XOM, que nunca tuvo, y
+    para uno que la puerta rechace mañana.
+    """
+    if not len(puerta) or 'cdv_ticker' not in universe.columns: return universe
+    malos=set(puerta.loc[puerta.estado!='operable','ticker'])
+    u=universe.copy()
+    u.loc[u.alphadata_ticker.isin(malos),'cdv_ticker']=''
+    return u
+
 def portfolio_return(prices:pd.DataFrame,weights:list[dict],start:pd.Timestamp,end:pd.Timestamp)->float:
     if not weights or start>=end:return 0.
     matrix=prices.pivot(index='date',columns='alphadata_ticker',values='adjusted_close').sort_index().ffill(limit=3)
@@ -64,7 +87,7 @@ def portfolio_return(prices:pd.DataFrame,weights:list[dict],start:pd.Timestamp,e
         if t in matrix and pd.notna(a.iloc[0][t]) and pd.notna(z.iloc[0][t]) and a.iloc[0][t]>0: total+=w*(z.iloc[0][t]/a.iloc[0][t]-1)
     return total
 
-def enrich_open_positions(portfolio: pd.DataFrame, prices: pd.DataFrame, as_of: pd.Timestamp, buy_cost: float | None = None,
+def enrich_open_positions(portfolio: pd.DataFrame, prices: pd.DataFrame, as_of: pd.Timestamp,
                           precios_anotados: dict[str, float] | None = None,
                           dividendos: pd.DataFrame | None = None) -> pd.DataFrame:
     """Precios de entrada y de hoy, y la variación entre ambos.
@@ -81,7 +104,10 @@ def enrich_open_positions(portfolio: pd.DataFrame, prices: pd.DataFrame, as_of: 
     el excepcional.
 
     **La variación es movimiento de precio y no descuenta la comisión de
-    entrada.** El costo vive en el NAV. La consecuencia es que esta columna y
+    entrada, y por eso esta función no recibe la tarifa.** El costo vive en el
+    NAV. Llevaba un parámetro `buy_cost` que el cuerpo no leía nunca: un
+    parámetro muerto con valor por omisión es lo peor de las dos cosas, porque
+    parece que el costo entra acá y no entra. La consecuencia es que esta columna y
     el rendimiento de la estrategia no cuadran exactamente, y es por diseño:
     son dos mediciones distintas, como en cualquier cartola.
 
@@ -189,7 +215,7 @@ def movements_for_report(current: pd.DataFrame, previous_path: Path) -> pd.DataF
 
 FUERA_DE_LA_CANASTA=['IPSA_TR','LTM-ADR','SQM-ADR']
 
-def canasta_chilena(prices)->pd.Series:
+def canasta_chilena(prices,fuera=())->pd.Series:
     """El benchmark automático: partes iguales del mercado chileno, base 100.
 
     Reemplaza al MSCI IPSA, que era la última dependencia manual del sistema
@@ -213,16 +239,25 @@ def canasta_chilena(prices)->pd.Series:
     Se reequilibra a diario sobre la sección transversal que tiene precio en
     las dos ruedas, así que una acción que se lista a mitad de camino entra sin
     inventar un retorno y una que deja de cotizar sale sin dejar un hueco.
+
+    **`fuera` son los instrumentos que dejaron de cotizar y siguen en el
+    almacén**, y dejarlos adentro no era inocuo. AESANDES quedó congelada el
+    14-04-2025 y el almacén conserva su último precio: la canasta lo leía como
+    un retorno de 0% todos los días, y eso **arrastraba el benchmark 4,48%
+    hacia abajo** sobre la serie completa. Un benchmark más bajo es una vara
+    más fácil, o sea el error apunta en la dirección que halaga a las
+    estrategias. No se ve como una falla: se ve como una acción que no se
+    mueve.
     """
-    local=(prices[~prices.alphadata_ticker.isin(FUERA_DE_LA_CANASTA)]
+    local=(prices[~prices.alphadata_ticker.isin(set(FUERA_DE_LA_CANASTA)|set(fuera))]
            .pivot(index='date',columns='alphadata_ticker',values='adjusted_close')
            .sort_index().ffill(limit=3))
     if local.empty:return pd.Series(dtype=float)
     diario=local.pct_change().mean(axis=1,skipna=True).fillna(0.)
     return (1+diario).cumprod()*100
 
-def benchmark_return(prices,start,end)->float:
-    canasta=canasta_chilena(prices)
+def benchmark_return(prices,start,end,fuera=())->float:
+    canasta=canasta_chilena(prices,fuera=fuera)
     a=canasta.loc[:start].tail(1);z=canasta.loc[:end].tail(1)
     if a.empty or z.empty:return 0.
     return float(z.iloc[0]/a.iloc[0]-1)
@@ -255,7 +290,7 @@ def report(as_of,sigma,delta,smove,dmove,s_audit,d_audit,coverage,errors,state,n
     sigma_cash=1-sigma.target_weight.sum() if len(sigma) else 1.;delta_cash=1-delta.target_weight.sum() if len(delta) else 1.
     intro=(f'Al cierre del {as_of:%d-%m-%Y}, Sigma-6 mantiene {len(sigma)} posiciones y {pct(sigma_cash)} en caja. '
            f'Delta-12 mantiene {len(delta)} posiciones y {pct(delta_cash)} en caja. '
-           f'En esta ejecución se detectaron {len(errors)} filas de recomendaciones con observaciones y {int((coverage.status!="OK").sum())} instrumentos con cobertura incompleta.')
+           f'En esta ejecución se detectaron {len(errors)} filas de recomendaciones con observaciones y {len(_incompletos(coverage))} instrumentos con cobertura incompleta.')
     md=f"""# Informe automático AlphaData
 
 **Fecha de corte:** {as_of:%d-%m-%Y}  
@@ -296,7 +331,7 @@ def report(as_of,sigma,delta,smove,dmove,s_audit,d_audit,coverage,errors,state,n
 
 - Recomendaciones vigentes evaluadas: {len(s_audit)}.
 - Filas de recomendaciones rechazadas: {len(errors)}.
-- Instrumentos con precios suficientes: {int((coverage.status=='OK').sum())}/{len(coverage)}.
+- Instrumentos con precios suficientes: {len(coverage)-len(_incompletos(coverage))}/{len(coverage)}.
 - Fecha más reciente de precios: {as_of:%d-%m-%Y}.
 
 ## Metodología
@@ -313,7 +348,7 @@ Resultados de carteras modelo para evaluación interna. No constituyen asesoría
     <h2>Resumen</h2><p>{escape(intro)}</p><table><tr><th>Serie</th><th>Índice acumulado</th></tr><tr><td>Sigma-6</td><td>{navrow['Sigma-6']:.2f}</td></tr><tr><td>Delta-12</td><td>{navrow['Delta-12']:.2f}</td></tr><tr><td>Mercado chileno (canasta igual peso)</td><td>{navrow[BENCHMARK_VIVO]:.2f}</td></tr></table>
     <h2>Sigma-6</h2>{html_table(sigma,['ticker','target_weight'])}<p><strong>Caja:</strong> {pct(sigma_cash)}</p><h3>Movimientos</h3>{html_table(smove,['ticker','action','previous_weight','target_weight','change'])}
     <h2>Delta-12</h2>{html_table(delta,['ticker','target_weight'])}<p><strong>Caja:</strong> {pct(delta_cash)}. Se modifica sólo una vez por mes.</p><h3>Movimientos</h3>{html_table(dmove,['ticker','action','previous_weight','target_weight','change'])}
-    <h2>Calidad de datos</h2><ul><li>Filas rechazadas: {len(errors)}</li><li>Instrumentos con cobertura suficiente: {int((coverage.status=='OK').sum())}/{len(coverage)}</li><li>Último precio: {as_of:%d-%m-%Y}</li></ul>
+    <h2>Calidad de datos</h2><ul><li>Filas rechazadas: {len(errors)}</li><li>Instrumentos con cobertura suficiente: {len(coverage)-len(_incompletos(coverage))}/{len(coverage)}</li><li>Último precio: {as_of:%d-%m-%Y}</li></ul>
     <h2>Metodología</h2><p>Sigma-6 combina recomendación positiva de Credicorp con momentum 12-1 positivo. Delta-12 selecciona mensualmente hasta ocho acciones mediante momentum 12-1, SMA200 y liquidez. Costo: 0,1785% del monto transado.</p><p class='note'><strong>Advertencia:</strong> carteras modelo para evaluación interna; no constituyen asesoría personalizada ni garantizan rentabilidades futuras.</p></body></html>"""
     return md,html
 
@@ -337,6 +372,12 @@ def main()->None:
     # necesita el subyacente en dólares y el tipo de cambio a la vez.
     prices_all=prices
     prices=prices[~prices.alphadata_ticker.isin(us_tickers|etf_tickers|{'USDCLP'})].copy()
+    # La puerta de símbolos, antes de rankear: decide qué es elegible para
+    # Gamma-6 y qué símbolo imprime la guía. Ver src/cdv.py.
+    # Lo que dejó de cotizar no entra al benchmark: su último precio se leería
+    # como 0% de retorno todos los días. Ver canasta_chilena.
+    no_cotizan=set(universe.loc[universe.estado!='activo','alphadata_ticker'])
+    puerta_cdv=estado_cdv(universe,cargar_cdv(),prices_all,cargar_simbolos_cdv())
     # Los ADR cotizan en Nueva York y operan en feriados chilenos: si fijaran
     # la fecha de corte, la corrida marcaría NAV y fecharía compras en un día
     # en que la bolsa de Santiago estuvo cerrada.
@@ -382,7 +423,10 @@ def main()->None:
     if state.get('gamma_last_period')==gamma_period and state.get('gamma_rule_version')==GAMMA_RULE_VERSION and old_gamma:
         gamma=pd.DataFrame(old_gamma); g_audit=pd.DataFrame()
     else:
-        gamma,g_audit=gamma6(prices_us,universe,gamma_cutoff)
+        # La puerta de símbolos decide qué es elegible. Un nombre que no pasó
+        # pierde su símbolo acá, y Gamma-6 lo deja fuera del ranking por la
+        # misma regla que deja fuera a XOM: sin símbolo, no se puede comprar.
+        gamma,g_audit=gamma6(prices_us,_solo_operables(universe,puerta_cdv),gamma_cutoff)
         previous_gamma_entries=state.get('gamma_entries',{})
         gamma_execution=prices_us.loc[prices_us.date>gamma_cutoff,'date'].sort_values()
         gamma_execution_date=(gamma_execution.iloc[0] if len(gamma_execution) else as_of).date().isoformat()
@@ -441,10 +485,10 @@ def main()->None:
         for clave in ('sigma_entries','delta_entries','gamma_entries','oro_entries'):
             state[clave]={t:max(f,piso) for t,f in state.get(clave,{}).items()}
     dividendos=pd.read_csv(DATA/'dividendos.csv') if (DATA/'dividendos.csv').exists() else None
-    sigma=enrich_open_positions(sigma,prices,as_of,buy_cost=modelo_de_costo()[0],precios_anotados=precios_de_entrada(libro,'Sigma-6'),dividendos=dividendos)
-    delta=enrich_open_positions(delta,prices,as_of,buy_cost=modelo_de_costo()[0],precios_anotados=precios_de_entrada(libro,'Delta-12'),dividendos=dividendos)
-    gamma=enrich_open_positions(gamma,prices_us_clp,as_of,buy_cost=modelo_de_costo()[0],precios_anotados=precios_de_entrada(libro,'Gamma-6'),dividendos=dividendos)
-    oro_portfolio=enrich_open_positions(oro_portfolio,prices_oro_clp,as_of,buy_cost=modelo_de_costo()[0],precios_anotados=precios_de_entrada(libro,'Oro'),dividendos=dividendos)
+    sigma=enrich_open_positions(sigma,prices,as_of,precios_anotados=precios_de_entrada(libro,'Sigma-6'),dividendos=dividendos)
+    delta=enrich_open_positions(delta,prices,as_of,precios_anotados=precios_de_entrada(libro,'Delta-12'),dividendos=dividendos)
+    gamma=enrich_open_positions(gamma,prices_us_clp,as_of,precios_anotados=precios_de_entrada(libro,'Gamma-6'),dividendos=dividendos)
+    oro_portfolio=enrich_open_positions(oro_portfolio,prices_oro_clp,as_of,precios_anotados=precios_de_entrada(libro,'Oro'),dividendos=dividendos)
     # Peso real contra peso objetivo. El NAV supone que la cartera vuelve al
     # objetivo todos los días, gratis; una cuenta de verdad deja correr los
     # pesos entre revisiones y los ganadores se van concentrando. Sin esta
@@ -511,7 +555,7 @@ def main()->None:
     delta_r=portfolio_return(prices,old_delta,last_date,as_of)-turnover_cost(old_delta,delta,modelo_de_costo()[0])
     gamma_r=portfolio_return(prices_us_clp,old_gamma,last_date,as_of)-turnover_cost(old_gamma,gamma,modelo_de_costo()[0])
     oro_r=portfolio_return(prices_oro_clp,old_oro,last_date,as_of)-turnover_cost(old_oro,oro_portfolio,modelo_de_costo()[0])
-    ipsa_r=benchmark_return(prices,last_date,as_of)
+    ipsa_r=benchmark_return(prices,last_date,as_of,fuera=no_cotizan)
     navrow={'date':as_of.date().isoformat(),'Sigma-6':nav['Sigma-6']*(1+sigma_r),'Delta-12':nav['Delta-12']*(1+delta_r),'Gamma-6':nav['Gamma-6']*(1+gamma_r),'Oro':nav['Oro']*(1+oro_r),BENCHMARK_VIVO:nav[BENCHMARK_VIVO]*(1+ipsa_r)}
     history=pd.read_csv(NAV) if NAV.exists() else pd.DataFrame()
     if 'IPSA TR' in history: history=history.rename(columns={'IPSA TR':BENCHMARK_VIVO})
@@ -523,7 +567,7 @@ def main()->None:
     # un empalme así no se ve roto, se ve como una serie. Es la forma exacta
     # del defecto de Sigma-6, y la regla del proyecto es que una serie
     # publicada se recalcula y no se guarda.
-    canasta_viva=canasta_chilena(prices)
+    canasta_viva=canasta_chilena(prices,fuera=no_cotizan)
     if len(canasta_viva)>1:
         fechas=pd.to_datetime(history.date)
         nivel=canasta_viva.reindex(canasta_viva.index.union(fechas)).ffill().reindex(fechas)
@@ -549,13 +593,27 @@ def main()->None:
         # Sigma-6 también se reconstruye: sin esto, las otras dos cambiaban de
         # aritmética y Sigma-6 se quedaba con la serie vieja, de peso constante.
         _reconstruir('Sigma-6',sigma6_historical_nav(valid,prices,universe,historical.date.min(),historical.date.max(),modelo_de_costo()[0]))
-        _reconstruir('Gamma-6',gamma6_historical_nav(prices_us,universe,fx,historical.date.min(),historical.date.max(),modelo_de_costo()[0]))
+        # La reconstrucción va **sin** la puerta de símbolos, y la razón hay que
+        # dejarla escrita porque es una decisión y no un detalle.
+        #
+        # La puerta bloquea a XOM porque su CDV no aparece **hoy** en el
+        # proveedor. Eso es un hueco de nuestro conocimiento, no un hecho sobre
+        # 2021: no sabemos si Trii ofrecía ese CDV entonces. Aplicarla hacia
+        # atrás bajaba la serie publicada de Gamma-6 de 315,40 a 291,64, un 7,5%,
+        # por no haber encontrado un ticker. Mover cinco años de historia
+        # publicada con un dato que falta es exactamente lo que este proyecto
+        # vino a terminar.
+        #
+        # La reconstrucción contesta «qué produjeron las reglas». Qué se puede
+        # comprar es una restricción operativa de hoy y vive en la guía de
+        # ingreso y en la selección vigente, que son las que deciden plata.
+        _reconstruir('Gamma-6',gamma6_historical_nav(prices_us,universe.drop(columns=['cdv_ticker'],errors='ignore'),fx,historical.date.min(),historical.date.max(),modelo_de_costo()[0]))
         _reconstruir('Oro',oro_historical_nav(prices_oro,universe,fx,historical.date.min(),historical.date.max(),modelo_de_costo()[0]))
         # El benchmark también. Era la última serie guardada de la
         # reconstrucción, y una serie guardada es la forma que ya falló: la de
         # Sigma-6 sobrevivió intacta a la reparación de los precios chilenos y
         # publicó +28,75% cuando el número era diez puntos menos.
-        canasta=canasta_chilena(prices)
+        canasta=canasta_chilena(prices,fuera=no_cotizan)
         canasta=canasta.loc[canasta.index.to_series().between(historical.date.min(),historical.date.max())]
         if len(canasta)<=1:
             raise RuntimeError('La serie del benchmark vino vacía. Ver CENSO_DE_SERIES.md.')
@@ -577,13 +635,20 @@ def main()->None:
         for nombre in STRATEGY_SERIES:
             for t, f in libro_abiertas(libro, nombre).items():
                 dentro = div[(div.alphadata_ticker == t) & (div.fecha_ex > f) & (div.fecha_ex <= as_of)]
-                flojas = dentro[dentro.caida_observada.isna() & dentro.caida_por_contraste.isna()]
+                # Un dividendo **aceptado** no es uno sin respaldo: tiene una
+                # base distinta de la del precio, escrita en su `origen`. El de
+                # MALLPLAZA del 03-09-2026 son $30 corroborados en magnitud y
+                # calendario contra la fuente primaria, que no publica 2026.
+                # Seguir persiguiendolo cuesta mas que el dato, y dejarlo
+                # sonando todas las semanas gasta la alarma.
+                flojas = dentro[dentro.caida_observada.isna() & dentro.caida_por_contraste.isna()
+                                & ~dentro.origen.fillna('').str.startswith('aceptado')]
                 sin_respaldo |= {f"{t} {x.date()}" for x in flojas.fecha_ex}
     salud, conocidos = revisar_salud(
         as_of=as_of,
         precios_al_dia=bool((as_of.normalize() - pd.Timestamp(prices.date.max()).normalize()).days <= 5),
         series_detenidas=set(_detenidas(prices[prices.alphadata_ticker.isin(vivas)])),
-        cobertura_incompleta=set(coverage.loc[coverage.status != 'OK', 'alphadata_ticker']) if len(coverage) else set(),
+        cobertura_incompleta=_incompletos(coverage),
         series_recalculadas=SERIES_RECONSTRUIDAS,
         series_publicadas=SERIES_RECONSTRUIDAS,
         carteras_reproducidas=True,
@@ -594,7 +659,12 @@ def main()->None:
         # Un año: suficientes ruedas frescas para tener error chico, y lo
         # bastante corto para que un cambio de régimen se note en vez de
         # diluirse en dos años de historia.
-        premio_cdv=premio_cdv(cargar_cdv(),prices_all,desde=as_of-pd.Timedelta(days=365)))
+        premio_cdv=premio_cdv(cargar_cdv(),prices_all,desde=as_of-pd.Timedelta(days=365)),
+        # Sobre instrumentos y no sobre cantidades: ver src/operaciones.py.
+        descalce_real=descalce_real(cargar_operaciones(DATA/'operaciones_reales.csv'),
+                                    {n:list(c.ticker) for n,c in
+                                     {'Sigma-6':sigma,'Delta-12':delta,'Gamma-6':gamma,'Oro':oro_portfolio}.items()
+                                     if c is not None and len(c)}))
 
     # La cartera de ingreso, con sus relojes. Se regenera en cada corrida: una
     # tabla de montos y fechas escrita a mano en la guía envejece sola.
@@ -602,10 +672,7 @@ def main()->None:
     # están medidos sobre órdenes reales y el mínimo cambió de $1.990 a $999,99.
     tarifa=modelo_de_costo()
     costos={n:tarifa for n in ('Sigma-6','Delta-12','Gamma-6','Oro')}
-    # La puerta de símbolos: ningún nombre estadounidense sale con símbolo en la
-    # guía si su CDV no pasó la verificación. Ver src/cdv.py.
-    puerta=estado_cdv(universe,cargar_cdv(),prices_all,cargar_simbolos_cdv())
-    ingreso=cartera_de_ingreso({'Sigma-6':sigma,'Delta-12':delta,'Gamma-6':gamma,'Oro':oro_portfolio},as_of,costos,simbolos=puerta)
+    ingreso=cartera_de_ingreso({'Sigma-6':sigma,'Delta-12':delta,'Gamma-6':gamma,'Oro':oro_portfolio},as_of,costos,simbolos=puerta_cdv)
     (REPORTS/'cartera_de_ingreso.md').write_text(markdown_ingreso(ingreso,as_of),encoding='utf-8')
     ingreso.to_csv(DATA/'cartera_de_ingreso.csv',index=False)
     md,html=build_public_report(as_of,delta,dmove,coverage,errors,history,gamma=gamma,gamma_moves=gmove,oro=oro_portfolio,oro_moves=omove,movimientos=movimientos_libro,capital_por_pieza=por_pieza,vigencia=vigencia,salud=salud,conocidos=conocidos,ha_entrado=ha_entrado);(REPORTS/'latest_report.md').write_text(md,encoding='utf-8');(REPORTS/'latest_report.html').write_text(html,encoding='utf-8')

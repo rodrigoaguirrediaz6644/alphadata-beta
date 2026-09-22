@@ -52,6 +52,32 @@ Se corrigió, se volvió a correr, y **la conclusión se sostuvo** —C gana las
 ventanas— pero el número cambió: mantener Sigma-6 costaba $4.880.898 y cuesta
 $4.658.161. Que esta vez no se diera vuelta fue suerte, no diseño.
 
+## Tres reglas que salieron de aplicarla
+
+**«Verde» y «funciona» son dos afirmaciones distintas.** Quitar los valores por
+omisión dejó la corrida caída en dos sitios y **248 pruebas siguieron en
+verde**, porque todas llamaban funciones sueltas con datos de juguete y ninguna
+llamaba al pipeline. Ahora hay una prueba de humo que lo corre entero sobre un
+árbol copiado y exige que llegue al final —`tests/test_humo_pipeline.py`—, y se
+verificó que falla al reintroducir esa misma regresión. No mira contenido: de
+eso se encargan las rápidas.
+
+**El recorte de valores absurdos pertenece al consumidor, no al productor.** El
+filtro que descartaba razones lejanas a 1 vivía en `frescas`, y las dos cosas
+que leen de ahí quieren lo contrario: para medir el premio un 3,6 es un dato
+roto que ensucia una media, y para la puerta de símbolos es **la evidencia** que
+delata a Boeing. Dejarlo en el productor le quitó a la puerta con qué rechazar.
+No es una excepción de este caso: cuando dos consumidores discrepan sobre qué es
+basura, el que decide es cada uno.
+
+**El artefacto de rancio no tiene techo.** Un precio congelado dividido por un
+subyacente que se movió puede dar cualquier número: HONCL llegó a 2,08 estando
+perfectamente sano. Por eso el umbral de razón imposible está en ±25% y es
+**ancho a propósito**: las ruedas frescas de HON dispersan 10%, así que una sola
+rueda dirime un 3,5 pero **no dirimiría un 1,4**. Que nadie lo apriete después
+creyendo que es un instrumento preciso; no lo es, y su precisión no se puede
+subir sin más ruedas frescas, que es justo lo que no hay.
+
 ## La lista: lo que queda con más de una casa
 
 No hay que arreglarlo todo ahora. Hay que tener la lista.
@@ -67,6 +93,12 @@ No hay que arreglarlo todo ahora. Hay que tener la lista.
   `src.cdv.estado` que no deja imprimir un símbolo sin verificar.
 - `research/carteras_en_pesos/` y `research/aporte_marginal/` leen la
   configuración.
+- El parámetro `buy_cost` de `enrich_open_positions`, que **el cuerpo no leía
+  nunca**. Un parámetro muerto con valor por omisión es lo peor de las dos
+  cosas: parece que el costo entra ahí y no entra. Eliminado.
+- La regla general, hecha prueba: ninguna constante del dominio puede tener
+  valor por omisión en `src/`, con las excepciones escritas y no silenciosas.
+  **Si el parámetro no llega, la llamada falla.**
 
 ### Abierto, por orden de lo que puede costar
 

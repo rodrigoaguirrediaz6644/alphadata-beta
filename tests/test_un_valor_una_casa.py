@@ -9,6 +9,7 @@ Lo que se prueba aca no es que los numeros sean correctos. Es que **no haya
 donde escribir un segundo numero**.
 """
 
+import ast
 import inspect
 import json
 import re
@@ -23,15 +24,50 @@ RAIZ = Path(__file__).resolve().parents[1]
 CONFIG = RAIZ / "config" / "runtime.v2.json"
 
 
-def test_ninguna_reconstruccion_trae_la_tarifa_como_valor_por_omision():
-    """Un valor por omision es una casa, y estaba escondiendo a la refutada.
+# Un parametro se considera constante del dominio si su nombre dice que lleva
+# plata: una tarifa, un minimo, una comision. Son justo los valores que algo
+# fuera del repositorio puede desmentir, que es el criterio de la norma.
+PLATA = ("cost", "costo", "tasa", "rate", "minimo", "minimum", "fee", "comision", "tarifa")
 
+# La excepcion, escrita y no silenciosa: `minimo_exactos` es cuanta
+# coincidencia se le exige a una fuente candidata de precios. Es un umbral que
+# elegimos, no un dato del mundo, asi que ninguna boleta puede desmentirlo.
+EXCEPCIONES = {("feed_validation.py", "aprueba", "minimo_exactos")}
+
+
+def test_ninguna_constante_del_dominio_tiene_valor_por_omision():
+    """Un valor por omision es exactamente una segunda casa.
+
+    Es una copia silenciosa que **solo se delata cuando falta la primera**.
     Cuatro funciones traian la tarifa por omision y una traia el 0,1% de los
-    CDV, que una boleta desmintio. Produccion las llamaba explicitamente, asi
-    que el error estaba **dormido esperando al proximo que llamara sin el
-    argumento**. Quitar el valor por omision hizo que la corrida fallara al
-    instante en dos sitios que venian usandolo sin que nadie lo supiera.
+    CDV que una boleta desmintio; produccion las llamaba explicitamente, asi
+    que el error estaba dormido esperando al proximo que llamara sin el
+    argumento. Quitarlas hizo que la corrida fallara al instante en dos sitios
+    que venian usandolas sin que nadie lo supiera.
+
+    La regla: **si el parametro no llega, la llamada falla.**
     """
+    culpables = []
+    for f in sorted((RAIZ / "src").glob("*.py")):
+        arbol = ast.parse(f.read_text(encoding="utf-8"))
+        for nodo in ast.walk(arbol):
+            if not isinstance(nodo, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                continue
+            a = nodo.args
+            params = a.posonlyargs + a.args + a.kwonlyargs
+            faltan = len(a.posonlyargs) + len(a.args) - len(a.defaults)
+            omisiones = [None] * faltan + list(a.defaults) + list(a.kw_defaults)
+            for par, omision in zip(params, omisiones):
+                if omision is None or not any(k in par.arg.lower() for k in PLATA):
+                    continue
+                if (f.name, nodo.name, par.arg) in EXCEPCIONES:
+                    continue
+                culpables.append(f"{f.name}:{nodo.lineno} {nodo.name}({par.arg}=...)")
+    assert not culpables, "constantes del dominio con valor por omision:\n" + "\n".join(culpables)
+
+
+def test_las_reconstrucciones_exigen_la_tarifa():
+    """El caso concreto que costo la corrida caida, por si la regla se ablanda."""
     for nombre in ["delta12_historical_nav", "gamma6_historical_nav",
                    "oro_historical_nav", "sigma6_historical_nav"]:
         p = inspect.signature(getattr(strategy_engine, nombre)).parameters["cost_rate"]
