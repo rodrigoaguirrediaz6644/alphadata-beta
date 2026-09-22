@@ -40,6 +40,19 @@ calendario semanal que los demás, para que el modelo de costo sea comparable.
 piezas era en realidad de dos. Los números de abajo son los de la corrida
 corregida.
 
+**¿Llega ese defecto a producción? No.** `oro_historical_nav` no usa
+`nav_corrido`: calcula la razón directa contra la primera sesión
+—`adjusted_close / adjusted_close.iloc[0] * 100 * (1 - costo)`— así que compra
+el primer día por construcción. La serie publicada arranca en **99,90** el
+08-07-2021 y se mueve desde la rueda siguiente. Son caminos distintos y el
+defecto fue sólo del banco de pruebas.
+
+Lo que sí conviene dejar escrito, porque nunca lo estuvo: en `nav_corrido`
+—que sí usan Sigma-6, Delta-12 y Gamma-6— **la serie está sin invertir hasta la
+primera revisión**. En la reconstrucción publicada eso son 15 ruedas planas
+para las dos mensuales, hasta el 30-07-2021, y una para Sigma-6. No es un
+defecto: antes de la primera revisión no hay cartera que comprar.
+
 ## Correlación, solape y concentración
 
 | candidato | Delta-12 | Gamma-6 | Oro | solape con Δ12 | posiciones |
@@ -99,6 +112,67 @@ $5.000.000 por pieza.
 | + C Fórmula inicial | +18,67% | **−5,3%** | 1,72 |
 | + D Sin corredora | **+27,50%** | −6,6% | **2,07** |
 
+## El control de caja, y las dos convenciones que faltaba declarar
+
+La firma de los cuatro candidatos es la misma —bajan el retorno y suben el
+Sharpe— y eso es exactamente lo que hace agregar caja. Además, **la Sigma-6
+actual es caja en su mayor parte por construcción**: cuatro posiciones con tope
+de 10% son 40% invertido y 60% en caja, así que agregarla al 25% agrega 15% del
+total en caja y 10% en acciones chilenas.
+
+Las dos convenciones, que no estaban escritas en ninguna parte:
+
+- **La caja rinde 0%.** El NAV sólo se mueve con las posiciones; el peso en caja
+  no acredita nada. Vale para las cuatro piezas y para el control.
+- **El Sharpe usa tasa libre de riesgo 0**: media de los retornos diarios por
+  252, sobre la desviación típica anualizada.
+
+Con esas dos, agregar caja escala retorno y volatilidad por el mismo factor y
+**debería ser neutro al Sharpe por construcción**. El control confirma que lo
+es:
+
+| aporte al Sharpe del conjunto | selección | evaluación |
+|---|---|---|
+| **+ CAJA (control)** | **−0,01** | **−0,01** |
+| + A Sigma-6 actual | +0,04 | +0,23 |
+| + B Consenso-6 | −0,00 | +0,20 |
+| + C Fórmula inicial | −0,15 | −0,03 |
+| + D Sin corredora | −0,11 | +0,32 |
+
+**El control vuelve plano en las dos ventanas, así que los aportes de A, B y D
+son selección de verdad y no el efecto de diluir con caja.** El estudio queda
+en pie.
+
+### Y contra la caja el cuadro se afina, en un sentido que corrige lo anterior
+
+Medido sobre el control en vez de sobre el conjunto de tres piezas —que es la
+comparación correcta, porque aísla la selección del efecto de diluir:
+
+| aporte sobre la caja | selección | evaluación | |
+|---|---|---|---|
+| **A Sigma-6 actual** | **+0,05** | **+0,24** | positivo en las dos |
+| **B Consenso-6** | **+0,01** | **+0,21** | positivo en las dos |
+| D Sin corredora | −0,10 | +0,33 | se da vuelta |
+| C Fórmula inicial | −0,14 | −0,02 | negativo en las dos |
+
+**Esto modifica lo que reporté antes.** Dije que entre A y D no se distinguía, y
+entre ellas sigue sin distinguirse: A gana la selección y D la evaluación. Pero
+**contra el control de caja, A y B son positivas en las dos ventanas y D no**.
+Es la primera cosa consistente entre ventanas que aparece a favor de mantener
+una señal de corredora, y hay que decirlo aunque el aporte en la selección sea
+chico (+0,05).
+
+### El resultado más nítido del control: C vale exactamente lo que la caja
+
+| | retorno | Sharpe |
+|---|---|---|
+| + C Fórmula inicial | −6,88% | −0,03 |
+| + CAJA (control) | −6,81% | −0,01 |
+
+**Agregar la fórmula inicial al conjunto rinde lo mismo que no invertir ese
+cuarto.** Es una forma mucho más nítida de decir su fracaso que llamarla
+«la peor de las cuatro».
+
 ## Las tres conclusiones
 
 **1. Ninguna cuarta pieza mejora el retorno del conjunto en la ventana de
@@ -122,10 +196,11 @@ resultado es un piso y no una medición limpia.
 
 ### La sensibilidad no cambia nada
 
-A $2.500.000 por pieza el cuadro es el mismo: A es el único que mejora el
-Sharpe en la selección (+0,01) y D el que más lo mejora en la evaluación
-(+0,28). Las diferencias de retorno se mueven entre 0,2 y 0,6 puntos. **La
-trampa del mínimo por operación no da vuelta ninguna conclusión.**
+A $2.500.000 por pieza el cuadro es el mismo: el control de caja sigue plano
+(−0,01 en las dos ventanas), A sigue siendo el único que mejora el Sharpe en la
+selección (+0,01) y D el que más lo mejora en la evaluación (+0,28). Contra la
+caja, A queda +0,02 y +0,22; B, +0,01 y +0,21; D, −0,15 y +0,29. **La trampa
+del mínimo por operación no da vuelta ninguna conclusión.**
 
 ## Qué contesta esto sobre Sigma-6
 

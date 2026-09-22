@@ -156,6 +156,12 @@ piezas en tercios (`research/aporte_marginal/`):
 ninguna cuarta pieza chilena mejora el retorno del conjunto en la ventana de
 selección; lo que aportan es Sharpe, bajando la caída.
 
+**El control de caja vuelve plano** —agregar 25% de caja aporta −0,01 de Sharpe
+en las dos ventanas— así que esos aportes son selección y no dilución. Y contra
+ese control, **mantener la corredora es positivo en las dos ventanas (+0,05 y
++0,24) y quitarla no (−0,10 y +0,33)**. Es lo único consistente que aparece a
+favor de mantenerla.
+
 Dos hechos más, que pesan sobre la opción de mantenerla: **Sigma-6 comparte dos
 de sus tres peores caídas con Delta-12** —octubre de 2023 y marzo de 2026— y la
 variante sin corredora no comparte ninguna. El argumento a favor de mantener la

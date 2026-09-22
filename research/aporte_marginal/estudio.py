@@ -15,6 +15,22 @@ Los cuatro candidatos, fijados antes de medir:
      5% para baja liquidez, maximo 12 posiciones. **Con las catorce corredoras
      de cien recomendaciones o mas**, no con las seis.
 - D  Sin corredora: solo momentum 12-1 y SMA200, top 10 al 10%. Es el piso.
+- CAJA  El control: la cuarta pieza al 25% en caja y nada mas. La firma de los
+     cuatro candidatos es la misma —bajan el retorno y suben el Sharpe— y eso
+     es lo que hace agregar caja. Si el control da el mismo Sharpe, lo que
+     aporta la cuarta pieza es la caja y no la seleccion.
+
+**Las dos convenciones, que hasta ahora no estaban escritas en ninguna parte:**
+
+- **La caja rinde 0%.** El NAV solo se mueve con las posiciones; el peso en caja
+  no acredita nada. Vale para las cuatro piezas y para el control.
+- **El Sharpe usa tasa libre de riesgo 0**: media de los retornos diarios por
+  252, dividida por la desviacion tipica anualizada.
+
+No es un detalle de forma. Con esas dos convenciones, agregar caja escala
+retorno y volatilidad por el mismo factor y **deberia ser neutro al Sharpe por
+construccion**. Si el control vuelve plano, los aportes de A, B y D son
+seleccion de verdad; si sube, son caja.
 
 Cortes: seleccion hasta 31-12-2023, evaluacion desde 01-01-2024.
 Costos: Trii 0,1785% con minimo $999,99; en lo estadounidense 0,1% sin minimo.
@@ -287,6 +303,8 @@ def main():
         for nombre, obj in [("A Sigma-6 actual", A), ("B Consenso-6", B),
                             ("C Formula inicial", C), ("D Sin corredora", D)]:
             candidatos[nombre] = correr(panel, ses, obj, capital, TASA_CL, MIN_CL)[0]
+        # El control: una pieza que es solo caja, al 0%.
+        candidatos["CAJA (control)"] = pd.Series(100., index=piezas["Delta-12"].index)
 
         print(f"\n{'#'*20} capital {etiqueta} {'#'*20}")
         fechas = piezas["Delta-12"].index
@@ -296,7 +314,10 @@ def main():
         for nombre, serie in candidatos.items():
             cors = [f"{mensual(serie).corr(mensual(s)):>10.2f}" for s in piezas.values()]
             obj = dict([("A Sigma-6 actual", A), ("B Consenso-6", B),
-                        ("C Formula inicial", C), ("D Sin corredora", D)])[nombre]
+                        ("C Formula inicial", C), ("D Sin corredora", D)]).get(nombre)
+            if obj is None:
+                print(f"{nombre:20} " + " ".join(f"{'—':>10}" for _ in piezas) + f"   {'—':>9}   {0.0:>10.1f}")
+                continue
             jac = []
             for (f, o), (_, od) in zip(obj, [(f, dict(obj_delta[min(range(len(meses_cl)),
                  key=lambda i: abs((meses_cl[i]-f).days))][1])) for f, _ in obj]):
