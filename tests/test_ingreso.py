@@ -77,9 +77,12 @@ def test_la_comision_del_primer_dia_sale_del_modelo_de_cada_pieza():
     unidades enteras deja parte del capital sin invertir, así que la base no son
     $20 millones.
     """
-    from src.ingreso import UMBRAL_MINIMO, costo_de_una
-    # Sobre el umbral manda el porcentual; bajo el umbral manda el mínimo.
-    assert costo_de_una(UMBRAL_MINIMO + 1000, .001785, 999.99) > 999.99
+    from src.ingreso import costo_de_una, umbral_minimo
+    # El umbral es derivado y no un dato: mínimo / tasa. Sobre él manda el
+    # porcentual; bajo él manda el mínimo.
+    umbral = umbral_minimo(.001785, 999.99)
+    assert umbral == pytest.approx(560_218, abs=1)
+    assert costo_de_una(umbral + 1000, .001785, 999.99) > 999.99
     assert costo_de_una(300_000., .001785, 999.99) == 999.99
     carteras = {"Delta-12": _cartera(monto_clp=937_500.),
                 "Gamma-6": _cartera(ticker="TGT", monto_clp=1_250_000., current_price=152_490.)}

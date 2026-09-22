@@ -216,11 +216,11 @@ Gamma-6, dejando el oro en 25%:
 
 | | los $20M quedan en | anual | peor caída |
 |---|---|---|---|
-| con Sigma-6 (25% c/u) | $48.685.107 | +18,67% | −$3.940.468 |
-| **sin Sigma-6 (37,5/37,5/25)** | **$53.566.005** | **+20,88%** | −$5.784.514 |
+| con Sigma-6 (25% c/u) | $48.323.631 | +18,50% | −$3.915.943 |
+| **sin Sigma-6 (37,5/37,5/25)** | **$52.981.792** | **+20,62%** | −$5.765.292 |
 
-**Mantenerla cuesta $4.880.898 en cinco años**, 2,2 puntos anuales, y lo que
-compra es $1,84 millones menos de caída. El control gana en las tres ventanas,
+**Mantenerla cuesta $4.658.161 en cinco años**, 2,1 puntos anuales, y lo que
+compra es $1,85 millones menos de caída. El control gana en las tres ventanas,
 sin darse vuelta. Ver `research/carteras_en_pesos/`.
 
 ### Las opciones, sin implementar ni medir

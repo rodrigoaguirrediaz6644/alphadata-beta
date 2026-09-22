@@ -290,7 +290,7 @@ def oro(prices: pd.DataFrame, universe: pd.DataFrame, as_of: pd.Timestamp) -> tu
     return portfolio,audit
 
 
-def oro_historical_nav(prices: pd.DataFrame, universe: pd.DataFrame, fx: pd.DataFrame, start: pd.Timestamp, end: pd.Timestamp, cost_rate: float = .001) -> pd.DataFrame:
+def oro_historical_nav(prices: pd.DataFrame, universe: pd.DataFrame, fx: pd.DataFrame, start: pd.Timestamp, end: pd.Timestamp, cost_rate: float) -> pd.DataFrame:
     """Reconstruye la serie del oro en pesos: comprar una vez y mantener."""
     clp=to_clp(prices,universe,fx)
     serie=clp.loc[(clp.alphadata_ticker==ORO_TICKER)&clp.date.between(start,end),["date","adjusted_close"]].dropna().sort_values("date")
@@ -319,7 +319,7 @@ def to_clp(prices: pd.DataFrame, universe: pd.DataFrame, fx: pd.DataFrame) -> pd
     return out
 
 
-def gamma6_historical_nav(prices: pd.DataFrame, universe: pd.DataFrame, fx: pd.DataFrame, start: pd.Timestamp, end: pd.Timestamp, cost_rate: float = .001) -> pd.DataFrame:
+def gamma6_historical_nav(prices: pd.DataFrame, universe: pd.DataFrame, fx: pd.DataFrame, start: pd.Timestamp, end: pd.Timestamp, cost_rate: float) -> pd.DataFrame:
     """Reconstruye Gamma-6 en pesos con los pesos corriendo. Ver delta12_historical_nav."""
     us=set(universe.loc[universe.tipo=="accion_us","alphadata_ticker"])
     clp=to_clp(prices,universe,fx)
@@ -328,7 +328,7 @@ def gamma6_historical_nav(prices: pd.DataFrame, universe: pd.DataFrame, fx: pd.D
     return nav_corrido(panel,sesiones,"M",lambda f: dict(zip(*[gamma6(prices,universe,f)[0][c] for c in ("ticker","target_weight")])),cost_rate,"Gamma-6")
 
 
-def delta12_historical_nav(prices: pd.DataFrame, universe: pd.DataFrame, start: pd.Timestamp, end: pd.Timestamp, cost_rate: float = .001785) -> pd.DataFrame:
+def delta12_historical_nav(prices: pd.DataFrame, universe: pd.DataFrame, start: pd.Timestamp, end: pd.Timestamp, cost_rate: float) -> pd.DataFrame:
     """Reconstruye Delta-12 con la política escrita: los pesos corren.
 
     Antes calculaba con el peso constante, que es la aritmética de una cartera
@@ -341,7 +341,7 @@ def delta12_historical_nav(prices: pd.DataFrame, universe: pd.DataFrame, start: 
     return nav_corrido(panel,sesiones,"M",lambda f: dict(zip(*[delta12(prices,universe,f)[0][c] for c in ("ticker","target_weight")])),cost_rate,"Delta-12")
 
 
-def sigma6_historical_nav(valid: pd.DataFrame, prices: pd.DataFrame, universe: pd.DataFrame, start: pd.Timestamp, end: pd.Timestamp, cost_rate: float = .001785, exigir_sma200: bool = True) -> pd.DataFrame:
+def sigma6_historical_nav(valid: pd.DataFrame, prices: pd.DataFrame, universe: pd.DataFrame, start: pd.Timestamp, end: pd.Timestamp, cost_rate: float, exigir_sma200: bool = True) -> pd.DataFrame:
     """Reconstruye Sigma-6 semanal con los pesos corriendo.
 
     No existía: la serie de Sigma-6 venía congelada en

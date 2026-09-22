@@ -38,7 +38,14 @@ ZIP = ("C:/Users/rodri/AppData/Local/Temp/claude/D--AlphaData/"
        "cda509b5-f3b1-4cc0-aadb-cdfdcf860f6d/scratchpad/corredoras/data/"
        "final_validated_recommendations.csv")
 INICIO, CORTE, FIN = pd.Timestamp("2021-07-08"), pd.Timestamp("2024-01-01"), pd.Timestamp("2026-07-15")
-TASA_CL, MIN_CL, TASA_US = .001785, 999.99, .001
+import json as _json
+from pathlib import Path as _Path
+# La tarifa sale de la configuracion, no de una copia: este estudio corrio
+# con un 0,1% para los CDV que una boleta real desmintio.
+_M = _json.loads((_Path(__file__).resolve().parents[2] / "config" / "runtime.v2.json")
+                 .read_text(encoding="utf-8"))["transaction_cost"]
+TASA_CL = TASA_US = float(_M["rate"])
+MIN_CL = float(_M["minimum_fee_clp"])
 TOTAL = 20_000_000.
 
 CARTERAS = {
@@ -140,8 +147,8 @@ def main():
     print("objetivos listos", flush=True)
 
     receta = {"Delta-12": (panel, ses, obj_delta, TASA_CL, MIN_CL),
-              "Gamma-6": (panel_us, ses_us, obj_gamma, TASA_US, 0.),
-              "Oro": (panel_oro, ses_us, obj_oro, TASA_US, 0.),
+              "Gamma-6": (panel_us, ses_us, obj_gamma, TASA_US, MIN_CL),
+              "Oro": (panel_oro, ses_us, obj_oro, TASA_US, MIN_CL),
               "Sigma-6": (panel, ses, obj_sigma, TASA_CL, MIN_CL)}
 
     conjuntos = {}

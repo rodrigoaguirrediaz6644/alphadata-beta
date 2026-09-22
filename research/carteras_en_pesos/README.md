@@ -20,6 +20,14 @@ Reglas de producción tal como están —pesos que corren, sólo entradas y sali
 entradas financiadas con lo que liberan las salidas, límite de concentración del
 25%—, costos de Trii 0,1785% con mínimo $999,99, caja a 0%.
 
+**Corregido el 22-09-2026.** Este estudio corrió con un 0,1% sin mínimo para los
+CDV, que era un supuesto y resultó falso: una boleta real de IAUCL mostró la
+misma tarifa chilena. La corrección pega más fuerte en C, que es la que más
+Gamma-6 tiene, o sea **en contra de la cartera que gana**. Las tablas de abajo
+son las de después de corregir; **el orden no cambió** y lo que se movió fue la
+magnitud: mantener Sigma-6 costaba $4.880.898 y cuesta $4.658.161. La tarifa ya
+no está escrita en este archivo: sale de `config/runtime.v2.json`.
+
 **El capital por pieza cambia entre carteras y eso no es cosmético:** con el
 mínimo por operación, una pieza de $7.500.000 paga proporcionalmente menos que
 una de $5.000.000. Cada pieza se corrió con el capital que le toca en su
@@ -29,12 +37,12 @@ cartera.
 
 | cartera | los $20M quedan en | ganancia | anual | peor caída |
 |---|---|---|---|---|
-| **A** cuatro piezas al 25% | $48.685.107 | $28.685.107 | +18,67% | **−$3.940.468** (−8,1%) |
-| **B** tres piezas en tercios | $50.413.295 | $30.413.295 | +19,47% | −$5.165.604 (−10,2%) |
-| **C** control, oro en 25% | **$53.566.005** | **$33.566.005** | **+20,88%** | −$5.784.514 (−10,8%) |
+| **A** cuatro piezas al 25% | $48.323.631 | $28.323.631 | +18,50% | **−$3.915.943** (−8,1%) |
+| **B** tres piezas en tercios | $49.920.998 | $29.920.998 | +19,25% | −$5.152.117 (−10,3%) |
+| **C** control, oro en 25% | **$52.981.792** | **$32.981.792** | **+20,62%** | −$5.765.292 (−10,9%) |
 
-**Mantener Sigma-6 cuesta $4.880.898 contra el control**, un 9,1% sobre el valor
-final y 2,2 puntos anuales. Contra B, $1.728.188.
+**Mantener Sigma-6 cuesta $4.658.161 contra el control**, un 8,8% sobre el valor
+final y 2,1 puntos anuales. Contra B, $1.597.366.
 
 ## Por ventana
 
@@ -42,17 +50,17 @@ final y 2,2 puntos anuales. Contra B, $1.728.188.
 
 | cartera | los $20M quedan en | anual | peor caída |
 |---|---|---|---|
-| A | $26.485.606 | +12,02% | **−$1.772.157** (−6,7%) |
-| B | $27.598.510 | +13,90% | −$2.838.236 (−10,2%) |
-| **C** | **$28.400.433** | **+15,22%** | −$3.077.619 (−10,8%) |
+| A | $26.388.746 | +11,85% | **−$1.777.048** (−6,7%) |
+| B | $27.465.898 | +13,67% | −$2.845.393 (−10,3%) |
+| **C** | **$28.248.289** | **+14,97%** | −$3.085.072 (−10,9%) |
 
 ### Evaluación (2024-01 a 2026-07)
 
 | cartera | los $20M quedan en | anual | peor caída |
 |---|---|---|---|
-| A | $37.157.486 | +25,68% | −$3.007.447 (−8,1%) |
-| B | $37.057.235 | +25,55% | **−$2.539.993** (−6,9%) |
-| **C** | **$38.307.934** | **+27,10%** | −$2.961.203 (−7,7%) |
+| A | $37.016.974 | +25,50% | −$2.999.699 (−8,1%) |
+| B | $36.872.537 | +25,32% | **−$2.532.710** (−6,9%) |
+| **C** | **$38.094.206** | **+26,84%** | −$2.950.888 (−7,7%) |
 
 ## El invariante aritmético
 
@@ -76,11 +84,11 @@ cuarto entre Delta-12 y Gamma-6 produce más plata en la ventana de selección, 
 la de evaluación y en la completa.
 
 **A queda última en dos de las tres.** En la evaluación le gana a B por
-$100.251 —un 0,27%, que es ruido— y pierde con C por $1.150.448.
+$144.437 —un 0,39%, que es ruido— y pierde con C por $1.077.232.
 
 **Lo único que A compra es una caída menor, y sólo a veces.** En la ventana
-completa su peor caída es $3.940.468 contra $5.784.514 de C: **ahorra $1,84
-millones de caída y renuncia a $4,88 millones de ganancia.** En la ventana de
+completa su peor caída es $3.915.943 contra $5.765.292 de C: **ahorra $1,85
+millones de caída y renuncia a $4,66 millones de ganancia.** En la ventana de
 evaluación ni siquiera compra eso: A tiene la peor caída de las tres.
 
 ## Esto apunta al revés que el Sharpe, y hay que decirlo
