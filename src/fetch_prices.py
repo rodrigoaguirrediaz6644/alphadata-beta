@@ -209,9 +209,24 @@ def build_coverage(
             and lag_business_days is not None
             and lag_business_days > MAX_BENCHMARK_LAG_BUSINESS_DAYS
         )
+        # Un instrumento deslistado **no es una falla**: dejó de cotizar y eso
+        # ya está sabido y escrito. Mantenerlo en estado DETENIDO todas las
+        # semanas es la forma de que la alarma se vuelva paisaje. Sigue en el
+        # universo a propósito, porque es de ahí de donde la canasta del
+        # benchmark aprende a excluirlo: si se borrara la fila, volvería a
+        # entrar contando 0% de retorno todos los días.
         status = (
-            "SIN_DATOS"
+            "DESLISTADO"
+            if getattr(item, "estado", "activo") == "deslistado"
+            else "SIN_DATOS"
             if not len(subset)
+            # Historia corta con dato fresco es un instrumento **acumulando**,
+            # no uno roto, y la diferencia se puede ver sola: MULTIFOODS quedó
+            # con una rueda al corregirle el símbolo y suma una por día desde
+            # entonces. Uno roto se delata por el rezago, no por el largo.
+            else "ACUMULANDO"
+            if not enough_history and lag_business_days is not None
+            and lag_business_days <= MAX_BENCHMARK_LAG_BUSINESS_DAYS
             else "INSUFICIENTE"
             if not enough_history
             else "DETENIDO"

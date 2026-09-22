@@ -7,6 +7,7 @@ razón conocida deja de ser una alarma.
 
 import pandas as pd
 
+from src import salud
 from src.salud import CONOCIDOS, html, markdown, revisar
 
 SANO = dict(
@@ -37,12 +38,31 @@ def test_cuando_algo_falla_dice_que_y_no_lo_demas():
     assert "la suite pasó" not in texto
 
 
-def test_lo_conocido_se_aparta_y_no_se_esconde():
-    """AESANDES no puede aparecer en rojo todas las semanas.
+def test_hoy_no_hay_ninguna_alarma_apartada():
+    """La meta era que `CONOCIDOS` quedara vacío, y quedó.
 
-    Está congelado desde abril de 2025 y anotado. Si saliera cada corrida, el
-    panel dejaría de leerse, que es peor que no tenerlo.
+    Cada uno se cerró en su lugar en vez de quedar suprimido para siempre:
+    AESANDES pasó a `deslistado`, MULTIFOODS a `ACUMULANDO` y el dividendo de
+    MALLPLAZA quedó aceptado con la base que tiene. **Una alarma suprimida es
+    una alarma que dejó de significar algo**, así que ninguna es el estado
+    correcto. Ver PENDIENTES.md.
+
+    El mecanismo se conserva, y las dos pruebas de abajo lo verifican, porque
+    va a volver a hacer falta.
     """
+    assert CONOCIDOS == {}
+
+
+def test_lo_conocido_se_aparta_y_no_se_esconde(monkeypatch):
+    """Lo anotado no puede aparecer en rojo todas las semanas.
+
+    Si saliera cada corrida, el panel dejaría de leerse, que es peor que no
+    tenerlo. Se inyecta el diccionario en vez de usar el real: la prueba es del
+    mecanismo, y atarla al contenido la rompía cada vez que algo se cerraba.
+    """
+    monkeypatch.setattr(salud, "CONOCIDOS",
+                        {"AESANDES": "congelado", "MULTIFOODS": "una rueda",
+                         "MALLPLAZA 2026-09-03": "dividendo sin respaldo"})
     chequeos, conocidos = revisar(**{**SANO,
                                      "cobertura_incompleta": {"AESANDES", "MULTIFOODS"},
                                      "dividendos_sin_respaldo": {"MALLPLAZA 2026-09-03"}})
@@ -54,7 +74,8 @@ def test_lo_conocido_se_aparta_y_no_se_esconde():
     assert "AESANDES" in markdown(chequeos, conocidos)
 
 
-def test_uno_nuevo_si_enciende_el_panel():
+def test_uno_nuevo_si_enciende_el_panel(monkeypatch):
+    monkeypatch.setattr(salud, "CONOCIDOS", {"AESANDES": "congelado"})
     chequeos, conocidos = revisar(**{**SANO, "cobertura_incompleta": {"AESANDES", "CHILE"}})
     assert conocidos == ["AESANDES"]
     cobertura = [c for c in chequeos if c.nombre == "Cobertura"][0]

@@ -253,6 +253,34 @@ def build_outputs(cuotas: pd.DataFrame, features: pd.DataFrame, returns: pd.Seri
     return {"summary": summary, "annual": pd.DataFrame(annual_rows), "state": state, "trades": trades}
 
 
+def _pct(valor: float) -> str:
+    return f"{valor:.1%}".replace(".", ",")
+
+
+def _pesos(retorno: float) -> str:
+    """Lo que habría pasado con un millón, que es lo que se entiende.
+
+    El acumulado en porcentaje obliga a hacer la cuenta de cabeza y nadie la
+    hace. El resto del informe está escrito en pesos y esta sección era la
+    única que seguía en CAGR y volatilidad.
+    """
+    return f"$ {1_000_000 * (1 + retorno):,.0f}".replace(",", ".")
+
+
+def _ventaja_en_palabras(ventaja: float | None) -> str:
+    """Lo que la regla le sumó o le restó a quedarse quieto en el Fondo A."""
+    if ventaja is None:
+        return "Todavía no hay con qué comparar."
+    plata = 1_000_000 * abs(ventaja)
+    cuanto = f"$ {plata:,.0f}".replace(",", ".")
+    if abs(ventaja) < .005:
+        return ("Moverse entre fondos dio prácticamente lo mismo que quedarse quieto en el "
+                "Fondo A: la diferencia sobre un millón es menor a $5.000.")
+    verbo = "más" if ventaja > 0 else "menos"
+    return (f"Sobre un millón, moverse entre fondos dejó **{cuanto} {verbo}** que quedarse "
+            f"quieto en el Fondo A durante todo el período.")
+
+
 def _replace_section(text: str, section: str) -> str:
     if REPORT_START in text and REPORT_END in text:
         before, rest = text.split(REPORT_START, 1)
@@ -266,28 +294,41 @@ def update_report(outputs: dict) -> None:
     state = outputs["state"]
     oos = outputs["summary"][outputs["summary"]["period"] == "fuera_muestra_2021+"].copy()
     rows = "".join(
-        f"<tr><td>{r.strategy}</td><td>{r.cagr:.2%}</td><td>{r.cumulative_return:.2%}</td>"
-        f"<td>{r.annualized_volatility:.2%}</td><td>{r.max_drawdown:.2%}</td></tr>"
+        f"<tr><td>{r.strategy}</td><td>{_pct(r.cagr)}</td><td>{_pct(r.cumulative_return)}</td>"
+        f"<td>{_pesos(r.cumulative_return)}</td><td>{_pct(r.max_drawdown)}</td></tr>"
         for r in oos.itertuples()
     )
+    propia = oos[oos.strategy == "Estrategia Horizonte"]
+    quieto = oos[oos.strategy == "Fondo A Cuprum"]
+    ventaja = (float(propia.cumulative_return.iloc[0]) - float(quieto.cumulative_return.iloc[0])
+               if len(propia) and len(quieto) else None)
     section = f"""{REPORT_START}<section><h2>Estrategia Horizonte</h2>
     <p><strong>Fondo vigente:</strong> Fondo {state['current_fund']} ·
     <strong>última señal:</strong> Fondo {state['recommendation']} ({state['score']}/5) ·
     <strong>fecha de señal:</strong> {state['signal_date']} ·
     <strong>datos Cuprum al:</strong> {state['as_of']}.</p>
-    <table><thead><tr><th>Estrategia</th><th>CAGR</th><th>Acumulado</th><th>Volatilidad</th><th>Máximo retroceso</th></tr></thead>
+    <p>Horizonte decide todos los meses entre el Fondo A y el Fondo E de la AFP. No compra
+    acciones: mueve el ahorro previsional de un fondo al otro.</p>
+    <table><thead><tr><th>Qué se hizo con la plata</th><th>Por año</th><th>En total desde 2021</th>
+    <th>Un millón habría quedado en</th><th>Peor caída</th></tr></thead>
     <tbody>{rows}</tbody></table>
-    <p class="muted">Prueba fuera de muestra desde 2021. Evaluación mensual; Fondo A con al menos 2 de 5 señales;
-    ejecución al cuarto valor cuota hábil posterior. Datos de fondos exclusivamente AFP Cuprum.</p></section>{REPORT_END}"""
+    <p>{_ventaja_en_palabras(ventaja)}</p>
+    <p class="muted">Medido desde 2021 sobre datos que la regla no vio cuando se escribió. Se revisa una vez
+    al mes: va al Fondo A si al menos 2 de 5 señales lo piden, y el cambio se ejecuta al cuarto valor cuota
+    hábil siguiente. Los valores cuota son de AFP Cuprum y de nadie más.</p></section>{REPORT_END}"""
     html_path = REPORTS / "latest_report.html"
     html_path.write_text(_replace_section(html_path.read_text(encoding="utf-8"), section), encoding="utf-8")
     md_path = REPORTS / "latest_report.md"
     md_section = (
         f"\n{REPORT_START}\n## Estrategia Horizonte\n\n"
-        f"- Fondo vigente: **Fondo {state['current_fund']}**.\n"
-        f"- Última señal: Fondo {state['recommendation']} ({state['score']}/5), fecha {state['signal_date']}.\n"
-        f"- Datos Cuprum actualizados al {state['as_of']}.\n"
-        f"- Backtest y tablas: `data/horizonte_backtest_summary.csv`, `data/horizonte_annual.csv`, "
+        "Horizonte decide todos los meses entre el Fondo A y el Fondo E de la AFP. "
+        "No compra acciones: mueve el ahorro previsional de un fondo al otro.\n\n"
+        f"- Hoy está en el **Fondo {state['current_fund']}**.\n"
+        f"- La última revisión, del {state['signal_date']}, pidió el Fondo "
+        f"{state['recommendation']} con {state['score']} de 5 señales a favor.\n"
+        f"- Los valores cuota de Cuprum están al {state['as_of']}.\n"
+        f"- {_ventaja_en_palabras(ventaja)}\n"
+        f"- El detalle está en `data/horizonte_backtest_summary.csv`, `data/horizonte_annual.csv`, "
         f"`data/horizonte_trades.csv` y `data/horizonte_signals.csv`.\n{REPORT_END}\n"
     )
     md_path.write_text(_replace_section(md_path.read_text(encoding="utf-8"), md_section), encoding="utf-8")
