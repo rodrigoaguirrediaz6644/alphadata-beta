@@ -28,11 +28,15 @@ from src.cdv import BANDA
 # siempre está roja por una razón conocida deja de ser una alarma**, así que
 # esto sale del panel. No se esconde: el panel dice cuántos hay y dónde están
 # escritos, y agregar uno acá exige que exista su entrada en PENDIENTES.md.
-CONOCIDOS = {
-    "AESANDES": "congelado desde el 14-04-2025",
-    "MULTIFOODS": "una rueda de historia tras corregir el símbolo",
-    "MALLPLAZA 2026-09-03": "dividendo sin respaldo de precio",
-}
+# Quedó **vacío**, y esa es la meta: cada uno se cerró en su lugar en vez de
+# quedar apartado para siempre. AESANDES pasó a estado `deslistado`, que la
+# cobertura ya no trata como falla; MULTIFOODS aparece como `ACUMULANDO`, que
+# es lo que es; y el dividendo de MALLPLAZA quedó aceptado con la base que
+# tiene. Ver PENDIENTES.md.
+#
+# El mecanismo se conserva porque va a volver a hacer falta, y con él la
+# prueba que exige que todo lo que se aparte tenga su entrada escrita.
+CONOCIDOS: dict[str, str] = {}
 
 
 @dataclass(frozen=True)
@@ -50,7 +54,7 @@ def _fecha(valor) -> str:
 def revisar(*, as_of, precios_al_dia, series_detenidas, cobertura_incompleta,
             series_recalculadas, series_publicadas, carteras_reproducidas,
             dias_sin_recomendaciones, umbral_vigencia, dividendos_sin_respaldo,
-            suite_verde, premio_cdv=None) -> tuple[list[Chequeo], list[str]]:
+            suite_verde, premio_cdv=None, descalce_real=None) -> tuple[list[Chequeo], list[str]]:
     """Consolida lo que ya se verificó en esta corrida. No verifica de nuevo.
 
     `cobertura_incompleta` y `dividendos_sin_respaldo` son conjuntos de claves,
@@ -92,7 +96,30 @@ def revisar(*, as_of, precios_al_dia, series_detenidas, cobertura_incompleta,
                 else f"sin respaldo de precio: {', '.join(dividendos_sin_respaldo)}"),
         Chequeo("Pruebas", bool(suite_verde), "la suite pasó" if suite_verde else "la suite no pasó"),
         _premio(premio_cdv),
+        _cuenta_real(descalce_real),
     ], conocidos
+
+
+def _cuenta_real(descalce) -> Chequeo:
+    """Lo que hay en la cuenta contra lo que tiene el modelo.
+
+    Desde que hay plata real existe una falla que antes no podía: **tener
+    comprado algo que el modelo ya vendió**. Nada la detectaría sola, porque el
+    informe habla de la cartera del modelo y la cuenta habla de otra cosa, y
+    las dos se ven sanas por separado.
+
+    Va sobre instrumentos y no sobre cantidades a propósito: las cantidades no
+    calzan ni tienen por qué —la primera compra fue de 8 IAUCL contra 63 de
+    referencia— y una alarma por eso sonaría siempre.
+    """
+    if descalce is None:
+        return Chequeo("Cuenta real", True, "sin operaciones registradas todavía")
+    if descalce:
+        return Chequeo("Cuenta real", False,
+                       f"hay en la cuenta {len(descalce)} instrumento"
+                       + ("" if len(descalce) == 1 else "s")
+                       + f" que el modelo no tiene: {', '.join(descalce)}")
+    return Chequeo("Cuenta real", True, "todo lo comprado sigue en alguna cartera del modelo")
 
 
 def _premio(p) -> Chequeo:
