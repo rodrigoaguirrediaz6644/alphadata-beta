@@ -79,6 +79,31 @@ sacar plata del sistema. El otro —recortar un ganador dentro de una
 estrategia— es la política de rebalanceo, que es otra cosa y vive en
 `ARQUITECTURA.md`.
 
+## La cuenta no va a calzar con el NAV publicado, y eso es esperado
+
+**Esto es lo primero que hay que leer cuando aparezca la diferencia**, porque se
+va a ver como una falla y no lo es.
+
+El NAV publicado de Gamma-6 y del oro usa el **precio sintetizado**: el
+subyacente en dólares por el tipo de cambio. La ejecución ocurre al precio del
+**CDV**, que cotiza con un premio encima de ese teórico. Medido sobre dos años,
+el premio es **+0,30%**, y lo que importa acá no es su nivel sino que **cambia
+0,418% de un mes a otro**.
+
+Un premio de nivel se cancela: si se compra y se vende con el mismo premio, no
+cuesta nada. Lo que no se cancela es su variación, y con Gamma-6 rotando todos
+los meses **la cuenta real va a separarse del informe del orden de un punto al
+año, en cualquier dirección**.
+
+Que sea en cualquier dirección es la parte que hay que retener. Si la cuenta va
+un punto arriba del informe, tampoco es que el modelo se quedó corto: es el
+mismo ruido con el otro signo.
+
+**Cuándo sí preocuparse:** cuando la diferencia sea mucho mayor que eso, o
+cuando tenga siempre el mismo signo durante varios meses. Lo segundo querría
+decir que el premio dejó de ser ruido y se volvió un cargo, y para eso está la
+guardia del panel de salud, con banda de ±1%. Ver `research/spread_cambio/`.
+
 ## Lo que se va a poder medir con esto
 
 - **Deslizamiento**: `precio_pagado / precio_modelo - 1`, por estrategia y por
