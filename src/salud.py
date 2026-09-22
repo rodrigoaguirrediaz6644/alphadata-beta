@@ -54,7 +54,8 @@ def _fecha(valor) -> str:
 def revisar(*, as_of, precios_al_dia, series_detenidas, cobertura_incompleta,
             series_recalculadas, series_publicadas, carteras_reproducidas,
             dias_sin_recomendaciones, umbral_vigencia, dividendos_sin_respaldo,
-            suite_verde, premio_cdv=None, descalce_real=None) -> tuple[list[Chequeo], list[str]]:
+            suite_verde, premio_cdv=None, descalce_real=None,
+            dias_horizonte=None) -> tuple[list[Chequeo], list[str]]:
     """Consolida lo que ya se verificó en esta corrida. No verifica de nuevo.
 
     `cobertura_incompleta` y `dividendos_sin_respaldo` son conjuntos de claves,
@@ -97,7 +98,33 @@ def revisar(*, as_of, precios_al_dia, series_detenidas, cobertura_incompleta,
         Chequeo("Pruebas", bool(suite_verde), "la suite pasó" if suite_verde else "la suite no pasó"),
         _premio(premio_cdv),
         _cuenta_real(descalce_real),
+        _horizonte(dias_horizonte),
     ], conocidos
+
+
+# Horizonte se evalúa una vez al mes y sus cuotas se publican con días de
+# atraso, así que tres semanas es lo que distingue «viene lento» de «dejó de
+# actualizarse».
+DIAS_HORIZONTE = 21
+
+
+def _horizonte(dias) -> Chequeo:
+    """Que Horizonte no haya quedado viejo sin que nadie lo note.
+
+    Su insumo externo viene de FRED, que **no responde desde los runners de
+    GitHub** aunque responda en local. Antes esa falla detenía el informe
+    completo, lo que era peor pero al menos era ruidoso. Ahora el informe sale
+    igual —una pieza secundaria no puede callar a la principal— y esto es lo
+    que impide que salir igual se vuelva salir en silencio con una sección
+    congelada.
+    """
+    if dias is None:
+        return Chequeo("Horizonte", True, "sin estado guardado todavía")
+    if dias > DIAS_HORIZONTE:
+        return Chequeo("Horizonte", False,
+                       f"su última actualización tiene {int(dias)} días: la sección del "
+                       "informe está congelada. Revisar si FRED respondió en la última corrida")
+    return Chequeo("Horizonte", True, f"actualizado hace {int(dias)} días")
 
 
 def _cuenta_real(descalce) -> Chequeo:

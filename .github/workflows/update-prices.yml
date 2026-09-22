@@ -44,7 +44,16 @@ jobs:
       - name: Descargar y calcular estrategias bursátiles
         run: PYTHONPATH=. python alphadata.py run
 
+      # **Horizonte no puede callar al informe.** Es una pieza secundaria -elige
+      # entre dos fondos de AFP- y su insumo viene de FRED, que no responde
+      # desde los runners de GitHub aunque responda en local. Cuando fallaba,
+      # se llevaba por delante el informe completo y el correo: la cartera, el
+      # panel de salud y la guia de ingreso no salian por un problema de otra
+      # cosa. Que el paso siga en rojo esta bien; que detenga el resto, no.
+      #
+      # El informe dice si Horizonte quedo viejo, asi que esto no esconde nada.
       - name: Descargar, calcular e incorporar Estrategia Horizonte
+        continue-on-error: true
         run: PYTHONPATH=. python -m src.horizonte
 
       - name: Enviar informe semanal

@@ -63,6 +63,14 @@ def _incompletos(coverage:pd.DataFrame)->set[str]:
     if not len(coverage): return set()
     return set(coverage.loc[~coverage.status.isin(COBERTURA_SANA),'alphadata_ticker'])
 
+def _edad_de_horizonte(as_of)->float|None:
+    """Cuántos días lleva la sección de Horizonte sin actualizarse."""
+    ruta=DATA/'horizonte_state.json'
+    if not ruta.exists(): return None
+    try: guardado=pd.Timestamp(json.loads(ruta.read_text(encoding='utf-8'))['as_of'])
+    except Exception: return None
+    return float((pd.Timestamp(as_of).normalize()-guardado.normalize()).days)
+
 def _solo_operables(universe:pd.DataFrame,puerta:pd.DataFrame)->pd.DataFrame:
     """El universo con el símbolo borrado donde la puerta no dejó pasar.
 
@@ -661,6 +669,7 @@ def main()->None:
         # diluirse en dos años de historia.
         premio_cdv=premio_cdv(cargar_cdv(),prices_all,desde=as_of-pd.Timedelta(days=365)),
         # Sobre instrumentos y no sobre cantidades: ver src/operaciones.py.
+        dias_horizonte=_edad_de_horizonte(as_of),
         descalce_real=descalce_real(cargar_operaciones(DATA/'operaciones_reales.csv'),
                                     {n:list(c.ticker) for n,c in
                                      {'Sigma-6':sigma,'Delta-12':delta,'Gamma-6':gamma,'Oro':oro_portfolio}.items()
