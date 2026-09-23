@@ -1,0 +1,72 @@
+##############################################################################
+# PRIMERO: la regla que congele esta rota, y se ve sin mirar el resultado
+##############################################################################
+  La escribi pensando en las AFP, donde el Fondo A recupera maximos entre
+  crisis. La bolsa chilena estuvo bajo su maximo de 2010 diez anios seguidos.
+
+  episodio                     dias
+  2007-12-07 a 2008-10-10       308
+  2010-11-04 a 2020-03-18      3422
+  2026-01-27 a 2026-06-05       129
+
+  Un episodio de 3.422 dias junta 2011, 2015-16, 2019 y 2020 en uno solo.
+  Se repara el instrumento: el umbral de 15% no se toca, y el episodio
+  ahora se cierra cuando la serie recupera el 50% de lo caido.
+
+##############################################################################
+# EL COLCHON CAMBIARIO, SOBRE EPISODIOS
+##############################################################################
+  Bolsa chilena en pesos: ECH x USDCLP, 2007-11-21 a 2026-09-23 (4699 dias)
+  Cartera: 37.5% Chile, 37.5% global, 25.0% oro, rebalanceo diario.
+  Episodio = caida de mas de 15% desde el maximo. Salieron 20.
+
+  episodio                    dias     Chile   USD/CLP  con dolar  sin dolar  beneficio
+  2007-12-07 a 2008-01-23       47   -24,67%    -5,79%    -13,76%    -11,88%     -1,89%
+  2008-04-21 a 2008-09-29      161   -21,66%   +16,01%     -8,45%    -16,42%     +7,97%
+  2008-09-30 a 2008-10-10       10   -29,95%    +9,14%     -8,78%    -16,38%     +7,60%
+  2008-11-03 a 2008-11-21       18   -16,33%    -3,56%     -9,53%     -8,58%     -0,95%
+  2009-02-09 a 2009-03-03       22   -15,32%    -0,26%    -12,56%    -12,52%     -0,04%
+  2010-11-04 a 2011-03-14      130   -17,21%    -3,57%     -4,24%     -2,18%     -2,07%
+  2011-05-18 a 2011-08-08       82   -28,45%    -4,24%    -15,17%    -13,03%     -2,14%
+  2011-08-31 a 2011-09-23       23   -17,97%    +5,38%     -8,71%    -11,64%     +2,92%
+  2012-04-02 a 2012-09-05      156   -16,02%    -1,53%     -7,08%     -6,21%     -0,87%
+  2013-02-13 a 2016-01-15     1066   -32,78%   +53,53%     +6,51%    -18,35%    +24,86%
+  2018-01-31 a 2018-09-04      216   -15,61%   +12,60%     -1,51%     -8,79%     +7,28%
+  2018-09-20 a 2019-08-26      340   -22,38%    +3,50%     -2,28%     -3,90%     +1,62%
+  2019-10-17 a 2019-11-12       26   -15,55%    +6,29%     -1,13%     -4,94%     +3,81%
+  2019-11-15 a 2020-03-18      124   -43,41%    +5,53%    -20,80%    -23,71%     +2,91%
+  2020-07-06 a 2020-09-23       79   -20,35%    -3,15%     -7,28%     -4,91%     -2,37%
+  2021-03-17 a 2021-10-14      211   -23,61%   +12,02%     +3,15%     -4,18%     +7,33%
+  2021-11-22 a 2021-12-20       28   -23,15%    +1,78%     -6,56%     -7,29%     +0,73%
+  2022-09-02 a 2022-10-14       42   -18,25%    +4,57%     -5,95%     -8,47%     +2,51%
+  2023-07-26 a 2023-11-01       98   -16,25%    +8,12%     -4,37%     -8,88%     +4,51%
+  2026-01-27 a 2026-03-20       52   -15,20%    +5,54%     -7,43%    -10,11%     +2,68%
+
+##############################################################################
+# VEREDICTO contra el criterio pre-registrado
+##############################################################################
+
+  1) «el peso sube en al menos 5 de los episodios»
+     -> sube en 13 de 20. CUMPLE
+
+  2) «el beneficio mediano es de al menos 2 puntos de caida evitada»
+     -> mediano +2,60%. CUMPLE
+     (beneficio positivo en 13 de 20)
+
+  Y mi segunda prediccion, la que me jugue en contra:
+     «la cartera con dolar igual tiene peor caida sobre la ventana completa»
+     -> con dolar -26,81%, sin dolar -32,06%. FALLO: la prediccion se cae
+
+##############################################################################
+# LA VENTANA COMPLETA, para poner el colchon al lado de lo que cuesta
+##############################################################################
+                       anual   peor caida   volatilidad
+  con el dolar        +9,06%      -26,81%       +22,59%
+  sin el dolar        +7,01%      -32,06%       +17,27%
+  el dolar solo       +3,56%      -34,41%       +16,61%
+
+  Y separando los dias de episodio de los demas:
+                     en episodios   fuera de ellos
+  con el dolar             -7,63%          +17,79%
+  sin el dolar            -11,19%          +20,08%
+  dias                       2019             2680

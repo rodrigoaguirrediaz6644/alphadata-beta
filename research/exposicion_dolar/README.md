@@ -63,6 +63,13 @@ como un amortiguador.
 
 **En esta ventana el dólar agrega retorno y agrega riesgo. No amortigua.**
 
+> **Corregido el 23-09-2026 por `research/colchon_cambiario/`.** La prueba de
+> episodios sobre 19 años dice que **sí amortigua**: reduce la caída máxima de
+> −32,06% a −26,81% y el colchón aparece en 13 de 20 episodios, incluido
+> octubre de 2019, que es estrés chileno puro. Lo de acá abajo sigue siendo
+> cierto **para 2021-2026**, que es una ventana sin una caída chilena de las que
+> importan. La conclusión que vale es la del otro estudio.
+
 Lo que **no** se puede contestar con 2021-2026 es si amortiguaría en una caída
 de la bolsa chilena de las que importan: en esta ventana no hubo una, y el
 mecanismo del colchón en las AFP se midió sobre episodios que sí la tuvieron.
