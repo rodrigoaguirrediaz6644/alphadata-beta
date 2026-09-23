@@ -94,6 +94,8 @@ def pendiente(filas: list[dict]) -> dict | None:
 def asunto(a: dict) -> str:
     """La instruccion completa en el asunto: se lee desde la pantalla bloqueada."""
     dia = dt.date.fromisoformat(a["fecha"]).strftime("%d-%m-%Y")
+    if a.get("ensayo"):
+        return f"[ENSAYO] AFP: asi se veria un aviso de cambio  —  {dia}"
     return f"AFP: cambiar a {nombre_fondo(a['hacia'])}  —  solicitar hoy {dia}"
 
 
@@ -102,6 +104,17 @@ def cuerpo(a: dict) -> str:
     materializa = habiles_adelante(a["fecha"]).strftime("%d-%m-%Y")
     repeticion = ("" if a["cual"] == 1
                   else f"\n(Aviso {a['cual']} de {DIAS_DE_AVISO} por el mismo cambio.)")
+    if a.get("ensayo"):
+        return (
+            "ESTO ES UN ENSAYO. No hay ningun cambio que solicitar.\n"
+            "Sirve para comprobar que el aviso llega desde el trabajo diario.\n\n"
+            f"Un aviso de verdad se veria asi, con la posicion de hoy:\n"
+            f"  Cambiar a {nombre_fondo(a['hacia'])} en AFP {AFP.capitalize()}.\n"
+            f"  Lo indican {a['votos']} de las {len(MEDIAS)} medias "
+            f"(la regla sale con {VOTOS_PARA_SALIR} o mas).\n"
+            f"  Valor cuota de hoy: {nombre_fondo(DENTRO)} {a['cuota_a']}, "
+            f"{nombre_fondo(a['hacia'])} {a['cuota']}.\n"
+            f"  Solicitando hoy quedaria materializado alrededor del {materializa}.\n")
     return (
         f"Cambiar a {nombre_fondo(a['hacia'])}, desde {nombre_fondo(a['desde'])}.\n"
         f"AFP {AFP.capitalize()}.\n\n"
@@ -135,6 +148,27 @@ def enviar(a: dict) -> tuple[bool, str]:
     return True, os.environ["REPORT_RECIPIENTS"]
 
 
+def ensayo(filas: list[dict]) -> dict:
+    """Un aviso de mentira con los datos de hoy, para comprobar que el correo sale.
+
+    Existe por la misma razon que el ensayo de Vigilancia: **el primer aviso
+    real no puede ser tambien la primera prueba del SMTP desde este flujo.**
+    Las pruebas unitarias cubren cuando dispara y que dice; lo que no pueden
+    cubrir es si el correo sale desde el runner, y eso solo se sabe mandando
+    uno. Ya nos paso con FRED, que respondia en local y no en GitHub.
+
+    Va marcado de forma inequivoca en el asunto: un ensayo que se lea como
+    instruccion real seria peor que no ensayar.
+    """
+    u = filas[-1] if filas else {}
+    hacia = u.get("posicion") or DENTRO
+    return {"desde": DENTRO, "hacia": hacia, "fecha": u.get("fecha", ""),
+            "fecha_senal": u.get("fecha", ""), "cual": 1,
+            "votos": u.get("votos") or "0",
+            "cuota": u.get(f"vc_{hacia.lower()}", ""),
+            "cuota_a": u.get(f"vc_{DENTRO.lower()}", ""), "ensayo": True}
+
+
 def avisar(filas: list[dict], enviador=enviar) -> tuple[bool, str]:
     """Avisa si corresponde y **marca la fila de hoy**. Devuelve (todo bien, que paso).
 
@@ -144,6 +178,9 @@ def avisar(filas: list[dict], enviador=enviar) -> tuple[bool, str]:
     """
     a = pendiente(filas)
     if a is None:
+        if os.getenv("SIMULAR_AVISO", "").lower() in ("1", "true", "yes"):
+            ok, detalle = enviador(ensayo(filas))
+            return ok, ("ensayo enviado" if ok else f"ENSAYO NO ENVIADO — {detalle}")
         return True, "sin transicion pendiente"
     ok, detalle = enviador(a)
     filas[-1]["aviso"] = f"a {a['hacia']} ({a['cual']}/{DIAS_DE_AVISO})"

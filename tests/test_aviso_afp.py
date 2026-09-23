@@ -147,3 +147,48 @@ def test_sin_transicion_no_toca_la_fila():
     ok, dicho = av.avisar(filas, enviador=lambda a: pytest.fail("no debio enviar"))
     assert ok and dicho == "sin transicion pendiente"
     assert filas[-1]["aviso"] == ""
+
+
+# --------------------------------------------------------------------------
+# el ensayo
+# --------------------------------------------------------------------------
+
+def test_el_ensayo_se_manda_cuando_no_hay_nada_que_avisar(monkeypatch):
+    """El primer aviso real no puede ser la primera prueba del SMTP.
+
+    Las pruebas unitarias cubren cuándo dispara y qué dice; lo que no pueden
+    cubrir es si el correo sale desde el runner. Con FRED ya nos pasó que algo
+    respondía en local y no en GitHub.
+    """
+    monkeypatch.setenv("SIMULAR_AVISO", "true")
+    mandados = []
+    ok, dicho = av.avisar(_historia(("A", 0), ("A", 0)),
+                          enviador=lambda a: (mandados.append(a), (True, "ok"))[1])
+    assert ok and dicho == "ensayo enviado"
+    assert mandados and mandados[0]["ensayo"] is True
+
+
+def test_el_ensayo_no_se_puede_confundir_con_una_instruccion_real():
+    """Uno que se lea como aviso de verdad sería peor que no ensayar."""
+    a = av.ensayo(_historia(("A", 0)))
+    assert av.asunto(a).startswith("[ENSAYO]")
+    assert av.cuerpo(a).startswith("ESTO ES UN ENSAYO")
+
+
+def test_el_ensayo_no_marca_la_fila():
+    """No pasó nada: el historial no debe decir que hubo un aviso."""
+    import os
+    os.environ["SIMULAR_AVISO"] = "1"
+    try:
+        filas = _historia(("A", 0), ("A", 0))
+        av.avisar(filas, enviador=lambda a: (True, "ok"))
+        assert filas[-1]["aviso"] == "" and filas[-1]["aviso_estado"] == ""
+    finally:
+        os.environ.pop("SIMULAR_AVISO", None)
+
+
+def test_un_ensayo_que_no_sale_tambien_deja_rojo(monkeypatch):
+    monkeypatch.setenv("SIMULAR_AVISO", "true")
+    ok, dicho = av.avisar(_historia(("A", 0), ("A", 0)),
+                          enviador=lambda a: (False, "sin red"))
+    assert ok is False and "ENSAYO NO ENVIADO" in dicho

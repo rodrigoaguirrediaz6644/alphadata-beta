@@ -18,6 +18,11 @@ name: Registro AFP
 # que tiene que seguir andando solo durante anios no deberia depender de eso.
 on:
   workflow_dispatch:
+    inputs:
+      simular_aviso:
+        description: "Mandar un aviso de ensayo para comprobar que el correo llega"
+        type: boolean
+        default: false
   schedule:
     # Todos los dias a las 13:30 UTC, unos 40 minutos despues de Vigilancia
     # para no chocar en el grupo de concurrencia. El valor cuota del dia se
@@ -62,6 +67,7 @@ jobs:
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
           SMTP_FROM: ${{ secrets.SMTP_FROM }}
           REPORT_RECIPIENTS: ${{ secrets.REPORT_RECIPIENTS }}
+          SIMULAR_AVISO: ${{ inputs.simular_aviso }}
         run: PYTHONPATH=. python -m src.registro_afp
 
       - name: Guardar el dia
