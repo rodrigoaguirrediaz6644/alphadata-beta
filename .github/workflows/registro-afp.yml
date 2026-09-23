@@ -1,0 +1,73 @@
+name: Registro AFP
+
+# **Registro hacia adelante de la grilla de parametros AFP. No opera nada.**
+#
+# El backtest ya no puede discriminar entre estos parametros: la banda se
+# eligio despues de ver los datos, el largo de la media tambien, y lo ultimo
+# que aprendimos es que hasta el precipicio del parametro es un rasgo de la
+# ventana y no de la regla. Lo unico que queda es dejar correr el tiempo sobre
+# datos que nadie miro antes de elegir.
+#
+# Vive aparte del flujo que produce el informe **a proposito**, igual que
+# Vigilancia: no comparte insumos, no comparte fallas, y si se cae no arrastra
+# nada. Lo unico que comparte es el grupo de concurrencia, porque los dos
+# escriben en main y dos push simultaneos se pisan.
+#
+# Y no instala dependencias: `src/registro_afp.py` usa solo biblioteca
+# estandar. El pin de pandas ya nos rompio corridas antes; un trabajo diario
+# que tiene que seguir andando solo durante anios no deberia depender de eso.
+on:
+  workflow_dispatch:
+  schedule:
+    # Todos los dias a las 13:30 UTC, unos 40 minutos despues de Vigilancia
+    # para no chocar en el grupo de concurrencia. El valor cuota del dia se
+    # publica con rezago, asi que la corrida de hoy registra el ultimo dia de
+    # cotizacion disponible, no necesariamente el de hoy.
+    - cron: "30 13 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: alphadata-escritura-en-main
+  cancel-in-progress: false
+
+jobs:
+  registrar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v6
+
+      - name: Preparar Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Calcular la grilla y guardarla
+        # Sale en rojo si la fuente reescribio historia ya registrada. Eso es
+        # deliberado: un registro hacia adelante cuyo pasado cambia solo no
+        # sirve para nada, y lo peor del caso es que no se nota.
+        run: PYTHONPATH=. python -m src.registro_afp
+
+      - name: Guardar el dia
+        run: |
+          git config user.name "alphadata-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add registro/afp_senales.csv
+          if git diff --cached --quiet; then
+            echo "Sin dias nuevos de cotizacion; no hay nada que guardar."
+            exit 0
+          fi
+          git commit -m "registro: dia de la grilla AFP"
+          for intento in 1 2 3; do
+            git pull --rebase --autostash origin main || exit 1
+            if git push; then
+              exit 0
+            fi
+            echo "Push rechazado (intento $intento de 3); reintentando..."
+            sleep 10
+          done
+          echo "No fue posible guardar el registro tras 3 intentos." >&2
+          exit 1
