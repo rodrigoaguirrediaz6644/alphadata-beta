@@ -222,10 +222,12 @@ def texto(a: dict) -> str:
         f"{nombre_fondo(a['hacia'])} {_miles(a['cuota_destino'])}",
         f"Venias en {nombre_fondo(a['desde'])} desde el "
         f"{_fecha(dt.date.fromisoformat(a['desde_cuando']))}.",
-        f"Aviso {a['cual']} de {DIAS_DE_AVISO}.",
-        "",
-        _pie(a),
     ]
+    # La repeticion es para los avisos de verdad. Tres correos de prueba
+    # entrenan a ignorarlos, que es lo contrario de lo que se busca.
+    if not a.get("ensayo"):
+        lineas.append(f"Aviso {a['cual']} de {DIAS_DE_AVISO}.")
+    lineas += ["", _pie(a)]
     return "\n".join(lineas) + "\n"
 
 
@@ -234,27 +236,46 @@ def texto(a: dict) -> str:
 # imagenes y sin colores de semaforo — las imagenes se bloquean por defecto en
 # la mitad de los clientes y un aviso que depende de una imagen es un aviso
 # roto.
+#
+# **Todo va inline sobre cada elemento, y el bloque <style> es solo para lo que
+# no se puede inline.** Un cliente de correo que descarta el <style> —y varios
+# lo hacen— dejaria la tabla de las cinco medias convertida en una columna de
+# texto corrido, que es justo el bloque que hay que leer de un vistazo. Las
+# reglas de aca abajo son el respaldo, no la fuente.
+LETRA = "-apple-system,Segoe UI,Arial,sans-serif"
+TINTA, SECUNDARIO, TENUE = "#1d2939", "#475467", "#667085"
+OSCURO, BORDE, PAPEL, FONDO = "#101828", "#eaecf0", "#ffffff", "#f2f4f7"
+
+S = {
+    "body": f"margin:0;padding:0;background:{FONDO};color:{TINTA};font-family:{LETRA};font-size:15px;line-height:1.5",
+    "wrap": f"max-width:560px;margin:0 auto;background:{PAPEL}",
+    "head": f"padding:20px 24px;background:{OSCURO};color:#ffffff",
+    "brand": "margin:0;font-size:20px;font-weight:700;color:#ffffff",
+    "sub": "margin:2px 0 0;font-size:13px;color:#c8cfda",
+    "sec": f"padding:20px 24px;border-bottom:1px solid {BORDE};background:{PAPEL}",
+    "h1": f"margin:0 0 2px;font-size:26px;line-height:1.15;color:{OSCURO};font-family:{LETRA}",
+    "donde": f"margin:0 0 14px;font-size:14px;color:{SECUNDARIO}",
+    "cuando": f"margin:0;font-size:16px;font-weight:700;color:{OSCURO}",
+    "luego": f"margin:2px 0 0;font-size:14px;color:{SECUNDARIO}",
+    "tabla": f"width:100%;border-collapse:collapse;margin:0;font-family:{LETRA}",
+    "th": f"padding:8px 6px;border-bottom:1px solid {BORDE};background:#f9fafb;color:{SECUNDARIO};font-weight:600;font-size:14px",
+    "td": f"padding:8px 6px;border-bottom:1px solid {BORDE};color:{TINTA};font-size:14px;background:{PAPEL}",
+    "td_sale": f"padding:8px 6px;border-bottom:1px solid {BORDE};color:{OSCURO};font-size:14px;font-weight:700;background:#f8fafc",
+    "cuenta": f"margin:12px 0 0;font-size:14px;color:{OSCURO}",
+    "ctx": f"margin:0 0 4px;font-size:14px;color:{SECUNDARIO}",
+    "foot": f"padding:16px 24px;font-size:12px;color:{TENUE};background:{PAPEL}",
+    "ensayo": "padding:14px 24px;background:#fffaeb;border-bottom:4px solid #f79009;color:#93370d;font-size:14px",
+}
+
 ESTILO = """
-body{margin:0;background:#f2f4f7;font:15px/1.5 -apple-system,Segoe UI,Arial,sans-serif;color:#1d2939}
-.wrap{max-width:560px;margin:auto;background:#fff}
-.head{padding:20px 24px;background:#101828;color:#fff}
-.brand{font-size:20px;font-weight:700}.sub{margin-top:2px;color:#c8cfda;font-size:13px}
-section{padding:20px 24px;border-bottom:1px solid #eaecf0}
-h1{margin:0 0 2px;font-size:26px;line-height:1.15;color:#101828}
-.donde{color:#475467;font-size:14px;margin:0 0 14px}
-.cuando{font-size:16px;font-weight:700;color:#101828;margin:0}
-.luego{color:#475467;font-size:14px;margin:2px 0 0}
-table{width:100%;border-collapse:collapse;margin:0}
-th,td{padding:8px 6px;border-bottom:1px solid #eaecf0;text-align:right;font-size:14px}
-th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left}
-th{background:#f9fafb;color:#475467;font-weight:600}
-tr.sale td{font-weight:700;background:#f8fafc}
-.cuenta{margin:12px 0 0;color:#101828;font-size:14px}
-.ctx{margin:0;color:#475467;font-size:14px}
-.foot{padding:16px 24px;color:#667085;font-size:12px}
-.ensayo{padding:14px 24px;background:#fffaeb;border-bottom:4px solid #f79009;color:#93370d;font-size:14px}
-@media(max-width:640px){.head,section,.foot,.ensayo{padding-left:16px;padding-right:16px}h1{font-size:23px}}
+@media(max-width:640px){.pad{padding-left:16px !important;padding-right:16px !important}
+.t1{font-size:23px !important}}
 """
+
+
+def _celda(txt: str, alineado: str, sale: bool) -> str:
+    base = S["td_sale"] if sale else S["td"]
+    return f'<td style="{base};text-align:{alineado}">{txt}</td>'
 
 
 def html(a: dict) -> str:
@@ -262,44 +283,56 @@ def html(a: dict) -> str:
     for m, pos, razon in a["medias"]:
         sale = pos == FUERA
         r = "—" if razon is None else f"{razon:+.1%}".replace(".", ",")
-        filas.append(f'<tr class="{"sale" if sale else ""}"><td>{m} d</td>'
-                     f'<td>{"refugio" if sale else "agresivo"}</td><td>{r}</td></tr>')
+        filas.append(
+            f'<tr class="{"sale" if sale else "queda"}">'
+            + _celda(f"{m} d", "left", sale)
+            + _celda("refugio" if sale else "agresivo", "left", sale)
+            + _celda(r, "right", sale) + "</tr>")
     # La franja del ensayo va **arriba del todo**, antes del bloque de
     # instruccion. Un ensayo con la misma forma que uno real es una trampa
     # esperando si el aviso de que lo es aparece despues de la instruccion.
-    franja = ('<div class="ensayo"><strong>Esto es un ensayo.</strong> No hay nada '
-              'que solicitar; sirve para comprobar que el aviso llega.</div>'
-              if a.get("ensayo") else "")
+    franja = (f'<div class="ensayo pad" style="{S["ensayo"]}"><strong>Esto es un '
+              'ensayo.</strong> No hay nada que solicitar; sirve para comprobar que '
+              'el aviso llega.</div>' if a.get("ensayo") else "")
+    # La repeticion es para los avisos de verdad. Tres correos de prueba
+    # entrenan a ignorarlos, que es lo contrario de lo que se busca.
+    repeticion = ("" if a.get("ensayo") else
+                  f'<p class="ctx" style="{S["ctx"]}">Aviso {a["cual"]} de {DIAS_DE_AVISO}.</p>')
+    th = lambda t, al: f'<th style="{S["th"]};text-align:{al}">{t}</th>'  # noqa: E731
     return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<style>{ESTILO}</style></head><body><div class="wrap">
-{franja}<div class="head"><div class="brand">AlphaData</div>
-<div class="sub">Aviso de cambio de fondo</div></div>
+<meta name="color-scheme" content="light only">
+<meta name="supported-color-schemes" content="light only">
+<style>{ESTILO}</style></head>
+<body style="{S['body']}"><div style="{S['wrap']}">
+{franja}<div class="pad" style="{S['head']}">
+<div style="{S['brand']}">AlphaData</div>
+<div style="{S['sub']}">Aviso de cambio de fondo</div></div>
 
-<section>
-<h1>Cambiar a {escape(nombre_fondo(a['hacia']))}</h1>
-<p class="donde">AFP {escape(AFP.capitalize())} · {escape(CUENTA)}</p>
-<p class="cuando">Solicitar hoy, {_largo(a['fecha_envio'])}</p>
-<p class="luego">Quedaría materializado alrededor del {_largo(a['materializa'])}</p>
-</section>
+<div class="pad" style="{S['sec']}">
+<h1 class="t1" style="{S['h1']}">Cambiar a {escape(nombre_fondo(a['hacia']))}</h1>
+<p style="{S['donde']}">AFP {escape(AFP.capitalize())} · {escape(CUENTA)}</p>
+<p style="{S['cuando']}">Solicitar hoy, {_largo(a['fecha_envio'])}</p>
+<p style="{S['luego']}">Quedaría materializado alrededor del {_largo(a['materializa'])}</p>
+</div>
 
-<section>
-<table><thead><tr><th>media</th><th>indica</th><th>razón</th></tr></thead>
+<div class="pad" style="{S['sec']}">
+<table role="presentation" style="{S['tabla']}"><thead><tr>
+{th('media', 'left')}{th('indica', 'left')}{th('razón', 'right')}</tr></thead>
 <tbody>{''.join(filas)}</tbody></table>
-<p class="cuenta"><strong>{a['votos']} de {len(MEDIAS)} indican refugio.</strong>
+<p style="{S['cuenta']}"><strong>{a['votos']} de {len(MEDIAS)} indican refugio.</strong>
 La regla sale con {VOTOS_PARA_SALIR} o más.</p>
-</section>
+</div>
 
-<section>
-<p class="ctx">Valor cuota del {_fecha(a['fecha_dato'])} ({a['dias_de_dato']} días) —
-{escape(nombre_fondo(DENTRO))} {_miles(a['cuota_a'])} ·
+<div class="pad" style="{S['sec']}">
+<p class="ctx" style="{S['ctx']}">Valor cuota del {_fecha(a['fecha_dato'])}
+({a['dias_de_dato']} días) — {escape(nombre_fondo(DENTRO))} {_miles(a['cuota_a'])} ·
 {escape(nombre_fondo(a['hacia']))} {_miles(a['cuota_destino'])}</p>
-<p class="ctx">Venías en {escape(nombre_fondo(a['desde']))} desde el
+<p class="ctx" style="{S['ctx']}">Venías en {escape(nombre_fondo(a['desde']))} desde el
 {_fecha(dt.date.fromisoformat(a['desde_cuando']))}.</p>
-<p class="ctx">Aviso {a['cual']} de {DIAS_DE_AVISO}.</p>
-</section>
+{repeticion}</div>
 
-<div class="foot">{_pie(a)}</div>
+<div class="pad" style="{S['foot']}">{_pie(a)}</div>
 </div></body></html>"""
 
 

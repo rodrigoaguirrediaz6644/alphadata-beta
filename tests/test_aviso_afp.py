@@ -63,7 +63,7 @@ def test_una_transicion_real_manda_al_refugio_y_lo_dice_en_todas_partes():
     assert a["hacia"] == r.REFUGIO and a["desde"] == r.DENTRO
     assert "cambiar a Fondo E" in av.asunto(a)
     assert "CAMBIAR A FONDO E" in av.texto(a)
-    assert "<h1>Cambiar a Fondo E</h1>" in av.html(a)
+    assert ">Cambiar a Fondo E</h1>" in av.html(a)
 
 
 def test_los_dos_fondos_de_la_linea_de_valores_son_distintos():
@@ -242,7 +242,7 @@ def test_el_ensayo_es_imposible_de_confundir_con_uno_real():
 def test_la_franja_del_ensayo_va_antes_de_la_instruccion():
     """Si el aviso de que es ensayo aparece después, ya se leyó la instrucción."""
     h = av.html(av.ensayo(_historia(("A", ()))))
-    assert h.index("Esto es un ensayo") < h.index("<h1>Cambiar a")
+    assert h.index("Esto es un ensayo") < h.index("Cambiar a Fondo")
 
 
 def test_un_aviso_real_no_lleva_franja_de_ensayo():
@@ -298,3 +298,56 @@ def test_sin_transicion_no_toca_la_fila(monkeypatch):
     ok, dicho = av.avisar(filas, enviador=lambda a: pytest.fail("no debio enviar"))
     assert ok and dicho == "sin transicion pendiente"
     assert filas[-1]["aviso"] == ""
+
+
+# --------------------------------------------------------------------------
+# LO QUE GMAIL PUEDE ROMPER
+# --------------------------------------------------------------------------
+
+def test_los_estilos_van_inline_y_no_solo_en_un_bloque_style():
+    """Varios clientes descartan el <style> entero.
+
+    Si pasara, la tabla de las cinco medias se desarmaria en una columna de
+    texto corrido, que es justo el bloque que hay que leer de un vistazo.
+    """
+    h = av.html(av.pendiente(_salida()))
+    assert h.count('style="') >= 25
+    for etiqueta in ("<table", "<td", "<th", "<body", "<h1"):
+        i = h.index(etiqueta)
+        assert 'style="' in h[i:i + 260], f"{etiqueta} sin estilo inline"
+
+
+def test_cada_celda_lleva_fondo_y_color_propios():
+    """Contra la inversion de modo oscuro: si el fondo se invierte y el texto
+    no, queda gris claro sobre gris oscuro. Declarar los dos evita el caso."""
+    h = av.html(av.pendiente(_salida()))
+    celdas = re.findall(r'<td style="([^"]+)"', h)
+    assert len(celdas) == 3 * len(r.MEDIAS)
+    for c in celdas:
+        assert "background:" in c and "color:" in c
+
+
+def test_le_dice_al_cliente_que_no_invierta_los_colores():
+    h = av.html(av.pendiente(_salida()))
+    assert 'name="color-scheme" content="light only"' in h
+    assert 'name="supported-color-schemes"' in h
+
+
+def test_pesa_muy_por_debajo_de_donde_gmail_recorta():
+    """Gmail corta con «[Mensaje recortado]» sobre 102 KB."""
+    h = av.html(av.pendiente(_salida()))
+    assert len(h.encode("utf-8")) < 102_400 / 4
+
+
+def test_el_ensayo_no_anuncia_que_se_va_a_repetir():
+    """La repeticion es para los avisos de verdad.
+
+    Tres correos de prueba entrenan a ignorarlos, que es lo contrario de lo
+    que se busca.
+    """
+    a = av.ensayo(_historia(("A", ())))
+    assert "de 3" not in av.texto(a) and "de 3" not in av.html(a)
+
+
+def test_un_aviso_real_si_dice_cual_de_los_tres_es():
+    assert "Aviso 1 de 3" in av.html(av.pendiente(_salida()))
