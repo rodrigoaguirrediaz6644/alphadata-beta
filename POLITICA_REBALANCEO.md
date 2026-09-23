@@ -84,6 +84,29 @@ vuelta: **entre esas dos no se distingue.**
 > más caro hace que «dejar correr» se vea mejor de lo que es. La conclusión
 > está implementada en `src/nav_historico.py`, así que por la norma del proyecto
 > corresponde volver a correr el estudio entero, no parcharlo.
+>
+> **Ampliada el 23-09-2026: los insumos vencidos son tres, no uno.** Corregir
+> sólo la tarifa produciría un número que sigue estando mal.
+>
+> 1. **La tarifa**, arriba.
+> 2. **El reparto.** Las posiciones de $5.000.000 por pieza salen de
+>    `"reparto": "equal_per_strategy"` —«en cuartos entre las cuatro piezas»—,
+>    que se retiró en el commit `2c9e08d` cuando Sigma-6 salió de la asignación.
+>    Hoy el reparto es Delta-12 37,5%, Gamma-6 37,5% y Oro 25%, y **Sigma-6 ya
+>    no está**.
+> 3. **El lugar de ejecución.** Gamma-6 y el oro no se pueden operar en Trii
+>    —libro vacío en los CDV— y van a una corredora con **comisión cero por
+>    operación**. Con costo de transacción nulo, el motivo entero para dejar
+>    correr una posición fuera de su peso desaparece, así que las bandas de
+>    Gamma-6 dejan de ser función de la tarifa de Trii. **Ninguna versión
+>    anterior del estudio pudo considerarlo, porque la decisión no existía.**
+>
+> **Una cosa que sí se verificó y descarta una alarma:** con el reparto vigente
+> ninguna pieza está cerca de cambiar de régimen de costo. Delta-12 tiene **8
+> posiciones por diseño** —`nlargest(8, momentum_12_1)`; el 12 del nombre es la
+> ventana de momentum, no el número de posiciones— de $937.500 cada una, con
+> **40,2% de margen** sobre el umbral de $560.218. Gamma-6 tiene 55,2%. Haría
+> falta que la pieza cayera 40% para cruzar.
 
 Ésta es la que decide, porque es la que se paga. Banda = cuánto puede apartarse
 una posición del objetivo antes de corregirla; entradas y salidas se ejecutan

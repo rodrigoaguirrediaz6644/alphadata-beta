@@ -100,6 +100,25 @@ No hay que arreglarlo todo ahora. Hay que tener la lista.
   valor por omisión en `src/`, con las excepciones escritas y no silenciosas.
   **Si el parámetro no llega, la llamada falla.**
 
+### La norma se aplica también a la prosa
+
+**Quien hace una cuenta declara sus insumos y de dónde vienen.**
+
+Salió de `POLITICA_REBALANCEO.md`, que calculó una política entera —la que está
+implementada en `src/nav_historico.py`— con tres insumos que hoy están vencidos:
+la tarifa mínima, el reparto del capital y el lugar de ejecución. **El defecto no
+fue que un número estuviera mal: fue que el documento hacía cuentas vivas sin
+decir de dónde salían sus entradas.**
+
+Si hubiera nombrado sus tres insumos y su procedencia, el mínimo se habría caído
+solo el día que se midió la boleta, en vez de sobrevivir meses sosteniendo una
+decisión. Un documento que calcula es código que nadie ejecuta: se le aplica la
+misma regla.
+
+`tests/test_un_valor_una_casa.py` ya cubre una parte —falla si un documento
+vigente repite un número que la medición desmintió— pero la declaración de
+insumos no se puede probar sola. Es una norma de escritura.
+
 ### Abierto, por orden de lo que puede costar
 
 **Los estudios congelados llevan la tarifa vieja.** `research/ingreso/`,
