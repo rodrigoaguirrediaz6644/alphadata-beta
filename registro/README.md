@@ -1,10 +1,10 @@
-# Registro AFP — la grilla, hacia adelante
+# Ahorro Generacional — la grilla, hacia adelante
 
 **Nada de esto se opera. Nada se recalibra.** Un archivo, una línea por día de
-cotización: `afp_senales.csv`.
+cotización: `ahorro_generacional.csv`.
 
-Se produce con `PYTHONPATH=. python -m src.registro_afp`, a diario, desde
-`.github/workflows/registro-afp.yml`.
+Se produce con `PYTHONPATH=. python -m src.registro_generacional`, a diario, desde
+`.github/workflows/ahorro-generacional.yml`.
 
 ---
 
@@ -66,7 +66,7 @@ prueba la fija.
 | refugios | **Fondo E**, con el **D** al lado |
 | votos para salir | **2 de 5** |
 | refugio que se opera | **Fondo E** — por correlación, no por ser el más tranquilo |
-| AFP | **Cuprum** |
+| administradora | **Cuprum** |
 
 **Las medias van en días de cotización, no corridos.** Esa distinción costó una
 discrepancia entera entre dos sesiones —«126 días» eran 90 de rueda para una y
@@ -74,7 +74,7 @@ discrepancia entera entre dos sesiones —«126 días» eran 90 de rueda para un
 cinco medias incluyan 90 y 105: el borde está entre 100 y 110, así que la
 grilla lo cruza a propósito en vez de quedarse de un lado.
 
-`tests/test_registro_afp.py` fija estos seis valores. **Si la prueba falla,
+`tests/test_registro_generacional.py` fija estos seis valores. **Si la prueba falla,
 alguien recalibró**, y esa es toda su función: los parámetros no se eligieron
 midiendo, así que el registro sólo sirve si nadie los toca mientras corre.
 
@@ -131,7 +131,7 @@ El informe semanal no sirve como instrumento: entre que la señal habla un lunes
 y se lee el viernes se pierden cuatro días, que sumados al rezago de ejecución
 deterioran varios puntos la protección medida.
 
-`src/aviso_afp.py` corre dentro del mismo trabajo diario, después de calcular la
+`src/aviso_generacional.py` corre dentro del mismo trabajo diario, después de calcular la
 grilla. **Dispara sólo en la transición** —no cada día que la señal esté en
 refugio— y se repite **tres días de cotización**: un correo se pierde, tres no.
 Así tampoco hace falta que el sistema sepa en qué fondo está Rodrigo de verdad,
@@ -224,5 +224,27 @@ existiendo, y no se puede calcular desde acá.
 
 ---
 
-Los estudios que llevaron hasta acá están en `research/afp_*`. El que explica
+Los estudios que llevaron hasta acá están en `research/afp_*`. **Esos directorios conservan el nombre viejo a propósito:** son el registro de lo que se midió y cuándo, y renombrarlos reescribiría esa historia. El que explica
 por qué se congela es `research/afp_2027/`.
+
+## Qué reemplazó, y por qué no conviven
+
+**Ahorro Generacional reemplazó a la Estrategia Horizonte el 23-09-2026.** No
+es que convivan: las dos contestan exactamente la misma pregunta —en qué fondo
+está parada la plata previsional— y **dos estrategias contestando lo mismo es un
+valor con más de una casa.** El día que discrepen, y van a discrepar, no hay
+regla que diga cuál manda y el informe estaría publicando dos respuestas
+contradictorias en el mismo correo.
+
+Horizonte perdió por su auditoría, no por su idea: ventana publicada que
+arrancaba en 2012 sin razón escrita y dejaba fuera la crisis, registro hacia
+adelante vacío —once publicaciones sin un solo cambio—, y backtest que la dejaba
+3,6 años quieta en Fondo A, que es el Fondo A con otro nombre.
+
+**Su código no se borró.** Está en `src/horizonte.py` con la nota de por qué se
+retiró: borrarlo borraría la auditoría que la retiró, y esa auditoría es lo
+único que explica la decisión dentro de un año.
+
+Y el premio de sacarla vale más que la sección: **se llevó con ella la única
+consulta a FRED del informe del viernes**, que es la fuente externa que ya tumbó
+el correo y el commit una vez.

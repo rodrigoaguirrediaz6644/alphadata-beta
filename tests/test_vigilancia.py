@@ -122,30 +122,24 @@ def test_el_ensayo_del_aviso_se_distingue_de_uno_de_verdad():
     assert "ENSAYO" not in real and "no ha salido el informe" in real
 
 
-def test_horizonte_viejo_enciende_el_panel_pero_no_detiene_el_informe():
-    """Una pieza secundaria no puede callar a la principal.
+def test_el_panel_ya_no_chequea_horizonte():
+    """Horizonte salio del informe el 23-09-2026. La reemplazo Ahorro Generacional.
 
-    El insumo de Horizonte viene de FRED, que **no responde desde los runners
-    de GitHub** aunque responda en local. Cuando fallaba se llevaba por delante
-    el informe completo y el correo: la cartera, el panel de salud y la guia de
-    ingreso no salian por un problema de otra cosa.
+    Dos estrategias contestando la misma pregunta -en que fondo esta la plata
+    previsional- es un valor con mas de una casa, y el dia que discrepen el
+    informe estaria publicando dos respuestas contradictorias en el mismo
+    correo.
 
-    Ahora el paso sigue en rojo pero no detiene el resto, y esto es lo que
-    impide que salir igual se vuelva salir en silencio con una seccion
-    congelada.
+    Lo que se gana de paso vale mas que la seccion: **con Horizonte se fue la
+    unica consulta a FRED del informe del viernes**, que es la fuente externa
+    que ya tumbo el correo y el commit una vez.
     """
-    from src.salud import DIAS_HORIZONTE, revisar
+    from src import salud
 
-    def revisa(dias):
-        return [c for c in revisar(
-            as_of=AHORA, precios_al_dia=True, series_detenidas=set(),
-            cobertura_incompleta=set(), series_recalculadas={"A"}, series_publicadas={"A"},
-            carteras_reproducidas=True, dias_sin_recomendaciones=10, umbral_vigencia=90,
-            dividendos_sin_respaldo=set(), suite_verde=True, dias_horizonte=dias)[0]
-            if c.nombre == "Horizonte"][0]
-
-    assert revisa(2.).sano
-    assert revisa(float(DIAS_HORIZONTE)).sano
-    viejo = revisa(DIAS_HORIZONTE + 1.)
-    assert not viejo.sano and "congelada" in viejo.detalle
-    assert revisa(None).sano      # sin estado todavia no es una falla
+    chequeos = salud.revisar(
+        as_of=AHORA, precios_al_dia=True, series_detenidas=set(),
+        cobertura_incompleta=set(), series_recalculadas={"A"}, series_publicadas={"A"},
+        carteras_reproducidas=True, dias_sin_recomendaciones=10, umbral_vigencia=90,
+        dividendos_sin_respaldo=set(), suite_verde=True)[0]
+    assert not [c for c in chequeos if c.nombre == "Horizonte"]
+    assert not hasattr(salud, "DIAS_HORIZONTE")

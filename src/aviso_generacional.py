@@ -5,7 +5,7 @@ senal habla un lunes y Rodrigo lo lee el viernes se pierden cuatro dias, y
 sumados al rezago de ejecucion la proteccion medida se deteriora varios puntos.
 
 **Que se opera: la votacion, no una media.** La regla es la de
-`registro_afp.posicion_por_voto`: al refugio cuando dos o mas de las cinco lo
+`registro_generacional.posicion_por_voto`: al refugio cuando dos o mas de las cinco lo
 indican, de vuelta al agresivo cuando menos de dos.
 
 **Las dos fechas son distintas y las dos tienen que estar.** El dia del envio
@@ -33,7 +33,7 @@ import smtplib
 from email.message import EmailMessage
 from html import escape
 
-from src.registro_afp import (AFP, BANDA, CONGELADO, DENTRO, FUERA, MEDIAS,
+from src.registro_generacional import (AFP, BANDA, CONGELADO, DENTRO, FUERA, MEDIAS,
                               REFUGIO, REZAGO, VOTOS_PARA_SALIR, transicion)
 
 # Un correo se pierde; tres no. Y asi no hace falta que el sistema sepa en que
@@ -177,8 +177,8 @@ def asunto(a: dict) -> str:
     """La instruccion completa en el asunto: se lee desde la pantalla bloqueada."""
     dia = _fecha(a["fecha_envio"])
     if a.get("ensayo"):
-        return f"[ENSAYO] AFP: cambiar a {nombre_fondo(a['hacia'])}  —  {dia}"
-    return f"AFP: cambiar a {nombre_fondo(a['hacia'])}  —  solicitar hoy {dia}"
+        return f"[ENSAYO] Cambiar a {nombre_fondo(a['hacia'])}  —  {dia}"
+    return f"Cambiar a {nombre_fondo(a['hacia'])}  —  solicitar hoy {dia}"
 
 
 def _pie(a: dict) -> str:
@@ -307,7 +307,7 @@ def html(a: dict) -> str:
 <body style="{S['body']}"><div style="{S['wrap']}">
 {franja}<div class="pad" style="{S['head']}">
 <div style="{S['brand']}">AlphaData</div>
-<div style="{S['sub']}">Aviso de cambio de fondo</div></div>
+<div style="{S['sub']}">Ahorro Generacional</div></div>
 
 <div class="pad" style="{S['sec']}">
 <h1 class="t1" style="{S['h1']}">Cambiar a {escape(nombre_fondo(a['hacia']))}</h1>

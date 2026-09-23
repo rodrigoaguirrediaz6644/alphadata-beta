@@ -1,3 +1,30 @@
+"""Estrategia Horizonte — **retirada del informe el 23-09-2026.**
+
+El codigo queda y no se borra: **borrarlo borraria la auditoria que la retiro**,
+y esa auditoria es lo unico que explica la decision dentro de un anio. Sigue
+siendo ejecutable a mano con `python -m src.horizonte`.
+
+**Por que salio.** La reemplazo Ahorro Generacional, que contesta exactamente la
+misma pregunta: en que fondo esta parada la plata previsional. Dos estrategias
+contestando lo mismo es un valor con mas de una casa, y el dia que discrepen
+-y van a discrepar- no hay regla que diga cual manda; el informe estaria
+publicando dos respuestas contradictorias en el mismo correo.
+
+**Y lo que la auditoria encontro, que es por que perdio ella y no la otra:**
+
+- La ventana publicada arrancaba en **2012** sin razon escrita, y eso dejaba
+  fuera la crisis de 2008, que es el episodio que mas decide en esta linea.
+- El registro hacia adelante estaba **vacio**: once publicaciones sin un solo
+  cambio de fondo.
+- El backtest la dejaba **3,6 anios quieta en Fondo A**, o sea que lo que
+  mostraba era el Fondo A con otro nombre.
+
+Ahorro Generacional no arregla ninguna de las tres por ser mejor regla: las
+arregla porque **registra hacia adelante con los parametros congelados antes de
+mirar**, que es lo unico que ninguno de los dos backtests podia hacer.
+
+Ver `registro/README.md` y `research/horizonte_auditoria/`.
+"""
 from __future__ import annotations
 
 from io import StringIO

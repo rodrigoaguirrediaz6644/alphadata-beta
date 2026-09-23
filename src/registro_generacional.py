@@ -1,8 +1,9 @@
-"""Registro hacia adelante de la grilla de parametros AFP. No opera nada.
+"""Ahorro Generacional: registro hacia adelante de la grilla. No opera nada.
 
 **Por que existe.** El backtest ya no puede discriminar entre estos parametros.
 La banda de 2% se eligio despues de ver los datos; el largo de la media se
-eligio despues de ver donde estaba el salto; las siete AFP son la misma prueba
+eligio despues de ver donde estaba el salto; las siete administradoras son la
+misma prueba
 repetida siete veces, y los episodios son siete en veintitres anios. Lo ultimo
 que aprendimos es que sigue apareciendo estructura que **es de la ventana y no
 de la regla**: el precipicio del largo de la media aparece en 2011-2026 y no
@@ -41,7 +42,7 @@ import urllib.request
 from pathlib import Path
 
 # --------------------------------------------------------------------------
-# La grilla congelada. Una sola casa, y `tests/test_registro_afp.py` la fija.
+# La grilla congelada. Una sola casa, y `tests/test_registro_generacional.py` la fija.
 #
 # Cambiar cualquiera de estos numeros **es recalibrar**, que es exactamente lo
 # que este registro existe para no hacer. La prueba falla si se tocan; si
@@ -116,7 +117,7 @@ CONGELADO = "2026-09-23"
 # lee desde el pipeline, que corre desde otra parte, y una ruta relativa
 # devolveria "no hay registro" en vez de fallar. Eso convertiria la alarma en
 # lo contrario de una alarma.
-SALIDA = Path(__file__).resolve().parents[1] / "registro" / "afp_senales.csv"
+SALIDA = Path(__file__).resolve().parents[1] / "registro" / "ahorro_generacional.csv"
 
 DENTRO, FUERA = "A", "fuera"
 
@@ -193,7 +194,7 @@ def histeresis(razones_: list[float | None], banda: float = BANDA) -> list[str |
     Entre los dos umbrales **se mantiene la posicion**: es histeresis, no una
     zona neutra. Ahi esta el ahorro de rotacion, y es lo unico de toda esta
     linea que resulto ser mecanico y no un parametro afortunado: la meseta
-    aparece igual en las siete AFP, con dispersion de un punto.
+    aparece igual en las siete administradoras, con dispersion de un punto.
 
     Arranca dentro del Fondo A, que es la posicion por defecto de quien no hace
     nada.
@@ -582,7 +583,7 @@ def main(argv=None) -> int:
         aviso_dicho = f"aviso suspendido — {problema}"
     else:
         try:
-            from src.aviso_afp import avisar
+            from src.aviso_generacional import avisar
             aviso_ok, aviso_dicho = avisar(nuevo)
         except Exception as e:                   # noqa: BLE001
             aviso_ok, aviso_dicho = False, f"el aviso reviento: {type(e).__name__}: {e}"

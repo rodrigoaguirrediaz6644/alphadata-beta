@@ -63,18 +63,10 @@ def _incompletos(coverage:pd.DataFrame)->set[str]:
     if not len(coverage): return set()
     return set(coverage.loc[~coverage.status.isin(COBERTURA_SANA),'alphadata_ticker'])
 
-def _edad_de_horizonte(as_of)->float|None:
-    """Cuántos días lleva la sección de Horizonte sin actualizarse."""
-    ruta=DATA/'horizonte_state.json'
-    if not ruta.exists(): return None
-    try: guardado=pd.Timestamp(json.loads(ruta.read_text(encoding='utf-8'))['as_of'])
-    except Exception: return None
-    return float((pd.Timestamp(as_of).normalize()-guardado.normalize()).days)
-
-def _registro_afp()->dict|None:
+def _registro_generacional()->dict|None:
     """Lo que el informe y el panel necesitan del registro AFP.
 
-    Lo arma `src.registro_afp.para_informe` y no este módulo: el archivo y
+    Lo arma `src.registro_generacional.para_informe` y no este módulo: el archivo y
     quien lo escribe tienen que ser la misma casa, o el día que cambie el
     formato esto va a leer otra cosa sin fallar. **Y no puede reventar:** un
     fallo de la sección menos crítica del informe —la única sin plata adentro—
@@ -82,7 +74,7 @@ def _registro_afp()->dict|None:
     informe entero con FRED.
     """
     try:
-        from src.registro_afp import para_informe
+        from src.registro_generacional import para_informe
         return para_informe()
     except Exception as e:
         print(f'Registro AFP ilegible ({type(e).__name__}: {e}); el informe sigue.')
@@ -669,7 +661,7 @@ def main()->None:
                 flojas = dentro[dentro.caida_observada.isna() & dentro.caida_por_contraste.isna()
                                 & ~dentro.origen.fillna('').str.startswith('aceptado')]
                 sin_respaldo |= {f"{t} {x.date()}" for x in flojas.fecha_ex}
-    registro_afp=_registro_afp()
+    registro_generacional=_registro_generacional()
     salud, conocidos = revisar_salud(
         as_of=as_of,
         precios_al_dia=bool((as_of.normalize() - pd.Timestamp(prices.date.max()).normalize()).days <= 5),
@@ -686,12 +678,10 @@ def main()->None:
         # bastante corto para que un cambio de régimen se note en vez de
         # diluirse en dos años de historia.
         premio_cdv=premio_cdv(cargar_cdv(),prices_all,desde=as_of-pd.Timedelta(days=365)),
-        # Sobre instrumentos y no sobre cantidades: ver src/operaciones.py.
-        dias_horizonte=_edad_de_horizonte(as_of),
         # Un cron que se apaga no hace ruido: no manda correo, no deja rojo y
         # no deja rastro; el archivo simplemente deja de crecer. Esto va donde
         # Rodrigo ya mira. Ver registro/README.md.
-        registro_afp=(registro_afp['filas'],registro_afp['fecha']) if registro_afp else None,
+        registro_generacional=(registro_generacional['filas'],registro_generacional['fecha']) if registro_generacional else None,
         descalce_real=descalce_real(cargar_operaciones(DATA/'operaciones_reales.csv'),
                                     {n:list(c.ticker) for n,c in
                                      {'Sigma-6':sigma,'Delta-12':delta,'Gamma-6':gamma,'Oro':oro_portfolio}.items()
@@ -706,7 +696,7 @@ def main()->None:
     ingreso=cartera_de_ingreso({'Sigma-6':sigma,'Delta-12':delta,'Gamma-6':gamma,'Oro':oro_portfolio},as_of,costos,simbolos=puerta_cdv)
     (REPORTS/'cartera_de_ingreso.md').write_text(markdown_ingreso(ingreso,as_of),encoding='utf-8')
     ingreso.to_csv(DATA/'cartera_de_ingreso.csv',index=False)
-    md,html=build_public_report(as_of,delta,dmove,coverage,errors,history,gamma=gamma,gamma_moves=gmove,oro=oro_portfolio,oro_moves=omove,movimientos=movimientos_libro,capital_por_pieza=por_pieza,vigencia=vigencia,salud=salud,conocidos=conocidos,ha_entrado=ha_entrado,afp=registro_afp);(REPORTS/'latest_report.md').write_text(md,encoding='utf-8');(REPORTS/'latest_report.html').write_text(html,encoding='utf-8')
+    md,html=build_public_report(as_of,delta,dmove,coverage,errors,history,gamma=gamma,gamma_moves=gmove,oro=oro_portfolio,oro_moves=omove,movimientos=movimientos_libro,capital_por_pieza=por_pieza,vigencia=vigencia,salud=salud,conocidos=conocidos,ha_entrado=ha_entrado,generacional=registro_generacional);(REPORTS/'latest_report.md').write_text(md,encoding='utf-8');(REPORTS/'latest_report.html').write_text(html,encoding='utf-8')
     guardar_publicada(vigente,as_of,PUBLICADA)
     sigma.to_csv(DATA/'portfolio_sigma6.csv',index=False);delta.to_csv(DATA/'portfolio_delta12.csv',index=False);gamma.to_csv(DATA/'portfolio_gamma6.csv',index=False);oro_portfolio.to_csv(DATA/'portfolio_oro.csv',index=False)
     s_audit.to_csv(DATA/'audit_sigma6.csv',index=False);d_audit.to_csv(DATA/'audit_delta12.csv',index=False)

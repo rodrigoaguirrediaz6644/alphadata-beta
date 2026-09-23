@@ -1,4 +1,4 @@
-name: Registro AFP
+name: Ahorro Generacional
 
 # **Registro hacia adelante de la grilla de parametros AFP. No opera nada.**
 #
@@ -13,7 +13,7 @@ name: Registro AFP
 # nada. Lo unico que comparte es el grupo de concurrencia, porque los dos
 # escriben en main y dos push simultaneos se pisan.
 #
-# Y no instala dependencias: `src/registro_afp.py` usa solo biblioteca
+# Y no instala dependencias: `src/registro_generacional.py` usa solo biblioteca
 # estandar. El pin de pandas ya nos rompio corridas antes; un trabajo diario
 # que tiene que seguir andando solo durante anios no deberia depender de eso.
 on:
@@ -68,7 +68,7 @@ jobs:
           SMTP_FROM: ${{ secrets.SMTP_FROM }}
           REPORT_RECIPIENTS: ${{ secrets.REPORT_RECIPIENTS }}
           SIMULAR_AVISO: ${{ inputs.simular_aviso }}
-        run: PYTHONPATH=. python -m src.registro_afp
+        run: PYTHONPATH=. python -m src.registro_generacional
 
       - name: Guardar el dia
         # `always()` porque el paso anterior sale en rojo cuando el aviso no
@@ -79,7 +79,7 @@ jobs:
         run: |
           git config user.name "alphadata-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add registro/afp_senales.csv
+          git add registro/ahorro_generacional.csv
           if git diff --cached --quiet; then
             echo "Sin dias nuevos de cotizacion; no hay nada que guardar."
             exit 0

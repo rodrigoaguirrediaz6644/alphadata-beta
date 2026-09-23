@@ -44,17 +44,14 @@ jobs:
       - name: Descargar y calcular estrategias bursátiles
         run: PYTHONPATH=. python alphadata.py run
 
-      # **Horizonte no puede callar al informe.** Es una pieza secundaria -elige
-      # entre dos fondos de AFP- y su insumo viene de FRED, que no responde
-      # desde los runners de GitHub aunque responda en local. Cuando fallaba,
-      # se llevaba por delante el informe completo y el correo: la cartera, el
-      # panel de salud y la guia de ingreso no salian por un problema de otra
-      # cosa. Que el paso siga en rojo esta bien; que detenga el resto, no.
+      # **Horizonte salio del informe el 23-09-2026.** La reemplazo Ahorro
+      # Generacional, que contesta la misma pregunta -en que fondo esta la
+      # plata previsional- y dos estrategias contestando lo mismo es un valor
+      # con mas de una casa. Ver src/horizonte.py y registro/README.md.
       #
-      # El informe dice si Horizonte quedo viejo, asi que esto no esconde nada.
-      - name: Descargar, calcular e incorporar Estrategia Horizonte
-        continue-on-error: true
-        run: PYTHONPATH=. python -m src.horizonte
+      # Sacarla se llevo con ella la unica consulta a FRED del informe del
+      # viernes: la fuente externa que ya tumbo el correo y el commit una vez.
+      # Ese es el premio, y vale mas que la seccion que se pierde.
 
       - name: Enviar informe semanal
         env:
@@ -86,12 +83,6 @@ jobs:
             data/reconstruccion_historica.csv
             data/dividendos.csv
             data/dividendos_pendientes.csv
-            data/horizonte_state.json
-            data/horizonte_quotes.csv
-            data/horizonte_signals.csv
-            data/horizonte_trades.csv
-            data/horizonte_backtest_summary.csv
-            data/horizonte_annual.csv
             data/recommendations_errors.csv
             data/recommendations_history.csv
             data/coverage_report.csv

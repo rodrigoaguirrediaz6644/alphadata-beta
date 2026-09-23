@@ -37,29 +37,21 @@ que se pueda bajar sola. No hay ninguna hoy: todo lo listado en Chile viaja por
 el mismo feed `.SN`, que está congelado desde el 17-07-2026. Ver
 `DEPENDENCIAS_MANUALES.md`.
 
-## La segunda tarea, que apareció al ensayar en el entorno real
+## La tarea de FRED se cerró sola: la fuente ya no está
 
-**FRED no responde desde los runners de GitHub.** En local devuelve 14.512
-observaciones de NASDAQ y VIX; desde Actions falla los tres intentos, la fuente
-secundaria devuelve 3.703, y la verificación de completitud la rechaza con 138
-días hábiles ausentes —correctamente, porque un backtest sobre una serie con
-huecos publica cifras que nadie puede reproducir—.
+**FRED no respondía desde los runners de GitHub.** En local devolvía 14.512
+observaciones de NASDAQ y VIX; desde Actions fallaba los tres intentos y la
+verificación de completitud la rechazaba con 138 días hábiles ausentes.
+Costó un informe entero antes de que el paso pasara a `continue-on-error`.
 
-Hasta el 22-09-2026 eso **detenía el informe completo y el correo**. Ya no: el
-paso de Horizonte sigue en rojo pero no detiene el resto, y el panel de salud
-avisa si la sección queda congelada más de 21 días.
+**Se cerró el 23-09-2026 sin resolverla, y esa es la forma correcta de
+cerrarla:** Horizonte salió del informe, y FRED era su único consumidor. El
+informe del viernes quedó con **una fuente externa menos** — la misma que ya lo
+había tumbado una vez.
 
-**Qué falta:** una fuente de NASDAQ y VIX que responda desde Actions y pase la
-verificación de completitud. Candidatos sin probar: Stooq, o el propio Yahoo
-pidiendo un rango más largo para que los 138 días hábiles que faltan no sean un
-hueco sino el borde de la serie.
-
-**Condición de cierre:** que una corrida de `update-prices.yml` en GitHub
-Actions termine con el paso de Horizonte en verde.
-
-**Mientras tanto no es urgente**: Horizonte elige entre dos fondos de AFP, no
-toca los $20 millones, y su sección del informe queda con la última fecha buena
-y dicho que está vieja.
+No hay nada que buscar: la fuente alternativa que faltaba ya no hace falta. Si
+alguna vez Horizonte vuelve al informe, la tarea vuelve con ella y está escrita
+acá arriba.
 
 ---
 

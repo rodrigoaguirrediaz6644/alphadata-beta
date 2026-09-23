@@ -93,9 +93,13 @@ es que el libro guarda **hechos** (cuándo se decidió, a qué precio), no
 Cuando cambia una regla, el libro se reconstruye entero con el recorrido, y la
 prueba de aceptación exige que reproduzca las cuatro carteras publicadas.
 
-### Estrategia Horizonte
+### Estrategia Horizonte — retirada del informe el 23-09-2026
 
-Era el candidato obvio y **no tiene el defecto**. `src/horizonte.py` corre como
+**Ya no publica nada**, así que no está en este censo por lo que publica sino
+por lo que enseñó. La reemplazó Ahorro Generacional; ver `registro/README.md`
+y la nota en `src/horizonte.py`.
+
+Era el candidato obvio y **no tenía el defecto**. `src/horizonte.py` corre como
 paso propio del workflow, baja las cuotas de Cuprum y las series de FRED,
 rehace el backtest completo y reescribe todas sus tablas, incluida
 `horizonte_backtest_summary.csv`, que es la forma que acaba de fallar.

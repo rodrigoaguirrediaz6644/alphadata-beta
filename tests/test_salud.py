@@ -110,7 +110,7 @@ def test_el_registro_se_muestra_aunque_este_sano():
     lee. Esta es la excepción: si el registro no aparece, nadie va a abrir el
     CSV para contarle las filas.
     """
-    chequeos, conocidos = revisar(**SANO, registro_afp=(5993, "2026-09-17"))
+    chequeos, conocidos = revisar(**SANO, registro_generacional=(5993, "2026-09-17"))
     assert all(c.sano for c in chequeos)
     for texto in (html(chequeos, conocidos), markdown(chequeos, conocidos)):
         assert "5.993" in texto and "17-09-2026" in texto
@@ -119,9 +119,9 @@ def test_el_registro_se_muestra_aunque_este_sano():
 def test_si_el_registro_dejo_de_crecer_enciende_el_panel():
     """El cron se apaga en silencio; esto es lo que lo vuelve ruidoso."""
     viejo = dict(SANO, as_of=pd.Timestamp("2026-10-15"))
-    chequeos, _ = revisar(**viejo, registro_afp=(5993, "2026-09-17"))
+    chequeos, _ = revisar(**viejo, registro_generacional=(5993, "2026-09-17"))
     malos = [c for c in chequeos if not c.sano]
-    assert [c.nombre for c in malos] == ["Registro AFP"]
+    assert [c.nombre for c in malos] == ["Ahorro Generacional"]
     assert "dejó de crecer" in malos[0].detalle
 
 
@@ -133,11 +133,11 @@ def test_el_umbral_del_registro_no_suena_por_fiestas_patrias():
     """
     assert salud.DIAS_REGISTRO >= 6
     chequeos, _ = revisar(**dict(SANO, as_of=pd.Timestamp("2024-09-23")),
-                          registro_afp=(5000, "2024-09-17"))
+                          registro_generacional=(5000, "2024-09-17"))
     assert all(c.sano for c in chequeos)
 
 
 def test_sin_registro_lo_dice_en_vez_de_callarse():
-    chequeos, conocidos = revisar(**SANO, registro_afp=None)
+    chequeos, conocidos = revisar(**SANO, registro_generacional=None)
     assert all(c.sano for c in chequeos)
     assert "todavía no hay registro" in markdown(chequeos, conocidos)

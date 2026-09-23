@@ -19,7 +19,7 @@ import inspect
 
 import pytest
 
-from src import registro_afp as r
+from src import registro_generacional as r
 
 
 # --------------------------------------------------------------------------

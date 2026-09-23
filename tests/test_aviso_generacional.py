@@ -18,8 +18,8 @@ import re
 
 import pytest
 
-from src import aviso_afp as av
-from src import registro_afp as r
+from src import aviso_generacional as av
+from src import registro_generacional as r
 
 
 def _fila(fecha, posicion, fuera=(), **extra):
@@ -61,7 +61,7 @@ def test_una_transicion_real_manda_al_refugio_y_lo_dice_en_todas_partes():
     """
     a = av.pendiente(_salida())
     assert a["hacia"] == r.REFUGIO and a["desde"] == r.DENTRO
-    assert "cambiar a Fondo E" in av.asunto(a)
+    assert av.asunto(a).startswith("Cambiar a Fondo E")
     assert "CAMBIAR A FONDO E" in av.texto(a)
     assert ">Cambiar a Fondo E</h1>" in av.html(a)
 
@@ -101,6 +101,26 @@ def test_la_materializacion_sale_del_envio_y_no_del_ultimo_dia_con_dato():
     assert a["fecha_dato"] != a["fecha_envio"]
     assert a["materializa"] == av.habiles_adelante(a["fecha_envio"])
     assert a["materializa"] > a["fecha_envio"]
+
+
+def test_el_asunto_empieza_por_la_instruccion_y_no_por_el_nombre():
+    """El nombre de la estrategia va en el cuerpo, donde hay espacio.
+
+    El asunto existe para leerse en la pantalla bloqueada de un telefono, y
+    «Ahorro Generacional:» se come veinte caracteres antes de decir nada util.
+    Si hace falta distinguirlo de otros correos, que lo haga el remitente.
+    """
+    a = av.pendiente(_salida())
+    assert av.asunto(a).startswith("Cambiar a ")
+    for rotulo in ("AFP:", "Ahorro Generacional", "Horizonte"):
+        assert rotulo not in av.asunto(a)
+    # y el ensayo antepone solo su marca, que es lo unico que va antes
+    assert av.asunto(av.ensayo(_historia(("A", ())))).startswith("[ENSAYO] Cambiar a ")
+
+
+def test_el_nombre_de_la_estrategia_va_en_el_cuerpo():
+    h = av.html(av.pendiente(_salida()))
+    assert "Ahorro Generacional" in h
 
 
 def test_el_asunto_lleva_la_fecha_del_envio():

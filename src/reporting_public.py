@@ -237,8 +237,8 @@ def _dias_registro() -> int:
     return DIAS_REGISTRO
 
 
-def _afp_lineas(afp: dict | None, as_of) -> list[str]:
-    """Las líneas de la sección AFP, en texto plano. El HTML las envuelve.
+def _generacional_lineas(g: dict | None, as_of) -> list[str]:
+    """Las líneas de Ahorro Generacional, en texto plano. El HTML las envuelve.
 
     **El encuadre lo hacen el título y lo que se muestra, no un párrafo de
     descargo.** La sección dice qué indica cada configuración y qué está en
@@ -249,51 +249,51 @@ def _afp_lineas(afp: dict | None, as_of) -> list[str]:
     multifondos desaparecen y esto tiene que seguir diciendo la verdad sin que
     nadie edite la plantilla.
     """
-    if afp is None:
+    if g is None:
         return ["- El registro no se pudo leer en esta corrida. El resto del informe no depende de él."]
-    dias = (pd.Timestamp(as_of).normalize() - pd.Timestamp(afp["fecha"]).normalize()).days
-    agresivo, refugio = f"Fondo {afp['agresivo']}", f"Fondo {afp['refugio']}"
+    dias = (pd.Timestamp(as_of).normalize() - pd.Timestamp(g["fecha"]).normalize()).days
+    agresivo, refugio = f"Fondo {g['agresivo']}", f"Fondo {g['refugio']}"
 
     lineas = [f"**Qué dice hoy** — la razón es cuánto le falta al umbral de salida."]
-    for m, senal, razon, _ in afp["medias"]:
+    for m, senal, razon, _ in g["medias"]:
         donde = agresivo if senal == "A" else refugio
         lineas.append(f"- media {m} d · {donde} · razón {_signed(razon)}")
-    if afp["posicion"]:
-        desde = (f" desde el {pd.Timestamp(afp['desde']):%d-%m-%Y}" if afp["desde"] else "")
-        votos = afp["votos"]
+    if g["posicion"]:
+        desde = (f" desde el {pd.Timestamp(g['desde']):%d-%m-%Y}" if g["desde"] else "")
+        votos = g["votos"]
         lineas.append(
-            f"- **En vigor hoy: Fondo {afp['posicion']}**{desde} "
-            f"({votos} de {len(afp['medias'])} indican salir; la regla sale con "
-            f"{afp['votos_para_salir']} o más). Es la posición que corresponde al rezago de "
+            f"- **En vigor hoy: Fondo {g['posicion']}**{desde} "
+            f"({votos} de {len(g['medias'])} indican salir; la regla sale con "
+            f"{g['votos_para_salir']} o más). Es la posición que corresponde al rezago de "
             "ejecución, no la señal de hoy.")
 
-    if afp["acum_a"] is not None:
+    if g["acum_a"] is not None:
         lineas += ["", f"**Cuánto lleva costando** — desde el "
-                       f"{pd.Timestamp(afp['congelado']):%d-%m-%Y}, contra quedarse en "
-                       f"{agresivo} ({_signed(afp['acum_a'])})."]
-        for m, p in afp["peaje"]:
+                       f"{pd.Timestamp(g['congelado']):%d-%m-%Y}, contra quedarse en "
+                       f"{agresivo} ({_signed(g['acum_a'])})."]
+        for m, p in g["peaje"]:
             lineas.append(f"- media {m} d · {_signed(p) if p is not None else '—'}")
-        if afp["acum_voto"] is not None:
+        if g["acum_voto"] is not None:
             lineas.append(f"- **la regla en vigor · "
-                          f"{_signed(afp['acum_voto'] - afp['acum_a'])}**")
+                          f"{_signed(g['acum_voto'] - g['acum_a'])}**")
     else:
         lineas += ["", f"**Cuánto lleva costando** — el registro se congeló el "
-                       f"{pd.Timestamp(afp['congelado']):%d-%m-%Y} y todavía no hay días "
+                       f"{pd.Timestamp(g['congelado']):%d-%m-%Y} y todavía no hay días "
                        "posteriores que medir."]
 
-    estado = (f"{afp['filas']:,}".replace(",", ".") + " días de cotización, el último del "
-              f"{pd.Timestamp(afp['fecha']):%d-%m-%Y}")
+    estado = (f"{g['filas']:,}".replace(",", ".") + " días de cotización, el último del "
+              f"{pd.Timestamp(g['fecha']):%d-%m-%Y}")
     if dias > _dias_registro():
         lineas += ["", f"**El registro dejó de crecer:** {estado}, hace {int(dias)} días."]
     else:
         lineas += ["", f"**El registro** — {estado}."]
-    if afp["aviso"]:
-        lineas.append(f"- Último aviso: {afp['aviso']} ({afp['aviso_estado']}).")
+    if g["aviso"]:
+        lineas.append(f"- Último aviso: {g['aviso']} ({g['aviso_estado']}).")
     return lineas
 
 
-def _afp_html(afp: dict | None, as_of) -> str:
-    lineas = _afp_lineas(afp, as_of)
+def _generacional_html(g: dict | None, as_of) -> str:
+    lineas = _generacional_lineas(g, as_of)
     out, lista = [], []
     for l in lineas:
         if l.startswith("- "):
@@ -473,7 +473,7 @@ def build_public_report(
     salud: list | None = None,
     conocidos: list | None = None,
     ha_entrado: bool = True,
-    afp: dict | None = None,
+    generacional: dict | None = None,
 ) -> tuple[str, str]:
     vacio_cartera = pd.DataFrame(columns=["ticker", "target_weight"])
     vacio_movs = pd.DataFrame(columns=["ticker", "action", "target_weight"])
@@ -605,8 +605,8 @@ def build_public_report(
     <p class="muted">Todos los precios están en pesos. Gamma-6 y el oro se compran en Chile como CDV, así que su resultado ya incluye el efecto del tipo de cambio. El oro no se compra ni se vende por señales: es una posición fija que está para amortiguar las caídas del resto.</p>
     </section>
 
-    <section><h2>Fondos AFP — señal registrada</h2>
-    {_afp_html(afp, as_of)}
+    <section><h2>Ahorro Generacional</h2>
+    {_generacional_html(generacional, as_of)}
     </section>
 
     <section><h2>¿Hay que preocuparse?</h2>
@@ -643,7 +643,7 @@ def build_public_report(
         lines.append(f"- {name}: {_signed(metrics[name]['return'])} desde el {inicio:%d-%m-%Y}; peor caída {pct(metrics[name]['mdd'])}.")
     if not benchmark_usable:
         lines.append("- La comparación con la bolsa chilena no está disponible: la serie del IPSA tiene un salto y quedó fuera hasta corregirla.")
-    lines += ["", "## Fondos AFP — señal registrada", ""] + _afp_lineas(afp, as_of)
+    lines += ["", "## Ahorro Generacional", ""] + _generacional_lineas(generacional, as_of)
     lines += ["", "## ¿Hay que preocuparse?", "", _salud_md(salud, conocidos) if salud else "- Sin panel de salud en esta corrida.", ""]
     lines += ["", "El informe HTML incluye el gráfico y las carteras. La metodología y sus parámetros son información reservada.", ""]
     return "\n".join(lines), html

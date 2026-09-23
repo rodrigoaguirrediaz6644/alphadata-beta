@@ -46,7 +46,7 @@ class Chequeo:
     detalle: str
     # Casi todo lo sano se calla: un panel de veinte filas verdes no se lee.
     # La excepción es lo que hay que ver **aunque esté bien**, porque el número
-    # mismo es la información —cuántas filas lleva el registro AFP— y no sólo
+    # mismo es la información —cuántas filas lleva el registro— y no sólo
     # el semáforo. Va como campo y no como una lista de nombres aparte para
     # que no haya dos lugares donde decidir qué se muestra.
     visible: bool = False
@@ -61,7 +61,7 @@ def revisar(*, as_of, precios_al_dia, series_detenidas, cobertura_incompleta,
             series_recalculadas, series_publicadas, carteras_reproducidas,
             dias_sin_recomendaciones, umbral_vigencia, dividendos_sin_respaldo,
             suite_verde, premio_cdv=None, descalce_real=None,
-            dias_horizonte=None, registro_afp=None) -> tuple[list[Chequeo], list[str]]:
+            registro_generacional=None) -> tuple[list[Chequeo], list[str]]:
     """Consolida lo que ya se verificó en esta corrida. No verifica de nuevo.
 
     `cobertura_incompleta` y `dividendos_sin_respaldo` son conjuntos de claves,
@@ -104,8 +104,7 @@ def revisar(*, as_of, precios_al_dia, series_detenidas, cobertura_incompleta,
         Chequeo("Pruebas", bool(suite_verde), "la suite pasó" if suite_verde else "la suite no pasó"),
         _premio(premio_cdv),
         _cuenta_real(descalce_real),
-        _horizonte(dias_horizonte),
-        _registro(registro_afp, as_of),
+        _registro(registro_generacional, as_of),
     ], conocidos
 
 
@@ -120,7 +119,7 @@ DIAS_REGISTRO = 7
 
 
 def _registro(estado, as_of) -> Chequeo:
-    """Que el registro AFP siga creciendo.
+    """Que el registro de Ahorro Generacional siga creciendo.
 
     Es el modo de falla que este proyecto vino a eliminar, en su forma más
     pura: **un cron de GitHub Actions no muere haciendo ruido.** Los flujos
@@ -133,43 +132,18 @@ def _registro(estado, as_of) -> Chequeo:
     que acordarse de revisar.
     """
     if estado is None:
-        return Chequeo("Registro AFP", True, "todavía no hay registro", visible=True)
+        return Chequeo("Ahorro Generacional", True, "todavía no hay registro", visible=True)
     filas, ultima = estado
     dias = (pd.Timestamp(as_of).normalize() - pd.Timestamp(ultima).normalize()).days
     cuantas = f"{filas:,}".replace(",", ".")
     if dias > DIAS_REGISTRO:
-        return Chequeo("Registro AFP", False,
+        return Chequeo("Ahorro Generacional", False,
                        f"la última fila es del {_fecha(ultima)}, hace {int(dias)} días: "
                        "el registro dejó de crecer. Revisar si el flujo diario sigue "
                        "activo en Actions", visible=True)
-    return Chequeo("Registro AFP", True,
+    return Chequeo("Ahorro Generacional", True,
                    f"{cuantas} días de cotización, el último del {_fecha(ultima)}",
                    visible=True)
-
-
-# Horizonte se evalúa una vez al mes y sus cuotas se publican con días de
-# atraso, así que tres semanas es lo que distingue «viene lento» de «dejó de
-# actualizarse».
-DIAS_HORIZONTE = 21
-
-
-def _horizonte(dias) -> Chequeo:
-    """Que Horizonte no haya quedado viejo sin que nadie lo note.
-
-    Su insumo externo viene de FRED, que **no responde desde los runners de
-    GitHub** aunque responda en local. Antes esa falla detenía el informe
-    completo, lo que era peor pero al menos era ruidoso. Ahora el informe sale
-    igual —una pieza secundaria no puede callar a la principal— y esto es lo
-    que impide que salir igual se vuelva salir en silencio con una sección
-    congelada.
-    """
-    if dias is None:
-        return Chequeo("Horizonte", True, "sin estado guardado todavía")
-    if dias > DIAS_HORIZONTE:
-        return Chequeo("Horizonte", False,
-                       f"su última actualización tiene {int(dias)} días: la sección del "
-                       "informe está congelada. Revisar si FRED respondió en la última corrida")
-    return Chequeo("Horizonte", True, f"actualizado hace {int(dias)} días")
 
 
 def _cuenta_real(descalce) -> Chequeo:
@@ -226,7 +200,7 @@ def _premio(p) -> Chequeo:
 def _visibles(chequeos: list[Chequeo]) -> str:
     """Lo que se muestra aunque este sano, porque el numero es la informacion."""
     dichos = [c.detalle for c in chequeos if c.visible and c.sano]
-    return "".join(f" Registro AFP: {d}." for d in dichos)
+    return "".join(f" Ahorro Generacional: {d}." for d in dichos)
 
 
 def _apartados(conocidos: list[str]) -> str:
