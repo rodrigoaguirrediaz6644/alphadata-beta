@@ -15,13 +15,23 @@ la posicion que indicaria cada configuracion, junto con el valor cuota del
 Fondo A y de los dos refugios. Con datos que nadie miro antes de elegir los
 parametros, el registro puede hacer lo que el backtest ya no puede.
 
-**Y hay que decirlo ahora, no despues: esto no va a decir nada hasta que haya
-una caida, y eso puede tardar anios.** Escrito de antemano para que a nadie se
-le ocurra leer una racha tranquila como confirmacion.
+**Y hay que decirlo ahora, no despues: sobre la proteccion esto no va a decir
+nada hasta que haya una caida, y eso puede tardar anios.** Escrito de antemano
+para que a nadie se le ocurra leer una racha tranquila como confirmacion.
 
-No toca `data/`, `reports/`, el pipeline ni el informe del viernes. Solo
-biblioteca estandar, a proposito: el trabajo diario no deberia caerse porque un
-paquete cambio de version.
+**Pero sobre el costo si dice algo desde el primer mes.** El trato tiene dos
+mitades: cuanto ahorra en las caidas y cuanto cuesta en los anios tranquilos,
+que se paga en latigazos cada vez que la senal sale y vuelve sin que pasara
+nada. Esa segunda mitad no necesita ninguna crisis, y por eso el archivo lleva
+el retorno acumulado de cada configuracion contra el de quedarse en el Fondo A.
+
+No escribe en `data/` ni en `reports/` ni toca el pipeline. El informe del
+viernes **si lo lee**, para decir cuantas filas lleva y avisar si dejo de
+crecer: un cron que se apaga no hace ruido, y ese es justo el modo de falla que
+este proyecto vino a eliminar.
+
+Solo biblioteca estandar, a proposito: el trabajo diario no deberia caerse
+porque un paquete cambio de version.
 """
 from __future__ import annotations
 
@@ -72,7 +82,11 @@ FUENTE = "https://raw.githubusercontent.com/collabmarket/data_afp/master/data/VC
 # esta linea es la que dice que no lo es.
 CONGELADO = "2026-09-23"
 
-SALIDA = Path("registro/afp_senales.csv")
+# Absoluta y no relativa al directorio de trabajo: el informe del viernes la
+# lee desde el pipeline, que corre desde otra parte, y una ruta relativa
+# devolveria "no hay registro" en vez de fallar. Eso convertiria la alarma en
+# lo contrario de una alarma.
+SALIDA = Path(__file__).resolve().parents[1] / "registro" / "afp_senales.csv"
 
 DENTRO, FUERA = "A", "fuera"
 
@@ -185,6 +199,68 @@ def columnas() -> list[str]:
     cols = ["fecha"] + [f"vc_{f.lower()}" for f in (DENTRO, *REFUGIOS)]
     for m in MEDIAS:
         cols += [f"razon_{m}", f"senal_{m}", f"pos_{m}"]
+    cols.append("acum_a")
+    for m in MEDIAS:
+        cols += [f"acum_{m}_{r.lower()}" for r in REFUGIOS]
+    return cols
+
+
+def _base(fechas: list[str], congelado: str | None = None) -> int:
+    """El ultimo dia anterior o igual al congelamiento. Desde ahi se acumula.
+
+    `congelado` se resuelve adentro y no como valor por defecto: un valor por
+    defecto captura la constante en el momento de definir la funcion, y
+    entonces CONGELADO pasa a tener dos casas que pueden discrepar. Lo
+    descubri probando, cuando el peaje salio vacio con una fecha movida.
+    """
+    congelado = congelado or CONGELADO
+    base = 0
+    for i, f in enumerate(fechas):
+        if f <= congelado:
+            base = i
+    return base
+
+
+def acumulados(coti, grilla, congelado: str | None = None) -> dict[str, list[str]]:
+    """Retorno acumulado desde el congelamiento: el de cada configuracion y el del Fondo A.
+
+    **Esta es la mitad del trato que si se puede medir sin esperar una crisis.**
+    La estrategia tiene dos mitades: cuanto ahorra en las caidas, que no se
+    sabra hasta que haya una, y **cuanto cuesta en los anios tranquilos**, que
+    se paga en latigazos cada vez que la senal sale y vuelve sin que pasara
+    nada. Esa segunda mitad empieza a medirse el primer mes.
+
+    Y da una pregunta que el archivo puede contestar mucho antes que la otra:
+    **de las cinco medias, cual paga menos peaje en calma.** Si una se despega
+    hacia abajo en dos anios de mercado tranquilo, queda descartada sin esperar
+    el desplome.
+
+    Queda guardado y no derivado a mano despues: si hay que reconstruirlo,
+    alguien va a reconstruirlo distinto.
+    """
+    congelado = congelado or CONGELADO
+    fechas = [f for f, _ in coti]
+    base = _base(fechas, congelado)
+    n = len(coti)
+
+    def acumular(fondo_por_dia) -> list[str]:
+        out, acc = [""] * n, 1.
+        for i in range(base + 1, n):
+            f = fondo_por_dia(i)
+            if f is None:
+                out[i] = ""
+                continue
+            acc *= coti[i][1][f] / coti[i - 1][1][f]
+            out[i] = f"{acc - 1:.6f}"
+        return out
+
+    cols = {"acum_a": acumular(lambda i: DENTRO)}
+    for m in MEDIAS:
+        pos = grilla[m][2]
+        for ref in REFUGIOS:
+            cols[f"acum_{m}_{ref.lower()}"] = acumular(
+                lambda i, _p=pos, _r=ref: DENTRO if _p[i] == DENTRO else (
+                    _r if _p[i] == FUERA else None))
     return cols
 
 
@@ -206,6 +282,8 @@ def construir(filas=None) -> list[dict]:
         s = histeresis(r)
         grilla[m] = (r, s, ejecutada(s))
 
+    acum = acumulados(coti, grilla)
+
     salida = []
     for i, (fecha, v) in enumerate(coti):
         fila = {"fecha": fecha}
@@ -216,6 +294,8 @@ def construir(filas=None) -> list[dict]:
             fila[f"razon_{m}"] = "" if r[i] is None else f"{r[i]:.6f}"
             fila[f"senal_{m}"] = s[i] or ""
             fila[f"pos_{m}"] = p[i] or ""
+        for c, vals in acum.items():
+            fila[c] = vals[i]
         salida.append(fila)
     return salida
 
@@ -272,8 +352,24 @@ def resumen(filas: list[dict]) -> str:
     partes += ["", f"  {fuera} de {len(MEDIAS)} configuraciones estarian fuera del Fondo A.",
                f"  {cuentan} dias cuentan como evidencia (posteriores a {CONGELADO});",
                f"  los otros {len(filas) - cuentan} son la historia sobre la que se",
-               "  eligieron los parametros y no discriminan nada.",
-               "  Nada se opera. Nada se recalibra."]
+               "  eligieron los parametros y no discriminan nada."]
+
+    # El peaje: la mitad del trato que no necesita una crisis para medirse.
+    if u["acum_a"]:
+        a = float(u["acum_a"])
+        partes += ["", f"  Desde {CONGELADO}, el Fondo A acumula {a:+.2%}.",
+                   f"  Peaje de cada configuracion contra quedarse ahi:",
+                   f"    {'media':>6}" + "".join(f"{'refugio ' + r:>14}" for r in REFUGIOS)]
+        for m in MEDIAS:
+            celdas = []
+            for r in REFUGIOS:
+                v = u[f"acum_{m}_{r.lower()}"]
+                celdas.append(f"{float(v) - a:+.2%}" if v else "—")
+            partes.append(f"    {m:>6}" + "".join(f"{c:>14}" for c in celdas))
+        partes.append("  En calma el peaje deberia ser negativo y chico; ahi se ve cual"
+                      " media cuesta menos.")
+
+    partes.append("  Nada se opera. Nada se recalibra.")
     return "\n".join(partes)
 
 

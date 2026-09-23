@@ -71,6 +71,17 @@ def _edad_de_horizonte(as_of)->float|None:
     except Exception: return None
     return float((pd.Timestamp(as_of).normalize()-guardado.normalize()).days)
 
+def _estado_del_registro()->tuple[int,str]|None:
+    """Cuántas filas lleva el registro AFP y de cuándo es la última.
+
+    Se lee con `src.registro_afp.leer` y no con un `read_csv` acá: el archivo y
+    quien lo escribe tienen que ser la misma casa, o el día que cambie el
+    formato esto va a leer otra cosa sin fallar.
+    """
+    from src.registro_afp import leer as leer_registro
+    filas=leer_registro()
+    return (len(filas),filas[-1]['fecha']) if filas else None
+
 def _solo_operables(universe:pd.DataFrame,puerta:pd.DataFrame)->pd.DataFrame:
     """El universo con el símbolo borrado donde la puerta no dejó pasar.
 
@@ -670,6 +681,10 @@ def main()->None:
         premio_cdv=premio_cdv(cargar_cdv(),prices_all,desde=as_of-pd.Timedelta(days=365)),
         # Sobre instrumentos y no sobre cantidades: ver src/operaciones.py.
         dias_horizonte=_edad_de_horizonte(as_of),
+        # Un cron que se apaga no hace ruido: no manda correo, no deja rojo y
+        # no deja rastro; el archivo simplemente deja de crecer. Esto va donde
+        # Rodrigo ya mira. Ver registro/README.md.
+        registro_afp=_estado_del_registro(),
         descalce_real=descalce_real(cargar_operaciones(DATA/'operaciones_reales.csv'),
                                     {n:list(c.ticker) for n,c in
                                      {'Sigma-6':sigma,'Delta-12':delta,'Gamma-6':gamma,'Oro':oro_portfolio}.items()

@@ -184,3 +184,57 @@ def test_el_registro_commiteado_tiene_la_forma_de_la_grilla_actual():
     fechas = [f["fecha"] for f in filas]
     assert fechas == sorted(fechas), "el registro tiene que estar ordenado"
     assert len(set(fechas)) == len(fechas), "hay fechas repetidas"
+
+
+# --------------------------------------------------------------------------
+# El peaje: la mitad del trato que no necesita una crisis
+# --------------------------------------------------------------------------
+
+def test_el_acumulado_arranca_en_el_congelamiento_y_no_antes():
+    """Antes del congelamiento no hay nada que acumular: esa historia ya la vimos."""
+    serie = _serie(300)
+    congelado = serie[200][0]
+    coti = r.de_cotizacion(serie)
+    grilla = {m: (lambda x: (x, r.histeresis(x), r.ejecutada(r.histeresis(x))))(
+        r.razones([v["A"] for _, v in coti], m)) for m in r.MEDIAS}
+    acum = r.acumulados(coti, grilla, congelado=congelado)
+    fechas = [f for f, _ in coti]
+    corte = fechas.index(congelado)
+    assert acum["acum_a"][corte] == ""
+    assert acum["acum_a"][corte + 1] != ""
+
+
+def test_el_acumulado_del_fondo_a_es_el_del_valor_cuota():
+    """Sin trucos: si la columna no reproduce la cuota, no sirve de referencia."""
+    serie = _serie(300)
+    congelado = serie[200][0]
+    coti = r.de_cotizacion(serie)
+    acum = r.acumulados(coti, {m: (None, None, [None] * len(coti)) for m in r.MEDIAS},
+                        congelado=congelado)
+    esperado = coti[-1][1]["A"] / coti[200][1]["A"] - 1
+    assert float(acum["acum_a"][-1]) == pytest.approx(esperado, abs=1e-6)
+
+
+def test_una_configuracion_que_nunca_sale_iguala_al_fondo_a(monkeypatch):
+    """Es el control: si difiere sin haberse movido, el calculo esta mal."""
+    serie = _serie(400)                  # sube siempre, ninguna senal sale
+    monkeypatch.setattr(r, "CONGELADO", serie[300][0])
+    ultima = r.construir(serie)[-1]
+    assert ultima["acum_a"]
+    for m in r.MEDIAS:
+        assert ultima[f"acum_{m}_e"] == ultima["acum_a"]
+
+
+def test_el_congelamiento_tiene_una_sola_casa(monkeypatch):
+    """Un valor por defecto captura la constante al definir la funcion.
+
+    Eso le daria a CONGELADO dos casas que pueden discrepar, que es el defecto
+    que UN_VALOR_UNA_CASA.md nombra. Lo encontre probando: el peaje salia vacio
+    al mover la fecha.
+    """
+    coti = r.de_cotizacion(_serie(300))
+    fechas = [f for f, _ in coti]
+    monkeypatch.setattr(r, "CONGELADO", fechas[100])
+    assert r._base(fechas) == 100
+    assert r.acumulados(coti, {m: (None, None, [None] * len(coti))
+                              for m in r.MEDIAS})["acum_a"][101] != ""

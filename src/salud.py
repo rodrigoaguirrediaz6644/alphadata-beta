@@ -44,6 +44,12 @@ class Chequeo:
     nombre: str
     sano: bool
     detalle: str
+    # Casi todo lo sano se calla: un panel de veinte filas verdes no se lee.
+    # La excepción es lo que hay que ver **aunque esté bien**, porque el número
+    # mismo es la información —cuántas filas lleva el registro AFP— y no sólo
+    # el semáforo. Va como campo y no como una lista de nombres aparte para
+    # que no haya dos lugares donde decidir qué se muestra.
+    visible: bool = False
 
 
 def _fecha(valor) -> str:
@@ -55,7 +61,7 @@ def revisar(*, as_of, precios_al_dia, series_detenidas, cobertura_incompleta,
             series_recalculadas, series_publicadas, carteras_reproducidas,
             dias_sin_recomendaciones, umbral_vigencia, dividendos_sin_respaldo,
             suite_verde, premio_cdv=None, descalce_real=None,
-            dias_horizonte=None) -> tuple[list[Chequeo], list[str]]:
+            dias_horizonte=None, registro_afp=None) -> tuple[list[Chequeo], list[str]]:
     """Consolida lo que ya se verificó en esta corrida. No verifica de nuevo.
 
     `cobertura_incompleta` y `dividendos_sin_respaldo` son conjuntos de claves,
@@ -99,7 +105,46 @@ def revisar(*, as_of, precios_al_dia, series_detenidas, cobertura_incompleta,
         _premio(premio_cdv),
         _cuenta_real(descalce_real),
         _horizonte(dias_horizonte),
+        _registro(registro_afp, as_of),
     ], conocidos
+
+
+# Siete días. **Medido, no elegido:** el hueco más largo entre dos días de
+# cotización consecutivos desde 2021 es de seis —Fiestas Patrias de 2024, del
+# 17 al 23 de septiembre— y el percentil 99 es cuatro. Con tres días, que es lo
+# natural de pedir, la alarma estaría roja cada 18 de septiembre, cada Navidad
+# y en varios fines de semana largos, y una alarma que suena por el calendario
+# deja de ser una alarma. Con siete no suena nunca por una razón conocida y
+# agarra un cron muerto dentro de la semana.
+DIAS_REGISTRO = 7
+
+
+def _registro(estado, as_of) -> Chequeo:
+    """Que el registro AFP siga creciendo.
+
+    Es el modo de falla que este proyecto vino a eliminar, en su forma más
+    pura: **un cron de GitHub Actions no muere haciendo ruido.** Los flujos
+    programados se deshabilitan solos cuando el repositorio queda quieto, y una
+    corrida que deja de dispararse no manda correo, no deja rojo y no deja
+    rastro. Simplemente el archivo deja de crecer, y como nadie lo mira a
+    diario, se descubre el día que se necesita.
+
+    Por eso el aviso va donde Rodrigo ya mira, y no en un panel nuevo que haya
+    que acordarse de revisar.
+    """
+    if estado is None:
+        return Chequeo("Registro AFP", True, "todavía no hay registro", visible=True)
+    filas, ultima = estado
+    dias = (pd.Timestamp(as_of).normalize() - pd.Timestamp(ultima).normalize()).days
+    cuantas = f"{filas:,}".replace(",", ".")
+    if dias > DIAS_REGISTRO:
+        return Chequeo("Registro AFP", False,
+                       f"la última fila es del {_fecha(ultima)}, hace {int(dias)} días: "
+                       "el registro dejó de crecer. Revisar si el flujo diario sigue "
+                       "activo en Actions", visible=True)
+    return Chequeo("Registro AFP", True,
+                   f"{cuantas} días de cotización, el último del {_fecha(ultima)}",
+                   visible=True)
 
 
 # Horizonte se evalúa una vez al mes y sus cuotas se publican con días de
@@ -178,6 +223,12 @@ def _premio(p) -> Chequeo:
     return Chequeo("Premio del CDV", True, f"{cuanto} ± {error}; {cierre}")
 
 
+def _visibles(chequeos: list[Chequeo]) -> str:
+    """Lo que se muestra aunque este sano, porque el numero es la informacion."""
+    dichos = [c.detalle for c in chequeos if c.visible and c.sano]
+    return "".join(f" Registro AFP: {d}." for d in dichos)
+
+
 def _apartados(conocidos: list[str]) -> str:
     if not conocidos:
         return ""
@@ -192,7 +243,7 @@ def html(chequeos: list[Chequeo], conocidos: list[str] | None = None) -> str:
     if not malos:
         return ('<p class="calm"><strong>Los datos están sanos y los cálculos cuadran.</strong> '
                 f'Pasaron las {len(chequeos)} verificaciones de esta corrida.'
-                f'{_apartados(conocidos or [])}</p>')
+                f'{_visibles(chequeos)}{_apartados(conocidos or [])}</p>')
     filas = "".join(f"<li><strong>{c.nombre}:</strong> {c.detalle}</li>" for c in malos)
     return (f'<div class="warn"><strong>Hay {len(malos)} '
             f'{"verificación que no pasó" if len(malos) == 1 else "verificaciones que no pasaron"}:'
@@ -203,6 +254,7 @@ def markdown(chequeos: list[Chequeo], conocidos: list[str] | None = None) -> str
     malos = [c for c in chequeos if not c.sano]
     if not malos:
         return (f"- Los datos están sanos y los cálculos cuadran ({len(chequeos)} verificaciones)."
+                + _visibles(chequeos)
                 + (f" {len(conocidos)} asuntos conocidos apartados: {', '.join(conocidos)}."
                    if conocidos else ""))
     return "\n".join(f"- **{c.nombre}:** {c.detalle}" for c in malos)
