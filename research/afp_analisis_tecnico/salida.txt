@@ -1,0 +1,81 @@
+##############################################################################
+# 1. LAS TRES IMAGENES, REPRODUCIDAS
+##############################################################################
+  ventana del grafico: 2025-05-20 a 2026-09-20
+  imagen 1  Habitat-A +28.0%   Habitat-E +2.1%   (la imagen: ~+28% y ~+2,5%)
+  imagen 2  spread en niveles, final 25.9   (la imagen: ~24)
+  imagen 3  variacion de 20 dias de A/E: rango [-3.03%, 4.85%], media +1.00%
+            (la imagen: rango ~[-3%, +4%] y lineas rojas en +1% y -1%)
+
+  **La linea roja de +1% esta en la MEDIA de la serie, no en un extremo.**
+
+##############################################################################
+# 2. LA PRUEBA QUE DECIDE SI LAS BANDAS SIGNIFICAN ALGO
+##############################################################################
+  spread en niveles (imagen 2)       ADF p = 0.1967  -> NO estacionaria
+  variacion 20 dias (imagen 3)       ADF p = 0.0000  -> estacionaria
+
+  Las bandas de Bollinger suponen que la serie vuelve a su media. La de la
+  imagen 2 **no vuelve**: tiene tendencia. Que toque la banda superior es
+  lo que hace una serie que sube, no una senal de nada.
+  Tiempo que pasa sobre su media movil: 56%
+
+##############################################################################
+# 3. ¿LA POSICION EN LAS BANDAS ANTICIPA ALGO?
+##############################################################################
+  %B = donde esta la serie dentro de sus bandas. Si anticipara, %B alto
+  deberia predecir que A rinde MENOS que E en adelante.
+
+     horizonte     correlacion con lo que viene        n
+        5 dias                            0.050     8773
+       10 dias                            0.046     8768
+       20 dias                            0.023     8758
+       60 dias                            0.026     8718
+
+  **Cero, y con el signo al reves del que haria falta.** Esto no descarta
+  una regla: descarta TODAS las reglas construidas sobre estas bandas,
+  en cualquier direccion y con cualquier umbral.
+
+##############################################################################
+# 4. LAS REGLAS QUE ESOS GRAFICOS IMPLICAN, MEDIDAS
+##############################################################################
+
+  --- HABITAT ---
+  regla                                anual   peor caida  cambios/anio
+  reversion: banda alta -> E          +8,14%      -29,68%          10.7
+  tendencia: banda alta -> A          +8,78%      -28,89%          10.6
+  lineas rojas: sobre +1% -> E        +5,79%      -42,83%          11.3
+  lineas rojas: sobre +1% -> A       +11,23%      -17,50%          11.3
+  comprar A y no mirar               +10,06%      -42,71%           0.0
+  comprar E y no mirar                +6,89%      -21,18%           0.0
+
+  --- CUPRUM ---
+  regla                                anual   peor caida  cambios/anio
+  reversion: banda alta -> E          +7,14%      -40,31%           9.9
+  tendencia: banda alta -> A          +9,53%      -19,74%           9.9
+  lineas rojas: sobre +1% -> E        +5,17%      -44,61%          10.7
+  lineas rojas: sobre +1% -> A       +11,66%      -17,33%          10.7
+  comprar A y no mirar               +10,02%      -44,00%           0.0
+  comprar E y no mirar                +6,72%      -20,81%           0.0
+
+##############################################################################
+# 5. LA UNICA QUE GANA, PARTIDA EN PEDAZOS
+##############################################################################
+  regla: variacion de 20 dias sobre +1% -> Fondo A, bajo -1% -> Fondo E
+
+  tramo                          regla   Fondo A   diferencia
+  2002-2007                    +18,99%   +21,05%       -2,06%
+  la crisis 2007-2009           +0,81%   -28,82%      +29,63%  <-- una sola
+  2009-2013                    +15,27%   +13,22%       +2,05%
+  2014-2019                     +6,91%    +9,78%       -2,87%
+  2020 (covid)                  +6,59%    +4,62%       +1,97%
+  2021-2026                     +9,32%   +11,21%       -1,90%
+  los 16 meses del canal        +9,48%   +19,89%      -10,41%
+
+  **Toda la ventaja esta en un episodio.** En cuatro de los otros seis
+  tramos la regla pierde, incluido el que el canal esta mostrando.
+
+  peor caida: regla -17,50% contra Fondo A -42,71%
+  tiempo en Fondo A: 58%
+
+  grafico en research\afp_analisis_tecnico\regla_contra_no_hacer_nada.png
