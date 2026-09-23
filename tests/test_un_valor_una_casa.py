@@ -121,3 +121,48 @@ def test_el_simbolo_del_cdv_vive_en_una_columna_y_no_dentro_del_nombre():
     assert us.loc[us.alphadata_ticker == "BAC", "cdv_ticker"].iloc[0] == "BACCL"
     # Y lo que no se encontro queda vacio, no adivinado.
     assert us.cdv_ticker.fillna("").eq("").sum() >= 1
+
+
+# --------------------------------------------------------------------------
+# Los documentos publicados contra la casa del costo
+# --------------------------------------------------------------------------
+
+# Números que la medición desmintió y que no pueden volver a aparecer como
+# vigentes. El de $1.990 era un supuesto escrito en el código; el 0,1% de los
+# CDV lo desmintió la boleta de una orden real de IAUCL. Los dos sobrevivieron
+# meses en la documentación después de corregirse en la configuración, que es
+# la misma falla de siempre: una copia que se queda atrás.
+REFUTADOS = ("$1.990", "0,1% por lado")
+
+# Documentos que describen lo que el sistema hace **hoy**. Los que narran la
+# historia del proyecto —UN_VALOR_UNA_CASA, README— citan los números viejos a
+# propósito y quedan fuera.
+VIGENTES = ("ESTRATEGIAS_ALPHADATA_v2.md", "GUIA_INGRESO.md", "GUIA_OPERACION.md")
+
+
+def test_ningun_documento_vigente_repite_un_numero_refutado():
+    """La prueba lee la configuración, no una copia de la configuración.
+
+    Entra el número real por un lado y el documento por el otro, y si alguien
+    escribe a mano una tarifa que la medición desmintió, falla.
+    """
+    modelo = json.loads(CONFIG.read_text(encoding="utf-8"))["transaction_cost"]
+    minimo = f"${modelo['minimum_fee_clp']:,.2f}".replace(",", "@").replace(".", ",").replace("@", ".")
+    for nombre in VIGENTES:
+        ruta = RAIZ / nombre
+        if not ruta.exists():
+            continue
+        texto = ruta.read_text(encoding="utf-8")
+        for malo in REFUTADOS:
+            assert malo not in texto, (
+                f"{nombre} repite {malo!r}, que la medición desmintió. "
+                f"El mínimo vigente es {minimo} y la tasa {modelo['rate']:.4%}; "
+                "los dos viven en config/runtime.v2.json.")
+
+
+def test_la_tarifa_del_documento_de_metodologia_es_la_de_la_configuracion():
+    """Si el documento y la configuración discrepan, el lector cree al documento."""
+    modelo = json.loads(CONFIG.read_text(encoding="utf-8"))["transaction_cost"]
+    tasa = f"{modelo['rate']:.4%}".replace(".", ",").rstrip("0").rstrip(",")
+    texto = (RAIZ / "ESTRATEGIAS_ALPHADATA_v2.md").read_text(encoding="utf-8")
+    assert tasa in texto, f"la metodología no menciona la tasa vigente {tasa}"

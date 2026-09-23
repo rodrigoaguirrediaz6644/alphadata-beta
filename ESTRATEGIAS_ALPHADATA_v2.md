@@ -62,7 +62,7 @@ No existen stops intrames ni decisiones por noticias.
 
 ### Costos
 
-Delta-12 utiliza el mismo modelo Trii/Racional de Sigma-6: 0,1785% sobre el monto transado y tarifa mínima de $1.990 cuando corresponda. Los backtests sin capital definido no incluyen la tarifa mínima.
+Delta-12 utiliza el mismo modelo Trii/Racional de Sigma-6: 0,1785% sobre el monto transado y tarifa mínima de **$999,99** cuando corresponda. Los backtests sin capital definido no incluyen la tarifa mínima.
 
 ## 2. Gamma-6
 
@@ -124,7 +124,7 @@ Se vende en la sesión siguiente a la revisión mensual cuando la acción deja d
 
 ### Moneda y costos
 
-Los indicadores se calculan sobre el precio en dólares: el tipo de cambio es un factor común y no altera el orden entre acciones. La valorización, el NAV y los resultados publicados están en pesos, convertidos con el tipo de cambio diario `USDCLP`, de modo que incluyen el efecto cambiario que enfrenta un inversionista local. El costo aplicado es 0,1% por lado, el spread que cobra la plataforma en acciones de Estados Unidos, sobre la misma fórmula de rotación que las demás estrategias.
+Los indicadores se calculan sobre el precio en dólares: el tipo de cambio es un factor común y no altera el orden entre acciones. La valorización, el NAV y los resultados publicados están en pesos, convertidos con el tipo de cambio diario `USDCLP`, de modo que incluyen el efecto cambiario que enfrenta un inversionista local. El costo aplicado es **0,1785% por lado**, el mismo de la acción chilena: la boleta de una orden real de IAUCL —que es CDV— lo confirmó al peso, y desmintió el 0,1% que este documento decía antes. Sale de `config/runtime.v2.json` y no está escrito acá; sobre la misma fórmula de rotación que las demás estrategias.
 
 ### Origen y validación pendiente
 
@@ -150,7 +150,7 @@ En el estudio de `research/etf_multiactivo/` el oro fue el único instrumento de
 
 ### Moneda, costos y fecha de apertura
 
-La valorización es en pesos, convertida con el tipo de cambio diario `USDCLP` saneado por `sanear_fx`, de modo que el resultado publicado incluye el efecto cambiario que enfrenta un inversionista local. El costo es 0,1% por lado, pagado esencialmente una sola vez al abrir, porque la rotación esperada es nula. La fecha de apertura registrada es la fecha en que la posición entra en seguimiento oficial, nunca la primera fecha disponible del instrumento: fechar la compra en el nacimiento del ETF inventaría una rentabilidad que nadie obtuvo.
+La valorización es en pesos, convertida con el tipo de cambio diario `USDCLP` saneado por `sanear_fx`, de modo que el resultado publicado incluye el efecto cambiario que enfrenta un inversionista local. El costo es **0,1785% por lado**, pagado esencialmente una sola vez al abrir, porque la rotación esperada es nula. La fecha de apertura registrada es la fecha en que la posición entra en seguimiento oficial, nunca la primera fecha disponible del instrumento: fechar la compra en el nacimiento del ETF inventaría una rentabilidad que nadie obtuvo.
 
 ## 4. Conjunto AlphaData
 
@@ -265,6 +265,6 @@ histórico; las variaciones nuevas se encadenan desde el valor acumulado vigente
 - Reconstruir el universo histórico sin sesgo de supervivencia.
 - Incorporar límites sectoriales con un mapa histórico confiable.
 - Incorporar deslizamiento dependiente del volumen.
-- Definir de forma verificable cuándo aplica la tarifa mínima de $1.990.
+- ~~Definir de forma verificable cuándo aplica la tarifa mínima.~~ **Cerrado:** son $999,99 y aplica bajo $560.218 por operación, que es mínimo/tasa y se deriva, no se guarda. Ver `src.ingreso.umbral_minimo`.
 - Completar validación prospectiva de seis a doce meses.
 - Realizar revisión legal del lenguaje comercial y las advertencias.

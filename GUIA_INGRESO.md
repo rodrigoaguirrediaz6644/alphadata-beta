@@ -182,10 +182,13 @@ Para cada posición vigente:
 - **El costo del par entrada-salida en ese plazo**, en pesos, como porcentaje
   de la posición y anualizado.
 
-Ese último es el que cambia una decisión. Con el mínimo de $1.990 por
-operación, **VAPORES cuesta 0,80% por nueve semanas de tenencia —4,3%
-anualizado— y BCI cuesta 0,87% repartido en diez meses, 1,1% anualizado.** El
-mismo porcentaje, cuatro veces el costo por mes mantenido.
+Ese último es el que cambia una decisión, y por eso las cifras salen de la
+tabla generada y no escritas acá: **este documento llevó durante meses un
+mínimo que la medición desmintió** —el vigente es $999,99 y vive en
+`config/runtime.v2.json`— y toda cifra copiada a mano quedó al doble sin que
+nada avisara. Dos posiciones con el mismo costo porcentual pueden tener cuatro
+veces el costo por mes mantenido según cuánto se queden, y eso es lo que hay
+que mirar en la columna anualizada de `reports/cartera_de_ingreso.md`.
 
 **Es información, no un filtro.** La decisión de comprar la cartera completa
 está tomada y medida —ver más arriba— y saltarse las que parezcan caras es

@@ -61,6 +61,30 @@ vuelta: **entre esas dos no se distingue.**
 
 ### Después, con la comisión mínima de $1.990 sobre $5.000.000
 
+> **Nota del 23-09-2026: estas cifras se calcularon con $1.990, y el mínimo real
+> es $999,99.** Lo desmintieron cuatro órdenes reales de Trii y una boleta
+> ejecutada de IAUCL. La tabla de abajo **no se corrigió en su lugar**, porque
+> reescribir el script sin reescribir el resultado deja el archivo mintiendo con
+> más convicción —ver `UN_VALOR_UNA_CASA.md`—.
+>
+> **Lo que el error cambia, medido:**
+>
+> - El umbral bajo el cual manda el mínimo baja de **$1.114.846 a $560.218**.
+>   Con las posiciones de este estudio, eso significa que **Gamma-6 y Sigma-6
+>   dejan de estar atados al mínimo** —$833.333 por posición— y pasan a pagar el
+>   porcentaje. No es un factor: **es otro régimen de costo** para dos de las
+>   tres piezas.
+> - Delta-12 sigue atado al mínimo —$416.667 por posición— pero **al doble de
+>   barato**.
+> - **La conclusión que la política usa sobrevive:** las 550 operaciones al año
+>   de Sigma-6 en banda 0 pasan de $1.094.500 a **$549.994**, o sea de 21,9% a
+>   **11,0% del capital al año**. Sigue siendo destructivo.
+>
+> **Y la dirección del sesgo va en contra de la política vigente:** un mínimo
+> más caro hace que «dejar correr» se vea mejor de lo que es. La conclusión
+> está implementada en `src/nav_historico.py`, así que por la norma del proyecto
+> corresponde volver a correr el estudio entero, no parcharlo.
+
 Ésta es la que decide, porque es la que se paga. Banda = cuánto puede apartarse
 una posición del objetivo antes de corregirla; entradas y salidas se ejecutan
 siempre.
