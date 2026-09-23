@@ -1,0 +1,129 @@
+##############################################################################
+# PARTE 1 — la especificacion diferenciada: es la grilla, no el refugio
+##############################################################################
+  Cuprum, banda 2%, refugio D, desde 2011-04-01. Tu numero: -15,56%.
+
+  grilla                               la media es                   rezago     caida  cam/anio
+  corridos   126 filas = 126 corridos ~ 90 habiles               5 corridos   -15.56%       2.3
+  corridos   126 filas = 126 corridos ~ 90 habiles   7 corridos = 5 habiles   -15.56%       2.3
+  habiles    90 filas =  90 habiles ~ 126 corridos                5 habiles   -15.56%       2.2
+  habiles   126 filas = 126 habiles ~ 176 corridos                5 habiles   -21.83%       1.6
+  corridos  176 filas = 176 corridos = 126 habiles   7 corridos = 5 habiles   -21.83%       1.6
+
+  El rezago no mueve nada -5 o 7 filas dan lo mismo-. La media si.
+  Tu «126 dias» son corridos; el mio eran habiles. Misma palabra,
+  ventana efectiva de 90 contra 126 dias de cotizacion.
+
+  Y el precipicio, en dias habiles efectivos, no esta donde creiamos:
+   media (habiles)        45        63        90       100       110       126       150
+         refugio D   -15,18%   -15,29%   -15,56%   -15,56%   -21,83%   -21,83%   -21,83%
+         refugio E   -14,39%   -12,28%   -10,32%   -11,20%   -19,02%   -19,02%   -19,02%
+
+  El salto esta entre 100 y 110 dias habiles. Tu barrido de 63/100/126
+  corridos son 45/71/90 habiles: los tres caen antes del salto, por eso
+  te parecio meseta. **La region buena termina alrededor de 100 habiles**
+  y el punto elegido, leido en habiles, queda 26 dias despues del borde.
+
+##############################################################################
+# PARTE 2 — los cinco pares en las siete AFP
+##############################################################################
+  Banda 2%, media 126 corridos, rezago 7 corridos (= 5 habiles). Ventana 2004-2019.
+
+  --- A -> E
+    AFP                  estrategia            agresivo             refugio   ventaja  cam/anio
+    capital          +9,72% /-9,44%     +6,78% /-39,07%     +7,52% /-10,94%   +29,63%       2.1
+    cuprum         +11,18% /-11,72%     +8,79% /-44,00%     +7,46% /-11,13%   +32,28%       2.1
+    habitat        +10,45% /-12,03%     +9,07% /-42,71%     +7,86% /-10,50%   +30,69%       2.3
+    modelo           +7,32% /-9,54%     +8,09% /-16,98%      +7,27% /-9,13%    +7,44%       2.0
+    planvital       +9,86% /-11,79%     +8,37% /-42,42%    +10,79% /-11,31%   +30,63%       2.3
+    provida        +10,99% /-11,99%     +8,76% /-44,19%     +7,23% /-11,31%   +32,20%       2.2
+    uno         sin historia en la ventana
+                ventaja: mediana +30.66%  rango 24.84%
+
+  --- A -> D
+    AFP                  estrategia            agresivo             refugio   ventaja  cam/anio
+    capital         +8,84% /-15,26%     +6,78% /-39,07%      +7,44% /-8,35%   +23,81%       2.1
+    cuprum         +10,50% /-15,47%     +8,79% /-44,00%      +8,00% /-8,52%   +28,53%       2.1
+    habitat        +10,14% /-12,91%     +9,07% /-42,71%      +8,42% /-8,30%   +29,80%       2.3
+    modelo           +7,46% /-9,95%     +8,09% /-16,98%      +7,68% /-6,55%    +7,04%       2.0
+    planvital       +9,55% /-13,86%     +8,37% /-42,42%      +7,68% /-9,13%   +28,56%       2.3
+    provida        +10,38% /-13,91%     +8,76% /-44,19%      +7,82% /-8,74%   +30,28%       2.2
+    uno         sin historia en la ventana
+                ventaja: mediana +28.55%  rango 23.24%
+
+  --- A -> C
+    AFP                  estrategia            agresivo             refugio   ventaja  cam/anio
+    capital         +8,28% /-21,57%     +6,78% /-39,07%     +7,43% /-15,83%   +17,49%       2.1
+    cuprum         +10,21% /-22,89%     +8,79% /-44,00%     +8,61% /-16,90%   +21,11%       2.1
+    habitat         +9,94% /-21,23%     +9,07% /-42,71%     +8,87% /-15,87%   +21,48%       2.3
+    modelo          +7,52% /-11,17%     +8,09% /-16,98%      +7,62% /-6,91%    +5,81%       2.0
+    planvital       +9,41% /-21,39%     +8,37% /-42,42%    +12,54% /-15,41%   +21,03%       2.3
+    provida        +10,04% /-22,36%     +8,76% /-44,19%     +8,23% /-17,34%   +21,83%       2.2
+    uno         sin historia en la ventana
+                ventaja: mediana +21.07%  rango 16.02%
+
+  --- B -> D
+    AFP                  estrategia            agresivo             refugio   ventaja  cam/anio
+    capital         +7,10% /-12,00%     +6,91% /-28,08%      +7,44% /-8,35%   +16,08%       2.0
+    cuprum          +8,79% /-13,33%     +8,51% /-31,51%      +8,00% /-8,52%   +18,18%       1.9
+    habitat         +9,29% /-11,08%     +8,85% /-29,89%      +8,42% /-8,30%   +18,81%       1.8
+    modelo          +6,13% /-12,17%     +7,59% /-11,85%      +7,68% /-6,55%    -0,32%       1.8
+    planvital       +8,42% /-11,86%     +8,32% /-29,65%      +7,68% /-9,13%   +17,78%       1.9
+    provida         +8,51% /-11,83%     +8,27% /-31,23%      +7,82% /-8,74%   +19,40%       1.8
+    uno         sin historia en la ventana
+                ventaja: mediana +17.98%  rango 19.72%
+
+  --- B -> C
+    AFP                  estrategia            agresivo             refugio   ventaja  cam/anio
+    capital         +7,03% /-18,64%     +6,91% /-28,08%     +7,43% /-15,83%    +9,44%       2.0
+    cuprum          +8,79% /-20,62%     +8,51% /-31,51%     +8,61% /-16,90%   +10,89%       1.9
+    habitat         +9,20% /-18,69%     +8,85% /-29,89%     +8,87% /-15,87%   +11,21%       1.8
+    modelo          +6,70% /-11,27%     +7,59% /-11,85%      +7,62% /-6,91%    +0,58%       1.8
+    planvital       +8,58% /-19,23%     +8,32% /-29,65%    +12,54% /-15,41%   +10,42%       1.9
+    provida         +8,46% /-20,18%     +8,27% /-31,23%     +8,23% /-17,34%   +11,05%       1.8
+    uno         sin historia en la ventana
+                ventaja: mediana +10.66%  rango 10.63%
+
+
+##############################################################################
+# PARTE 3 — el par de 2027: Fondo Inicial contra Consolidacion
+##############################################################################
+  Replica sintetica desde los limites: Inicial 95% de
+  activos de crecimiento, Consolidacion 29%.
+  La mezcla se arma con Fondo A y Fondo E reales (limites 80% y 5% de RV).
+
+  Tu diagnostico, replicado en Cuprum (2004-2019):
+    fondo       corr con A  vol anual  caida propia  sigue cayendo
+    Fondo B          0.989      7.06%       -31,51%         +1,39%
+    Fondo C          0.936      4.80%       -16,90%         +1,19%
+    Fondo D          0.715      3.22%        -8,52%         +1,31%
+    Fondo E          0.093      2.68%       -11,13%         +1,70%
+    (sobre 16 salidas)
+
+  Y ahora el par de 2027, con la Consolidacion barrida 20%-40%:
+     Consolidacion  w en Fondo A  corr con Inicial  vol anual  caida propia  sigue cayendo
+              20%            0.20             0.681      3.04%        -8,83%         +1,61%
+              25%            0.27             0.794      3.42%       -11,56%         +1,60%
+              29% <-          0.32             0.855      3.78%       -14,03%         +1,60%
+              35%            0.40             0.914      4.39%       -17,65%         +1,55%
+              40%            0.47             0.944      4.94%       -20,71%         +1,60%
+
+    (el Inicial sintetico pide w = 1.20 en Fondo A: el fondo mas
+     joven de 2027 es MAS agresivo que el Fondo A de hoy, no menos)
+
+  La estrategia sobre el par sintetico, contra los pares reales:
+    par                             estrategia            agresivo   ventaja  cam/anio
+    A -> E                    +11,18% /-11,72%     +8,79% /-44,00%   +32,28%       2.1
+    A -> D                    +10,50% /-15,47%     +8,79% /-44,00%   +28,53%       2.1
+    A -> C                    +10,21% /-22,89%     +8,79% /-44,00%   +21,11%       2.1
+    B -> D                     +8,79% /-13,33%     +8,51% /-31,51%   +18,18%       1.9
+    B -> C                     +8,79% /-20,62%     +8,51% /-31,51%   +10,89%       1.9
+    Inicial -> Consol 20%     +11,11% /-17,06%     +8,93% /-51,65%   +34,59%       2.6
+    Inicial -> Consol 29%     +10,88% /-21,98%     +8,93% /-51,65%   +29,66%       2.6
+    Inicial -> Consol 40%     +10,58% /-27,66%     +8,93% /-51,65%   +23,98%       2.6
+
+  Tu salvedad, medida: el orden de los refugios se da vuelta por ventana.
+    ventana                  corr D-A   corr E-A    caida D    caida E   mejor refugio
+    2004-01 a 2019-12           0.715      0.093    -15,47%    -11,72%               E
+    2011-04 a 2026-09           0.465      0.092    -15,56%    -10,44%               E
+    2020-01 a 2026-09           0.433      0.124    -15,56%    -10,44%               E
