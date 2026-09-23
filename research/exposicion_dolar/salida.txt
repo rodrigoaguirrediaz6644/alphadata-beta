@@ -1,0 +1,50 @@
+##############################################################################
+# CUANTO DE LA CARTERA SE MUEVE CON EL DOLAR
+##############################################################################
+  Capital de referencia: $20.000.000
+
+  pieza          reparto   en dolares   monto en dolares
+  Delta-12         37.5%           0%                 $0
+  Gamma-6          37.5%         100%         $7.500.000
+  Oro              25.0%         100%         $5.000.000
+                                TOTAL        $12.500.000
+
+  **62.5% de la cartera se mueve uno a uno con el tipo de cambio.**
+  Y no hay ninguna decision escrita que diga que esa era la intencion:
+  salio de elegir tres piezas por separado, cada una por sus motivos.
+
+  33 instrumentos del universo nacen en dolares.
+
+##############################################################################
+# LA CARTERA COMPLETA, CON EL DOLAR Y SIN EL DOLAR
+##############################################################################
+  1247 dias, desde 2021-07-09. Rebalanceo diario al reparto.
+
+                             anual   peor caida   volatilidad
+  con el dolar             +26,17%      -13,96%       +17,09%
+  sin el dolar             +23,92%      -10,95%       +13,32%
+  el dolar solo             +2,34%      -23,98%       +17,55%
+
+  Diferencia: +2,25% de retorno anual y -3,01% de peor caida.
+
+  Por pieza, la correlacion con Delta-12 -que es la parte en pesos-:
+                 en pesos   sin el dolar
+  Gamma-6          +0.219         +0.292
+  Oro              +0.125         +0.178
+
+  El dolar contra Delta-12: -0.014
+
+  **Y aca los numeros contradicen la historia del colchon, asi que va
+  como salio.** Quitar el dolar SUBE las correlaciones -o sea que el dolar
+  las estaba bajando, como se esperaba- pero la cartera con dolar tiene
+  mas volatilidad (+17,09% contra +13,32%) y peor caida.
+
+  Correlacion mas baja no es riesgo mas bajo cuando lo que se agrega es
+  esto de volatil: el dolar solo rinde +2,34% anual con -23,98% de caida propia
+  y +17,55% de volatilidad, contra -0.014 de correlacion con Delta-12, que es cero.
+
+  En esta ventana el dolar **agrega retorno y agrega riesgo**. No amortigua.
+  Lo que no se puede contestar con 2021-2026 es si amortiguaria en una
+  caida de la bolsa chilena de las que importan: en esta ventana no hubo,
+  y el mecanismo del colchon en las AFP se vio sobre episodios que si la
+  tuvieron. Son dos afirmaciones distintas y solo una esta medida aca.

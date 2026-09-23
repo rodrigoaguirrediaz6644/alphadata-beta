@@ -17,7 +17,7 @@ from src.libro import abiertas as libro_abiertas, anotar, cargar as cargar_libro
 from src.strategy_registry import validate_registry
 from src.reporting_public import build_public_report
 from src.salud import revisar as revisar_salud
-from src.strategy_engine import DIAS_VIGENCIA_RECOMENDACIONES, ORO_TICKER, RECOMMENDATION_COLUMNS, combined_equal_weight, delta12, delta12_historical_nav, gamma6, gamma6_historical_nav, movements, sigma6_historical_nav, oro, oro_historical_nav, reconstruct_entry_dates, sigma6, to_clp, validate_recommendations
+from src.strategy_engine import DIAS_VIGENCIA_RECOMENDACIONES, ORO_TICKER, RECOMMENDATION_COLUMNS, combined_equal_weight, delta12, en_dolares, exposicion_cambiaria, delta12_historical_nav, gamma6, gamma6_historical_nav, movements, sigma6_historical_nav, oro, oro_historical_nav, reconstruct_entry_dates, sigma6, to_clp, validate_recommendations
 
 ROOT=Path(__file__).resolve().parents[1]; DATA=ROOT/'data'; REPORTS=ROOT/'reports'; STATE=DATA/'strategy_state.json'; NAV=DATA/'strategy_nav.csv'
 CONFIG=ROOT/'config'/'runtime.v2.json'
@@ -661,6 +661,12 @@ def main()->None:
                 flojas = dentro[dentro.caida_observada.isna() & dentro.caida_por_contraste.isna()
                                 & ~dentro.origen.fillna('').str.startswith('aceptado')]
                 sin_respaldo |= {f"{t} {x.date()}" for x in flojas.fecha_ex}
+    # La exposicion cambiaria: estaba decidida sin decidirse. Ver
+    # research/exposicion_dolar/ y src/strategy_engine.exposicion_cambiaria.
+    _ops=cargar_operaciones(DATA/'operaciones_reales.csv')
+    _ops_invertido=invertido_real(_ops)
+    _ops_usd=sum(invertido_real(_ops[_ops.instrumento.isin(en_dolares(universe))]).values()) if len(_ops) else 0.
+    _expo_dolar=exposicion_cambiaria(universe,{'Delta-12':delta,'Gamma-6':gamma,'Oro':oro_portfolio},reparto,float(capital.get('total_clp',0)))
     registro_generacional=_registro_generacional()
     salud, conocidos = revisar_salud(
         as_of=as_of,
@@ -696,7 +702,7 @@ def main()->None:
     ingreso=cartera_de_ingreso({'Sigma-6':sigma,'Delta-12':delta,'Gamma-6':gamma,'Oro':oro_portfolio},as_of,costos,simbolos=puerta_cdv)
     (REPORTS/'cartera_de_ingreso.md').write_text(markdown_ingreso(ingreso,as_of),encoding='utf-8')
     ingreso.to_csv(DATA/'cartera_de_ingreso.csv',index=False)
-    md,html=build_public_report(as_of,delta,dmove,coverage,errors,history,gamma=gamma,gamma_moves=gmove,oro=oro_portfolio,oro_moves=omove,movimientos=movimientos_libro,capital_por_pieza=por_pieza,invertido_por_pieza=invertido_real(cargar_operaciones(DATA/'operaciones_reales.csv')),vigencia=vigencia,salud=salud,conocidos=conocidos,ha_entrado=ha_entrado,generacional=registro_generacional);(REPORTS/'latest_report.md').write_text(md,encoding='utf-8');(REPORTS/'latest_report.html').write_text(html,encoding='utf-8')
+    md,html=build_public_report(as_of,delta,dmove,coverage,errors,history,gamma=gamma,gamma_moves=gmove,oro=oro_portfolio,oro_moves=omove,movimientos=movimientos_libro,capital_por_pieza=por_pieza,invertido_por_pieza=_ops_invertido,exposicion_dolar=_expo_dolar,invertido_en_dolares=_ops_usd,vigencia=vigencia,salud=salud,conocidos=conocidos,ha_entrado=ha_entrado,generacional=registro_generacional);(REPORTS/'latest_report.md').write_text(md,encoding='utf-8');(REPORTS/'latest_report.html').write_text(html,encoding='utf-8')
     guardar_publicada(vigente,as_of,PUBLICADA)
     sigma.to_csv(DATA/'portfolio_sigma6.csv',index=False);delta.to_csv(DATA/'portfolio_delta12.csv',index=False);gamma.to_csv(DATA/'portfolio_gamma6.csv',index=False);oro_portfolio.to_csv(DATA/'portfolio_oro.csv',index=False)
     s_audit.to_csv(DATA/'audit_sigma6.csv',index=False);d_audit.to_csv(DATA/'audit_delta12.csv',index=False)

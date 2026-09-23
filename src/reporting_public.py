@@ -314,6 +314,33 @@ def _negritas(texto: str) -> str:
     return "".join(p if i % 2 == 0 else f"<strong>{p}</strong>" for i, p in enumerate(partes))
 
 
+def _dolar(exposicion: dict | None, invertido_usd: float | None,
+           invertido_total: float | None) -> list[str]:
+    """Cuánto del patrimonio se mueve uno a uno con el tipo de cambio.
+
+    **Estaba decidido sin decidirse.** Gamma-6 y el oro nacen en dólares, así
+    que el 62,5% del reparto está montado en el tipo de cambio, y eso salió de
+    elegir tres piezas por separado —cada una por sus propios motivos— y no de
+    una decisión escrita en ninguna parte.
+
+    Puede que sea lo que se quiere: se vive en pesos y un colchón en dólares
+    contra una caída global es razonable. Pero tiene que ser una decisión y no
+    una consecuencia, y para eso el número tiene que estar a la vista.
+    """
+    if not exposicion:
+        return []
+    lineas = [f"**Expuesto al dólar: {pct(exposicion['fraccion'])} del diseño** "
+              f"({_pesos(exposicion['clp'], '$')}). Gamma-6 y el oro nacen en dólares, "
+              "así que esa parte se mueve uno a uno con el tipo de cambio además de "
+              "moverse con lo que compró."]
+    if invertido_total:
+        real = (invertido_usd or 0.) / invertido_total
+        lineas.append(f"- De lo comprado de verdad, {pct(real)} está en dólares "
+                      f"({_pesos(invertido_usd or 0., '$')} de "
+                      f"{_pesos(invertido_total, '$')}).")
+    return lineas
+
+
 def _ejecutado(diseno: dict | None, real: dict | None) -> list[str]:
     """Lo comprado de verdad, al lado del reparto de diseño.
 
@@ -499,6 +526,8 @@ def build_public_report(
     movimientos: pd.DataFrame | None = None,
     capital_por_pieza: dict | None = None,
     invertido_por_pieza: dict | None = None,
+    exposicion_dolar: dict | None = None,
+    invertido_en_dolares: float | None = None,
     vigencia: dict | None = None,
     salud: list | None = None,
     conocidos: list | None = None,
@@ -584,6 +613,8 @@ def build_public_report(
     )
 
     ejecutado = _ejecutado(capital_por_pieza, invertido_por_pieza)
+    ejecutado += _dolar(exposicion_dolar, invertido_en_dolares,
+                        sum((invertido_por_pieza or {}).values()) or None)
     _bloque_ejecutado = ("".join(
         f'<p class="lead">{_negritas(l)}</p>' if not l.startswith("- ")
         else f'<p class="muted" style="margin:2px 0">{_negritas(l[2:])}</p>'

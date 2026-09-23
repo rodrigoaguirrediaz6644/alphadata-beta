@@ -363,3 +363,81 @@ def test_una_orden_no_ejecutada_no_cuenta_como_comprada():
                          "estado": "PENDIENTE", "cantidad": 65, "precio_pagado": 77300.,
                          "comision": 0.}])
     assert invertido(ops) == {}
+
+
+# --------------------------------------------------------------------------
+# La exposición al dólar: estaba decidida sin decidirse
+# --------------------------------------------------------------------------
+
+EXPO = {"fraccion": .625, "clp": 12_500_000.,
+        "por_pieza": {"Delta-12": 0., "Gamma-6": 1., "Oro": 1.}}
+
+
+def test_el_informe_dice_cuanto_se_mueve_con_el_dolar():
+    """Gamma-6 y el oro nacen en dólares: el 62,5% del reparto está montado en
+    el tipo de cambio, y eso no lo decidió nadie."""
+    md, html = _report(capital_por_pieza=DISENO, invertido_por_pieza={"Oro": 619_503.84},
+                       exposicion_dolar=EXPO, invertido_en_dolares=619_503.84)
+    for texto in (md, html):
+        assert "62,5% del diseño" in texto
+        assert "12.500.000" in texto
+
+
+def test_dice_tambien_cuanto_de_lo_comprado_esta_en_dolares():
+    md, _ = _report(capital_por_pieza=DISENO, invertido_por_pieza={"Oro": 619_503.84},
+                    exposicion_dolar=EXPO, invertido_en_dolares=619_503.84)
+    assert "100,0% está en dólares" in md
+
+
+def test_si_falta_el_dato_cambiario_el_informe_sale_completo_igual():
+    """Es una línea informativa y no puede tumbar el informe.
+
+    Es el mismo defecto que ya costó un informe entero con FRED: una pieza
+    secundaria que calla a la principal.
+    """
+    md, html = _report(capital_por_pieza=DISENO, invertido_por_pieza={"Oro": 1.},
+                       exposicion_dolar=None, invertido_en_dolares=None)
+    for texto in (md, html):
+        assert "Expuesto al dólar" not in texto
+        assert "¿Hay que preocuparse?" in texto
+        assert "Lo comprado de verdad" in texto or "Comprado de verdad" in texto
+
+
+def test_sin_operaciones_la_linea_del_diseno_sigue_apareciendo():
+    md, _ = _report(capital_por_pieza=DISENO, invertido_por_pieza={},
+                    exposicion_dolar=EXPO, invertido_en_dolares=0.)
+    assert "62,5% del diseño" in md
+
+
+def test_la_exposicion_se_calcula_de_la_moneda_del_universo_y_no_a_mano():
+    """Una sola casa: la misma regla que usa `to_clp` para convertir a pesos.
+
+    Dos lugares decidiendo qué es «en dólares» terminarían discrepando, y el
+    síntoma sería que el informe declara una exposición y el NAV usa otra.
+    """
+    import pandas as pd
+    from src.strategy_engine import en_dolares, exposicion_cambiaria
+
+    universo = pd.DataFrame([
+        {"alphadata_ticker": "BCI", "moneda": "CLP"},
+        {"alphadata_ticker": "IAU", "moneda": "USD"},
+        {"alphadata_ticker": "AAPL", "moneda": "USD"},
+    ])
+    assert en_dolares(universo) == {"IAU", "AAPL"}
+    carteras = {
+        "Delta-12": pd.DataFrame([{"ticker": "BCI", "target_weight": 1.}]),
+        "Gamma-6": pd.DataFrame([{"ticker": "AAPL", "target_weight": 1.}]),
+        "Oro": pd.DataFrame([{"ticker": "IAU", "target_weight": 1.}]),
+    }
+    e = exposicion_cambiaria(universo, carteras,
+                             {"Delta-12": .375, "Gamma-6": .375, "Oro": .25}, 20_000_000.)
+    assert e["fraccion"] == pytest.approx(.625)
+    assert e["clp"] == pytest.approx(12_500_000.)
+
+
+def test_sin_columna_de_moneda_no_inventa_una_exposicion():
+    import pandas as pd
+    from src.strategy_engine import en_dolares, exposicion_cambiaria
+    universo = pd.DataFrame([{"alphadata_ticker": "BCI"}])
+    assert en_dolares(universo) == set()
+    assert exposicion_cambiaria(universo, {}, {"Oro": 1.}, 1.) is None

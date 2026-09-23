@@ -312,6 +312,55 @@ def oro_historical_nav(prices: pd.DataFrame, universe: pd.DataFrame, fx: pd.Data
     return pd.DataFrame({"date":serie.date.values,"Oro":nav.values})
 
 
+def en_dolares(universe: pd.DataFrame) -> set[str]:
+    """Los instrumentos cuyo precio nace en dolares. **Una sola casa.**
+
+    Lo usaban `to_clp` -para multiplicar por el tipo de cambio- y nadie mas,
+    hasta que hubo que contar cuanto de la cartera se mueve con el dolar. Dos
+    lugares decidiendo que es "en dolares" es la forma conocida de que un dia
+    discrepen, y el sintoma seria que el informe declara una exposicion
+    cambiaria y el NAV usa otra.
+    """
+    if "moneda" not in universe:
+        return set()
+    return set(universe.loc[universe.moneda == "USD", "alphadata_ticker"])
+
+
+def exposicion_cambiaria(universe: pd.DataFrame, carteras: dict,
+                         reparto: dict, total: float) -> dict | None:
+    """Cuanto del patrimonio se mueve **uno a uno** con el tipo de cambio.
+
+    Salio de una correccion: decir que la pieza de oro era "dos tercios dolar"
+    describe su varianza, no su exposicion. La regresion sobre el tipo de
+    cambio da beta 0,97, o sea **dolar entero**: cada peso puesto ahi se mueve
+    uno a uno con el dolar ademas de moverse con el oro.
+
+    Y si el oro es dolar entero y Gamma-6 tambien, la pregunta deja de ser
+    sobre el oro: **el 62,5% del reparto esta montado en el dolar y eso no lo
+    decidio nadie**, salio de elegir tres piezas por separado. Ver
+    `research/exposicion_dolar/`.
+
+    Devuelve None si no se puede calcular. Esto es una linea informativa del
+    informe y no puede tumbarlo.
+    """
+    usd = en_dolares(universe)
+    if not usd or not reparto:
+        return None
+    por_pieza = {}
+    for pieza, cartera in (carteras or {}).items():
+        if cartera is None or not len(cartera):
+            continue
+        pesos = cartera.set_index("ticker").target_weight.astype(float)
+        if not pesos.sum():
+            continue
+        por_pieza[pieza] = float(pesos[pesos.index.isin(usd)].sum() / pesos.sum())
+    if not por_pieza:
+        return None
+    fraccion = sum(float(reparto.get(p, 0)) * v for p, v in por_pieza.items())
+    return {"fraccion": fraccion, "clp": float(total) * fraccion,
+            "por_pieza": por_pieza}
+
+
 def to_clp(prices: pd.DataFrame, universe: pd.DataFrame, fx: pd.DataFrame) -> pd.DataFrame:
     """Convierte a pesos los precios de los instrumentos en dólares.
 
@@ -325,7 +374,7 @@ def to_clp(prices: pd.DataFrame, universe: pd.DataFrame, fx: pd.DataFrame) -> pd
     rate,descartados=sanear_fx(rate)
     if len(descartados):
         print("ADVERTENCIA: se descartaron %d datos imposibles del tipo de cambio: %s" % (len(descartados), ", ".join(f"{d:%d-%m-%Y}={v:.2f}" for d,v in descartados.items())))
-    usd=set(universe.loc[universe.moneda=="USD","alphadata_ticker"])
+    usd=en_dolares(universe)
     out=prices.copy(); mask=out.alphadata_ticker.isin(usd)
     factor=rate.reindex(pd.DatetimeIndex(sorted(set(out.loc[mask,"date"])|set(rate.index)))).ffill()
     out.loc[mask,["open","high","low","close","adjusted_close"]]=out.loc[mask,["open","high","low","close","adjusted_close"]].mul(out.loc[mask,"date"].map(factor).to_numpy(),axis=0)
