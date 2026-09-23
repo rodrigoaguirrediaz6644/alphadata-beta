@@ -238,3 +238,105 @@ def test_el_congelamiento_tiene_una_sola_casa(monkeypatch):
     assert r._base(fechas) == 100
     assert r.acumulados(coti, {m: (None, None, [None] * len(coti))
                               for m in r.MEDIAS})["acum_a"][101] != ""
+
+
+# --------------------------------------------------------------------------
+# La votación: una instrucción, no cinco
+# --------------------------------------------------------------------------
+
+def test_la_votacion_tambien_esta_congelada():
+    assert r.VOTOS_PARA_SALIR == 2
+    assert r.REFUGIO == "E"
+    assert r.SALTO_IMPOSIBLE == .08
+
+
+def test_sale_al_refugio_con_dos_de_cinco_y_no_antes():
+    assert r.posicion_por_voto(1) == r.DENTRO
+    assert r.posicion_por_voto(2) == r.REFUGIO
+    assert r.posicion_por_voto(5) == r.REFUGIO
+    assert r.posicion_por_voto(None) is None
+
+
+def test_el_refugio_de_la_votacion_no_esta_escrito_a_mano():
+    """En abril de 2027 el nombre cambia y tiene que cambiar en un solo lugar."""
+    assert r.posicion_por_voto(3, refugio="Consolidacion") == "Consolidacion"
+
+
+def test_los_votos_salen_de_la_posicion_en_vigor_no_de_la_senal():
+    """Lo que se vota es lo que se puede materializar."""
+    n = 6
+    grilla = {m: (None, None, [r.FUERA] * 2 + [r.DENTRO] * (n - 2)) for m in r.MEDIAS}
+    assert r.votos(grilla, 0) == len(r.MEDIAS)
+    assert r.votos(grilla, 5) == 0
+
+
+def test_sin_todas_las_medias_no_hay_voto():
+    grilla = {m: (None, None, [None]) for m in r.MEDIAS}
+    assert r.votos(grilla, 0) is None
+
+
+# --------------------------------------------------------------------------
+# Las columnas de evento y el esquema
+# --------------------------------------------------------------------------
+
+def test_el_aviso_no_se_recalcula_se_arrastra():
+    """Que salió un aviso es un hecho, no una función de la serie.
+
+    Si se recalculara como todo lo demás, el historial de notificaciones se
+    borraría solo cada día.
+    """
+    viejo = r.construir(_serie(200))
+    viejo[-1]["aviso"] = "a E (1/3)"
+    viejo[-1]["aviso_estado"] = "enviado"
+    nuevo = r.arrastrar(viejo, r.construir(_serie(210)))
+    igual = next(f for f in nuevo if f["fecha"] == viejo[-1]["fecha"])
+    assert igual["aviso_estado"] == "enviado"
+
+
+def test_un_aviso_distinto_no_cuenta_como_que_la_fuente_reescribio_el_pasado():
+    """Son dos fallas distintas y confundirlas gastaría la alarma que importa."""
+    viejo = r.construir(_serie(200))
+    nuevo = [dict(f) for f in viejo]
+    nuevo[50]["aviso_estado"] = "fallo"
+    assert r.alteraciones(viejo, nuevo) == []
+
+
+def test_agregar_una_columna_no_se_reporta_como_reescritura_de_la_fuente():
+    viejo = [{c: "" for c in r.columnas() if c != "votos"} | {"fecha": f["fecha"]}
+             for f in r.construir(_serie(200))]
+    entran, salen = r.cambio_de_esquema(viejo)
+    assert "votos" in entran and salen == []
+
+
+# --------------------------------------------------------------------------
+# La guardia del dato imposible
+# --------------------------------------------------------------------------
+
+def test_un_salto_imposible_del_fondo_agresivo_se_detecta():
+    """Nunca pasó en 24 años. Si pasa, es dato malo antes que mercado."""
+    filas = [{"fecha": "2026-01-01", "vc_a": "100.00"},
+             {"fecha": "2026-01-02", "vc_a": "80.00"}]
+    assert "se movio" in r.salto_imposible(filas)
+
+
+def test_un_dia_malo_de_verdad_no_dispara_la_guardia():
+    """El peor día del Fondo A en la historia está por debajo del límite."""
+    filas = [{"fecha": "2026-01-01", "vc_a": "100.00"},
+             {"fecha": "2026-01-02", "vc_a": "95.00"}]
+    assert r.salto_imposible(filas) is None
+
+
+def test_la_transicion_es_la_ultima_y_dice_desde_donde():
+    filas = r.construir(_serie(200))
+    for f in filas[:100]:
+        f["posicion"] = "A"
+    for f in filas[100:]:
+        f["posicion"] = "E"
+    assert r.transicion(filas) == (100, "A", "E")
+
+
+def test_sin_cambios_no_hay_transicion():
+    filas = r.construir(_serie(200))
+    for f in filas:
+        f["posicion"] = "A"
+    assert r.transicion(filas) is None

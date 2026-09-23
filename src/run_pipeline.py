@@ -71,16 +71,22 @@ def _edad_de_horizonte(as_of)->float|None:
     except Exception: return None
     return float((pd.Timestamp(as_of).normalize()-guardado.normalize()).days)
 
-def _estado_del_registro()->tuple[int,str]|None:
-    """Cuántas filas lleva el registro AFP y de cuándo es la última.
+def _registro_afp()->dict|None:
+    """Lo que el informe y el panel necesitan del registro AFP.
 
-    Se lee con `src.registro_afp.leer` y no con un `read_csv` acá: el archivo y
+    Lo arma `src.registro_afp.para_informe` y no este módulo: el archivo y
     quien lo escribe tienen que ser la misma casa, o el día que cambie el
-    formato esto va a leer otra cosa sin fallar.
+    formato esto va a leer otra cosa sin fallar. **Y no puede reventar:** un
+    fallo de la sección menos crítica del informe —la única sin plata adentro—
+    no puede tumbar el correo ni el commit. Es el defecto que ya nos costó un
+    informe entero con FRED.
     """
-    from src.registro_afp import leer as leer_registro
-    filas=leer_registro()
-    return (len(filas),filas[-1]['fecha']) if filas else None
+    try:
+        from src.registro_afp import para_informe
+        return para_informe()
+    except Exception as e:
+        print(f'Registro AFP ilegible ({type(e).__name__}: {e}); el informe sigue.')
+        return None
 
 def _solo_operables(universe:pd.DataFrame,puerta:pd.DataFrame)->pd.DataFrame:
     """El universo con el símbolo borrado donde la puerta no dejó pasar.
@@ -663,6 +669,7 @@ def main()->None:
                 flojas = dentro[dentro.caida_observada.isna() & dentro.caida_por_contraste.isna()
                                 & ~dentro.origen.fillna('').str.startswith('aceptado')]
                 sin_respaldo |= {f"{t} {x.date()}" for x in flojas.fecha_ex}
+    registro_afp=_registro_afp()
     salud, conocidos = revisar_salud(
         as_of=as_of,
         precios_al_dia=bool((as_of.normalize() - pd.Timestamp(prices.date.max()).normalize()).days <= 5),
@@ -684,7 +691,7 @@ def main()->None:
         # Un cron que se apaga no hace ruido: no manda correo, no deja rojo y
         # no deja rastro; el archivo simplemente deja de crecer. Esto va donde
         # Rodrigo ya mira. Ver registro/README.md.
-        registro_afp=_estado_del_registro(),
+        registro_afp=(registro_afp['filas'],registro_afp['fecha']) if registro_afp else None,
         descalce_real=descalce_real(cargar_operaciones(DATA/'operaciones_reales.csv'),
                                     {n:list(c.ticker) for n,c in
                                      {'Sigma-6':sigma,'Delta-12':delta,'Gamma-6':gamma,'Oro':oro_portfolio}.items()
@@ -699,7 +706,7 @@ def main()->None:
     ingreso=cartera_de_ingreso({'Sigma-6':sigma,'Delta-12':delta,'Gamma-6':gamma,'Oro':oro_portfolio},as_of,costos,simbolos=puerta_cdv)
     (REPORTS/'cartera_de_ingreso.md').write_text(markdown_ingreso(ingreso,as_of),encoding='utf-8')
     ingreso.to_csv(DATA/'cartera_de_ingreso.csv',index=False)
-    md,html=build_public_report(as_of,delta,dmove,coverage,errors,history,gamma=gamma,gamma_moves=gmove,oro=oro_portfolio,oro_moves=omove,movimientos=movimientos_libro,capital_por_pieza=por_pieza,vigencia=vigencia,salud=salud,conocidos=conocidos,ha_entrado=ha_entrado);(REPORTS/'latest_report.md').write_text(md,encoding='utf-8');(REPORTS/'latest_report.html').write_text(html,encoding='utf-8')
+    md,html=build_public_report(as_of,delta,dmove,coverage,errors,history,gamma=gamma,gamma_moves=gmove,oro=oro_portfolio,oro_moves=omove,movimientos=movimientos_libro,capital_por_pieza=por_pieza,vigencia=vigencia,salud=salud,conocidos=conocidos,ha_entrado=ha_entrado,afp=registro_afp);(REPORTS/'latest_report.md').write_text(md,encoding='utf-8');(REPORTS/'latest_report.html').write_text(html,encoding='utf-8')
     guardar_publicada(vigente,as_of,PUBLICADA)
     sigma.to_csv(DATA/'portfolio_sigma6.csv',index=False);delta.to_csv(DATA/'portfolio_delta12.csv',index=False);gamma.to_csv(DATA/'portfolio_gamma6.csv',index=False);oro_portfolio.to_csv(DATA/'portfolio_oro.csv',index=False)
     s_audit.to_csv(DATA/'audit_sigma6.csv',index=False);d_audit.to_csv(DATA/'audit_delta12.csv',index=False)

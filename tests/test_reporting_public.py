@@ -235,3 +235,70 @@ def test_habiendo_comprado_el_mismo_bloque_ordena():
         assert "Todavía no has comprado nada" not in texto
         assert "Salió" not in texto and "Entró" not in texto
     assert "Qué hacer" in html
+
+
+# --------------------------------------------------------------------------
+# La sección AFP: el informe sale completo con registro presente, atrasado y ausente
+# --------------------------------------------------------------------------
+
+def _afp(**cambios):
+    base = {"fecha": "2026-11-05", "filas": 6000, "congelado": "2026-09-23",
+            "agresivo": "A", "refugio": "E", "votos_para_salir": 2,
+            "medias": [(45, "A", .061, "A"), (64, "A", .048, "A"), (90, "A", .032, "A"),
+                       (105, "A", .027, "A"), (126, "A", .019, "A")],
+            "votos": 0, "posicion": "A", "desde": "2026-10-01",
+            "acum_a": .031, "acum_voto": .026,
+            "peaje": [(45, -.004), (64, -.003), (90, -.005), (105, -.005), (126, -.006)],
+            "aviso": None, "aviso_estado": None}
+    return base | cambios
+
+
+def test_la_seccion_afp_aparece_con_lo_que_dice_hoy_y_lo_que_cuesta():
+    md, html = _report(afp=_afp())
+    for texto in (md, html):
+        assert "Fondos AFP" in texto
+        assert "media 45 d" in texto and "media 126 d" in texto
+        assert "En vigor hoy: Fondo A" in texto
+        assert "6.000 días de cotización" in texto
+
+
+def test_la_seccion_afp_no_recomienda_operar():
+    """El encuadre lo hacen el título y lo que se muestra, no un descargo."""
+    md, _ = _report(afp=_afp())
+    seccion = md.split("## Fondos AFP")[1].split("## ")[0].lower()
+    for palabra in ("conviene", "recomendamos", "señal de salida", "hay que cambiarse"):
+        assert palabra not in seccion
+
+
+def test_la_seccion_afp_no_entra_en_la_suma_de_la_cartera():
+    """No hay plata adentro: si apareciera en el conjunto, el informe mentiría."""
+    con = _report(afp=_afp())[0].split("## Fondos AFP")[0]
+    sin = _report(afp=None)[0].split("## Fondos AFP")[0]
+    assert con == sin
+
+
+def test_el_informe_sale_completo_con_el_registro_atrasado():
+    md, html = _report(afp=_afp(fecha="2026-08-01"))
+    for texto in (md, html):
+        assert "dejó de crecer" in texto
+        assert "¿Hay que preocuparse?" in texto      # el informe siguió
+
+
+def test_el_informe_sale_completo_sin_registro():
+    md, html = _report(afp=None)
+    for texto in (md, html):
+        assert "Fondos AFP" in texto
+        assert "no se pudo leer" in texto
+        assert "¿Hay que preocuparse?" in texto
+
+
+def test_sin_dias_posteriores_al_congelamiento_lo_dice_en_vez_de_inventar():
+    md, _ = _report(afp=_afp(acum_a=None, acum_voto=None, peaje=[]))
+    assert "todavía no hay días posteriores que medir" in md
+
+
+def test_los_nombres_de_los_fondos_salen_del_registro():
+    """En abril de 2027 los multifondos desaparecen y esto no se edita."""
+    md, _ = _report(afp=_afp(agresivo="Inicial", refugio="Consolidacion",
+                             posicion="Consolidacion", votos=3))
+    assert "Fondo Inicial" in md and "Fondo Consolidacion" in md

@@ -67,6 +67,36 @@ REZAGO = 4
 # no sabemos todavia cual de los generacionales ocupa ese lugar.
 REFUGIOS = ("E", "D")
 
+# **El refugio que se opera.** El registro guarda los dos; esto dice cual se
+# avisa. La medicion recomienda el E en todas las ventanas comparables, y no
+# por ser mas tranquilo sino por correlacion: el E se mueve distinto del A
+# (+0,136) y el D se mueve parecido (+0,809), y eso es lo que importa cuando
+# uno llega tarde al refugio, que es siempre.
+#
+# Es una sola casa a proposito: el aviso y el informe leen de aca, y en abril
+# de 2027, cuando A y E dejen de existir, se cambia en un lugar.
+REFUGIO = "E"
+
+# **Cuantas de las cinco medias tienen que indicar salida para salir.**
+#
+# Operar exige una instruccion, no cinco, y elegir una de las cinco medias es
+# justo la decision contaminada: las elegimos mirando estos datos. La salida es
+# no elegir y que voten.
+#
+# Dos, y no tres ni cinco. Esto tambien se eligio mirando la tabla —es
+# seleccion posterior como todo lo demas— pero lo que la hace defendible es que
+# 2 de 5 y 3 de 5 dan casi lo mismo en las tres ventanas medidas, asi que la
+# eleccion entre ellas no es la que decide. **La que decide es no esperar a la
+# unanimidad: esperar a las cinco cuesta siete puntos de caida.**
+VOTOS_PARA_SALIR = 2
+
+# Si el valor cuota del fondo agresivo se mueve mas que esto en un dia, el
+# aviso no dispara y la corrida sale en rojo. Nunca paso en 24 anios: el peor
+# dia del Fondo A esta muy por debajo. Si pasa, es dato malo antes que mercado,
+# y un aviso falso es peor que ningun aviso porque Rodrigo va a estar
+# confiando.
+SALTO_IMPOSIBLE = .08
+
 AFP = "CUPRUM"
 FUENTE = "https://raw.githubusercontent.com/collabmarket/data_afp/master/data/VC-{}.csv"
 
@@ -195,14 +225,41 @@ def ejecutada(senales: list[str | None], rezago: int = REZAGO) -> list[str | Non
 # el archivo
 # --------------------------------------------------------------------------
 
+# Las columnas de evento **no se recalculan**: son el registro de algo que pasó
+# una vez —que salió un aviso y si llegó— y no una funcion de la serie. Se
+# arrastran del archivo anterior y quedan fuera de la guardia de alteraciones,
+# que compara lo determinista. Mezclar las dos clases en la misma tabla es
+# comodo para leerlas juntas y peligroso si se tratan igual.
+COLUMNAS_EVENTO = ("aviso", "aviso_estado")
+
+
 def columnas() -> list[str]:
     cols = ["fecha"] + [f"vc_{f.lower()}" for f in (DENTRO, *REFUGIOS)]
     for m in MEDIAS:
         cols += [f"razon_{m}", f"senal_{m}", f"pos_{m}"]
-    cols.append("acum_a")
+    cols += ["votos", "posicion", "acum_a", "acum_voto"]
     for m in MEDIAS:
         cols += [f"acum_{m}_{r.lower()}" for r in REFUGIOS]
-    return cols
+    return cols + list(COLUMNAS_EVENTO)
+
+
+def votos(grilla, i: int) -> int | None:
+    """Cuantas de las cinco configuraciones estarian fuera del Fondo A hoy.
+
+    Sobre la posicion **en vigor**, no sobre la senal del dia: lo que se vota
+    es lo que se puede materializar.
+    """
+    ps = [grilla[m][2][i] for m in MEDIAS]
+    if any(p is None for p in ps):
+        return None
+    return sum(1 for p in ps if p == FUERA)
+
+
+def posicion_por_voto(n: int | None, refugio: str | None = None) -> str | None:
+    """La instruccion unica: al refugio con `VOTOS_PARA_SALIR` o mas, si no al A."""
+    if n is None:
+        return None
+    return (refugio or REFUGIO) if n >= VOTOS_PARA_SALIR else DENTRO
 
 
 def _base(fechas: list[str], congelado: str | None = None) -> int:
@@ -221,7 +278,8 @@ def _base(fechas: list[str], congelado: str | None = None) -> int:
     return base
 
 
-def acumulados(coti, grilla, congelado: str | None = None) -> dict[str, list[str]]:
+def acumulados(coti, grilla, congelado: str | None = None,
+               pos_voto: list[str | None] | None = None) -> dict[str, list[str]]:
     """Retorno acumulado desde el congelamiento: el de cada configuracion y el del Fondo A.
 
     **Esta es la mitad del trato que si se puede medir sin esperar una crisis.**
@@ -255,6 +313,10 @@ def acumulados(coti, grilla, congelado: str | None = None) -> dict[str, list[str
         return out
 
     cols = {"acum_a": acumular(lambda i: DENTRO)}
+    # La del voto es la que de verdad se opera, asi que es la que dira si la
+    # votacion fue la eleccion correcta. Eso solo se sabe hacia adelante.
+    if pos_voto is not None:
+        cols["acum_voto"] = acumular(lambda i: pos_voto[i])
     for m in MEDIAS:
         pos = grilla[m][2]
         for ref in REFUGIOS:
@@ -282,7 +344,9 @@ def construir(filas=None) -> list[dict]:
         s = histeresis(r)
         grilla[m] = (r, s, ejecutada(s))
 
-    acum = acumulados(coti, grilla)
+    voto = [votos(grilla, i) for i in range(len(coti))]
+    pos_voto = [posicion_por_voto(n) for n in voto]
+    acum = acumulados(coti, grilla, pos_voto=pos_voto)
 
     salida = []
     for i, (fecha, v) in enumerate(coti):
@@ -294,8 +358,12 @@ def construir(filas=None) -> list[dict]:
             fila[f"razon_{m}"] = "" if r[i] is None else f"{r[i]:.6f}"
             fila[f"senal_{m}"] = s[i] or ""
             fila[f"pos_{m}"] = p[i] or ""
+        fila["votos"] = "" if voto[i] is None else str(voto[i])
+        fila["posicion"] = pos_voto[i] or ""
         for c, vals in acum.items():
             fila[c] = vals[i]
+        for c in COLUMNAS_EVENTO:
+            fila[c] = ""
         salida.append(fila)
     return salida
 
@@ -317,15 +385,81 @@ def alteraciones(viejo: list[dict], nuevo: list[dict]) -> list[str]:
     """
     por_fecha = {f["fecha"]: f for f in nuevo}
     malas = []
+    # Solo las columnas que existen en los dos archivos. Si el esquema cambio
+    # —porque alguien agrego una columna— las nuevas no estan en el viejo y
+    # compararlas diria «la fuente reescribio el pasado» sobre algo que no
+    # tiene nada que ver con la fuente. Son dos fallas distintas y hay que
+    # poder distinguirlas: `cambio_de_esquema` reporta la otra.
+    previas = set(viejo[0]) if viejo else set()
+    deterministas = [c for c in columnas()
+                     if c not in COLUMNAS_EVENTO and c in previas]
     for f in viejo:
         n = por_fecha.get(f["fecha"])
         if n is None:
             malas.append(f"{f['fecha']}: desaparecio de la fuente")
             continue
-        for c in columnas():
+        for c in deterministas:
             if (f.get(c) or "") != (n.get(c) or ""):
                 malas.append(f"{f['fecha']}: {c} era {f.get(c)!r} y ahora es {n.get(c)!r}")
     return malas
+
+
+def cambio_de_esquema(viejo: list[dict]) -> tuple[list[str], list[str]]:
+    """Columnas que aparecen y que desaparecen respecto del archivo commiteado.
+
+    Un cambio de esquema es un cambio de codigo, no una falla de datos: se
+    anuncia y se sigue. Lo que no puede pasar es que se confunda con que la
+    fuente reescribio la historia, que si es grave.
+    """
+    if not viejo:
+        return [], []
+    previas, ahora = set(viejo[0]), set(columnas())
+    return sorted(ahora - previas), sorted(previas - ahora)
+
+
+def arrastrar(viejo: list[dict], nuevo: list[dict]) -> list[dict]:
+    """Conserva las columnas de evento del archivo anterior.
+
+    Todo lo demas se recalcula; esto no puede. Que salio un aviso el 12 de
+    noviembre y llego es un hecho, no una funcion de la serie: si se
+    recalculara, el historial de notificaciones se borraria solo cada dia.
+    """
+    previo = {f["fecha"]: f for f in viejo}
+    for f in nuevo:
+        v = previo.get(f["fecha"])
+        if v:
+            for c in COLUMNAS_EVENTO:
+                f[c] = v.get(c) or ""
+    return nuevo
+
+
+def salto_imposible(filas: list[dict]) -> str | None:
+    """Un movimiento diario del fondo agresivo que no puede ser mercado.
+
+    Se mira solo el ultimo dia: la historia ya esta validada y revisarla entera
+    en cada corrida convertiria un dato viejo y raro en una alarma diaria.
+    """
+    if len(filas) < 2:
+        return None
+    hoy, ayer = float(filas[-1]["vc_a"]), float(filas[-2]["vc_a"])
+    cambio = hoy / ayer - 1
+    if abs(cambio) > SALTO_IMPOSIBLE:
+        return (f"{filas[-1]['fecha']}: el Fondo A se movio {cambio:+.2%} en un dia, "
+                f"sobre el limite de {SALTO_IMPOSIBLE:.0%}")
+    return None
+
+
+def transicion(filas: list[dict]) -> tuple[int, str, str] | None:
+    """El ultimo cambio de la posicion en vigor: (indice, desde, hacia).
+
+    Sobre `posicion`, que es la instruccion unica por votacion, no sobre las
+    cinco senales sueltas. Devuelve None si nunca cambio.
+    """
+    con = [f for f in filas if f["posicion"]]
+    for i in range(len(con) - 1, 0, -1):
+        if con[i]["posicion"] != con[i - 1]["posicion"]:
+            return filas.index(con[i]), con[i - 1]["posicion"], con[i]["posicion"]
+    return None
 
 
 def guardar(filas: list[dict], ruta: Path = SALIDA) -> None:
@@ -373,9 +507,52 @@ def resumen(filas: list[dict]) -> str:
     return "\n".join(partes)
 
 
+def para_informe(filas: list[dict] | None = None) -> dict | None:
+    """Lo que el informe del viernes necesita, armado aca y no alla.
+
+    Los nombres de los fondos salen del registro y **nunca del codigo del
+    informe**: en abril de 2027 los multifondos desaparecen y el informe tiene
+    que seguir diciendo la verdad sin que nadie edite una plantilla.
+
+    Devuelve None si no hay registro. Quien llama decide que hacer con eso, y
+    lo que no puede hacer es reventar: esta seccion es la menos critica del
+    informe porque no hay plata adentro.
+    """
+    filas = leer() if filas is None else filas
+    if not filas:
+        return None
+    u = filas[-1]
+    t = transicion(filas)
+    peaje = []
+    if u["acum_a"]:
+        a = float(u["acum_a"])
+        for m in MEDIAS:
+            v = u[f"acum_{m}_{REFUGIO.lower()}"]
+            peaje.append((m, float(v) - a if v else None))
+    return {
+        "fecha": u["fecha"],
+        "filas": len(filas),
+        "congelado": CONGELADO,
+        "agresivo": DENTRO,
+        "refugio": REFUGIO,
+        "votos_para_salir": VOTOS_PARA_SALIR,
+        "medias": [(m, u[f"senal_{m}"], float(u[f"razon_{m}"]) if u[f"razon_{m}"] else None,
+                    u[f"pos_{m}"]) for m in MEDIAS],
+        "votos": int(u["votos"]) if u["votos"] else None,
+        "posicion": u["posicion"] or None,
+        "desde": filas[t[0]]["fecha"] if t else None,
+        "acum_a": float(u["acum_a"]) if u["acum_a"] else None,
+        "acum_voto": float(u["acum_voto"]) if u["acum_voto"] else None,
+        "peaje": peaje,
+        "aviso": u.get("aviso") or None,
+        "aviso_estado": u.get("aviso_estado") or None,
+    }
+
+
 def main(argv=None) -> int:
+    viejo = leer()
     nuevo = construir()
-    malas = alteraciones(leer(), nuevo)
+    malas = alteraciones(viejo, nuevo)
     if malas:
         print("La fuente reescribio historia ya registrada:", file=sys.stderr)
         for m in malas[:20]:
@@ -385,8 +562,42 @@ def main(argv=None) -> int:
         print("\nNo se sobrescribe. Hay que mirar la fuente antes de seguir.",
               file=sys.stderr)
         return 1
+    entran, salen = cambio_de_esquema(viejo)
+    if entran or salen:
+        print("El esquema del registro cambio en esta corrida:")
+        if entran:
+            print("  entran: " + ", ".join(entran))
+        if salen:
+            print("  salen:  " + ", ".join(salen))
+        print("  (es un cambio de codigo, no de la fuente; la grilla la fija la prueba)\n")
+    nuevo = arrastrar(viejo, nuevo)
+
+    # El aviso va antes de guardar para que la fila salga con su marca puesta,
+    # pero **el archivo se guarda pase lo que pase con el correo**: el registro
+    # es lo principal y una falla de la notificacion no puede hacerle perder un
+    # dia. Es el defecto que ya nos costo un informe entero con FRED.
+    problema = salto_imposible(nuevo)
+    aviso_ok, aviso_dicho = True, "sin transicion pendiente"
+    if problema:
+        aviso_dicho = f"aviso suspendido — {problema}"
+    else:
+        try:
+            from src.aviso_afp import avisar
+            aviso_ok, aviso_dicho = avisar(nuevo)
+        except Exception as e:                   # noqa: BLE001
+            aviso_ok, aviso_dicho = False, f"el aviso reviento: {type(e).__name__}: {e}"
+
     guardar(nuevo)
     print(resumen(nuevo))
+    print(f"\n  Aviso: {aviso_dicho}")
+    if problema:
+        print(f"\n{problema}\nNo se disparo ningun aviso: es dato malo antes que mercado.",
+              file=sys.stderr)
+        return 1
+    if not aviso_ok:
+        print(f"\n{aviso_dicho}\nEl registro quedo guardado; el aviso se reintenta manana.",
+              file=sys.stderr)
+        return 1
     return 0
 
 

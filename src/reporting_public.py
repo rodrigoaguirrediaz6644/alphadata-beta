@@ -229,6 +229,91 @@ def _positions(portfolio: pd.DataFrame, currency: str = "$") -> str:
             + f'</tr></thead><tbody>{"".join(rows)}</tbody></table>')
 
 
+# Cuántos días puede tener la última fila del registro antes de que salte a la
+# vista. **Una sola casa con el panel de salud**: dos umbrales para la misma
+# pregunta terminarían discrepando, y ya sabemos cómo termina eso.
+def _dias_registro() -> int:
+    from src.salud import DIAS_REGISTRO
+    return DIAS_REGISTRO
+
+
+def _afp_lineas(afp: dict | None, as_of) -> list[str]:
+    """Las líneas de la sección AFP, en texto plano. El HTML las envuelve.
+
+    **El encuadre lo hacen el título y lo que se muestra, no un párrafo de
+    descargo.** La sección dice qué indica cada configuración y qué está en
+    vigor; no dice «señal de salida» ni «conviene mover», porque la decisión de
+    operarla no es del informe.
+
+    Los nombres de los fondos vienen del registro. En abril de 2027 los
+    multifondos desaparecen y esto tiene que seguir diciendo la verdad sin que
+    nadie edite la plantilla.
+    """
+    if afp is None:
+        return ["- El registro no se pudo leer en esta corrida. El resto del informe no depende de él."]
+    dias = (pd.Timestamp(as_of).normalize() - pd.Timestamp(afp["fecha"]).normalize()).days
+    agresivo, refugio = f"Fondo {afp['agresivo']}", f"Fondo {afp['refugio']}"
+
+    lineas = [f"**Qué dice hoy** — la razón es cuánto le falta al umbral de salida."]
+    for m, senal, razon, _ in afp["medias"]:
+        donde = agresivo if senal == "A" else refugio
+        lineas.append(f"- media {m} d · {donde} · razón {_signed(razon)}")
+    if afp["posicion"]:
+        desde = (f" desde el {pd.Timestamp(afp['desde']):%d-%m-%Y}" if afp["desde"] else "")
+        votos = afp["votos"]
+        lineas.append(
+            f"- **En vigor hoy: Fondo {afp['posicion']}**{desde} "
+            f"({votos} de {len(afp['medias'])} indican salir; la regla sale con "
+            f"{afp['votos_para_salir']} o más). Es la posición que corresponde al rezago de "
+            "ejecución, no la señal de hoy.")
+
+    if afp["acum_a"] is not None:
+        lineas += ["", f"**Cuánto lleva costando** — desde el "
+                       f"{pd.Timestamp(afp['congelado']):%d-%m-%Y}, contra quedarse en "
+                       f"{agresivo} ({_signed(afp['acum_a'])})."]
+        for m, p in afp["peaje"]:
+            lineas.append(f"- media {m} d · {_signed(p) if p is not None else '—'}")
+        if afp["acum_voto"] is not None:
+            lineas.append(f"- **la regla en vigor · "
+                          f"{_signed(afp['acum_voto'] - afp['acum_a'])}**")
+    else:
+        lineas += ["", f"**Cuánto lleva costando** — el registro se congeló el "
+                       f"{pd.Timestamp(afp['congelado']):%d-%m-%Y} y todavía no hay días "
+                       "posteriores que medir."]
+
+    estado = (f"{afp['filas']:,}".replace(",", ".") + " días de cotización, el último del "
+              f"{pd.Timestamp(afp['fecha']):%d-%m-%Y}")
+    if dias > _dias_registro():
+        lineas += ["", f"**El registro dejó de crecer:** {estado}, hace {int(dias)} días."]
+    else:
+        lineas += ["", f"**El registro** — {estado}."]
+    if afp["aviso"]:
+        lineas.append(f"- Último aviso: {afp['aviso']} ({afp['aviso_estado']}).")
+    return lineas
+
+
+def _afp_html(afp: dict | None, as_of) -> str:
+    lineas = _afp_lineas(afp, as_of)
+    out, lista = [], []
+    for l in lineas:
+        if l.startswith("- "):
+            lista.append(f"<li>{_negritas(l[2:])}</li>")
+            continue
+        if lista:
+            out.append("<ul>" + "".join(lista) + "</ul>")
+            lista = []
+        if l:
+            out.append(f'<p class="lead">{_negritas(l)}</p>')
+    if lista:
+        out.append("<ul>" + "".join(lista) + "</ul>")
+    return "".join(out)
+
+
+def _negritas(texto: str) -> str:
+    partes = texto.split("**")
+    return "".join(p if i % 2 == 0 else f"<strong>{p}</strong>" for i, p in enumerate(partes))
+
+
 def _deriva(real, objetivo, limite: float | None = LIMITE_CONCENTRACION) -> str:
     """El peso al que llegó la posición, contra el que el modelo supone.
 
@@ -388,6 +473,7 @@ def build_public_report(
     salud: list | None = None,
     conocidos: list | None = None,
     ha_entrado: bool = True,
+    afp: dict | None = None,
 ) -> tuple[str, str]:
     vacio_cartera = pd.DataFrame(columns=["ticker", "target_weight"])
     vacio_movs = pd.DataFrame(columns=["ticker", "action", "target_weight"])
@@ -519,6 +605,10 @@ def build_public_report(
     <p class="muted">Todos los precios están en pesos. Gamma-6 y el oro se compran en Chile como CDV, así que su resultado ya incluye el efecto del tipo de cambio. El oro no se compra ni se vende por señales: es una posición fija que está para amortiguar las caídas del resto.</p>
     </section>
 
+    <section><h2>Fondos AFP — señal registrada</h2>
+    {_afp_html(afp, as_of)}
+    </section>
+
     <section><h2>¿Hay que preocuparse?</h2>
     {panel}
     {aviso_vigencia}{problems_block}</section>
@@ -553,6 +643,7 @@ def build_public_report(
         lines.append(f"- {name}: {_signed(metrics[name]['return'])} desde el {inicio:%d-%m-%Y}; peor caída {pct(metrics[name]['mdd'])}.")
     if not benchmark_usable:
         lines.append("- La comparación con la bolsa chilena no está disponible: la serie del IPSA tiene un salto y quedó fuera hasta corregirla.")
+    lines += ["", "## Fondos AFP — señal registrada", ""] + _afp_lineas(afp, as_of)
     lines += ["", "## ¿Hay que preocuparse?", "", _salud_md(salud, conocidos) if salud else "- Sin panel de salud en esta corrida.", ""]
     lines += ["", "El informe HTML incluye el gráfico y las carteras. La metodología y sus parámetros son información reservada.", ""]
     return "\n".join(lines), html

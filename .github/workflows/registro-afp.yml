@@ -45,13 +45,31 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Calcular la grilla y guardarla
-        # Sale en rojo si la fuente reescribio historia ya registrada. Eso es
-        # deliberado: un registro hacia adelante cuyo pasado cambia solo no
-        # sirve para nada, y lo peor del caso es que no se nota.
+      - name: Calcular la grilla, avisar si cambia, y guardar
+        # Sale en rojo en tres casos, los tres a proposito: si la fuente
+        # reescribio historia ya registrada, si el valor cuota dio un salto
+        # imposible, y **si habia que avisar un cambio de fondo y el correo no
+        # salio**. Ese ultimo es el que importa: un aviso que no llega es peor
+        # que no tener aviso, porque Rodrigo va a estar confiando.
+        #
+        # El archivo se guarda igual en los dos ultimos casos: el registro es
+        # lo principal y una falla de la notificacion no puede hacerle perder
+        # un dia. Por eso el paso siguiente lleva `always()`.
+        env:
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          SMTP_FROM: ${{ secrets.SMTP_FROM }}
+          REPORT_RECIPIENTS: ${{ secrets.REPORT_RECIPIENTS }}
         run: PYTHONPATH=. python -m src.registro_afp
 
       - name: Guardar el dia
+        # `always()` porque el paso anterior sale en rojo cuando el aviso no
+        # pudo enviarse, y justo en esa corrida es cuando mas importa que la
+        # fila quede commiteada con su marca de `fallo`: es el unico rastro de
+        # que hubo un cambio de fondo que Rodrigo no recibio.
+        if: always()
         run: |
           git config user.name "alphadata-bot"
           git config user.email "actions@users.noreply.github.com"

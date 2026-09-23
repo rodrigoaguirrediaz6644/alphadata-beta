@@ -64,6 +64,8 @@ prueba la fija.
 | medias | **45, 64, 90, 105 y 126 días de cotización** |
 | ejecución teórica | **4 días de cotización** de rezago |
 | refugios | **Fondo E**, con el **D** al lado |
+| votos para salir | **2 de 5** |
+| refugio que se opera | **Fondo E** — por correlación, no por ser el más tranquilo |
 | AFP | **Cuprum** |
 
 **Las medias van en días de cotización, no corridos.** Esa distinción costó una
@@ -85,8 +87,12 @@ midiendo, así que el registro sólo sirve si nadie los toca mientras corre.
 | `razon_{m}` | `precio / media de m días − 1`. Sirve para ver qué tan cerca del umbral está |
 | `senal_{m}` | `A` o `fuera`: lo que la configuración indicaría **hoy** |
 | `pos_{m}` | lo que estaría **en vigor** hoy, o sea la señal de hace 4 días |
+| `votos` | cuántas de las cinco indican salir, sobre la posición en vigor |
+| `posicion` | **la instrucción única**: el fondo donde corresponde estar hoy |
 | `acum_a` | retorno acumulado del Fondo A **desde el congelamiento** |
 | `acum_{m}_{e\|d}` | lo mismo para cada configuración, con refugio E o D |
+| `acum_voto` | lo mismo para la regla que de verdad se opera |
+| `aviso`, `aviso_estado` | si ese día salió un aviso de cambio y si llegó |
 
 Las columnas `acum_*` están vacías antes del congelamiento a propósito: acumular
 sobre la historia con la que se eligieron los parámetros no mide nada. El peaje
@@ -98,6 +104,62 @@ El refugio no aparece en la señal a propósito: la señal dice si estar en el
 Fondo A o fuera, y quien lea decide con cuál refugio valorizarlo. El Fondo D va
 al lado del E porque **en abril de 2027 los dos desaparecen del menú** y todavía
 no sabemos cuál de los generacionales ocupa ese lugar.
+
+## La regla que se opera: la votación, no una media
+
+Operar exige **una** instrucción, no cinco. Y elegir una de las cinco medias
+sería justo la decisión contaminada, porque las elegimos mirando estos datos.
+
+**La salida es no elegir: que voten.** Se va al refugio cuando **dos o más** de
+las cinco lo indican, y vuelve al agresivo cuando menos de dos. Sobre la
+posición en vigor, no sobre la señal del día: lo que se vota es lo que se puede
+materializar.
+
+El umbral de dos también se eligió mirando la tabla —es selección posterior,
+como todo lo demás—. Lo que lo hace defendible es que **2 de 5 y 3 de 5 dan casi
+lo mismo** en las tres ventanas medidas, así que la elección entre ellas no es
+la que decide. **La que decide es no esperar a la unanimidad: esperar a las
+cinco cuesta siete puntos de caída.**
+
+Sobre la historia completa esto da **2,2 cambios al año**, y las cinco medias
+están de acuerdo el **81,7%** de los días. El 18,3% restante es donde la regla
+hace su trabajo.
+
+## El aviso de cambio, el mismo día
+
+El informe semanal no sirve como instrumento: entre que la señal habla un lunes
+y se lee el viernes se pierden cuatro días, que sumados al rezago de ejecución
+deterioran varios puntos la protección medida.
+
+`src/aviso_afp.py` corre dentro del mismo trabajo diario, después de calcular la
+grilla. **Dispara sólo en la transición** —no cada día que la señal esté en
+refugio— y se repite **tres días de cotización**: un correo se pierde, tres no.
+Así tampoco hace falta que el sistema sepa en qué fondo está Rodrigo de verdad,
+que es una complicación que no vale lo que cuesta.
+
+El asunto lleva la instrucción completa, porque se lee desde la pantalla
+bloqueada del teléfono. El cuerpo dice a qué fondo, cuántas de las cinco medias
+lo indican, el valor cuota del día y cuándo quedaría materializado. **No
+recomienda nada.**
+
+### Lo que tiene que aguantar, que es lo que decide si sirve
+
+**Un aviso que no llega es peor que no tener aviso**, porque él va a estar
+confiando. Entonces:
+
+- Si el correo falla, **la corrida sale en rojo** y reintenta al día siguiente.
+- La fila del día queda marcada `fallo`, y se commitea igual: es el único rastro
+  de que hubo un cambio que no se recibió.
+- **El informe del viernes muestra la posición en vigor y desde cuándo.** Si los
+  tres correos se perdieron, el viernes lo agarra.
+
+**Un aviso falso por dato malo** es el otro modo de falla. Además de la guardia
+que ya existe, si el valor cuota del fondo agresivo se mueve más de **8% en un
+día** el aviso no dispara y la corrida sale en rojo. Nunca pasó en 24 años; si
+pasa, es dato malo antes que mercado.
+
+Y al revés: **la falta de aviso nunca tumba el registro ni el informe.** Es el
+defecto que ya nos costó un informe entero con FRED.
 
 ## Dos decisiones de construcción que no son obvias
 
