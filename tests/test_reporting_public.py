@@ -303,3 +303,63 @@ def test_los_nombres_de_los_fondos_salen_del_registro():
     md, _ = _report(generacional=_generacional(agresivo="Inicial", refugio="Consolidacion",
                              posicion="Consolidacion", votos=3))
     assert "Fondo Inicial" in md and "Fondo Consolidacion" in md
+
+
+# --------------------------------------------------------------------------
+# Lo comprado de verdad contra el reparto de diseño
+# --------------------------------------------------------------------------
+
+DISENO = {"Delta-12": 7_500_000., "Gamma-6": 7_500_000., "Oro": 5_000_000.}
+
+
+def test_el_informe_no_puede_decir_25_por_ciento_de_oro_sin_decir_cuanto_hay():
+    """Publicaba «Oro 25%, $5.000.000» con $619.504 comprados.
+
+    Los dos números eran correctos y decían cosas distintas sin que nada lo
+    dijera: un valor con más de una casa en su forma más cara, que es cuando
+    las dos casas tienen razón.
+    """
+    md, html = _report(capital_por_pieza=DISENO, invertido_por_pieza={"Oro": 619_503.84})
+    for texto in (md, html):
+        assert "619.504" in texto
+        assert "5.000.000" in texto
+        assert "12,4% de su pieza" in texto
+
+
+def test_dice_que_piezas_no_se_han_comprado():
+    md, _ = _report(capital_por_pieza=DISENO, invertido_por_pieza={"Oro": 619_503.84})
+    assert md.count("sin comprar todavía") == 2
+    assert "Delta-12: $ 0 de $ 7.500.000" in md
+
+
+def test_sin_operaciones_lo_dice_en_vez_de_callarse():
+    md, _ = _report(capital_por_pieza=DISENO, invertido_por_pieza={})
+    assert "0,0% del capital de referencia" in md
+
+
+def test_sin_reparto_configurado_el_bloque_no_aparece_y_el_informe_sale():
+    md, html = _report(capital_por_pieza=None, invertido_por_pieza={"Oro": 1.})
+    assert "Lo comprado de verdad" not in md
+    assert "¿Hay que preocuparse?" in md and "¿Hay que preocuparse?" in html
+
+
+def test_una_venta_baja_lo_invertido():
+    """Si se vendiera, el bloque tiene que reflejarlo o mentiría al revés."""
+    from src.operaciones import invertido
+    import pandas as pd
+    ops = pd.DataFrame([
+        {"estrategia": "Oro", "instrumento": "IAU", "accion": "COMPRA",
+         "estado": "EJECUTADA", "cantidad": 8, "precio_pagado": 77300., "comision": 1103.84},
+        {"estrategia": "Oro", "instrumento": "IAU", "accion": "VENTA",
+         "estado": "EJECUTADA", "cantidad": 4, "precio_pagado": 78000., "comision": 557.},
+    ])
+    assert invertido(ops)["Oro"] == pytest.approx(8 * 77300 + 1103.84 - 4 * 78000 + 557.)
+
+
+def test_una_orden_no_ejecutada_no_cuenta_como_comprada():
+    from src.operaciones import invertido
+    import pandas as pd
+    ops = pd.DataFrame([{"estrategia": "Oro", "instrumento": "IAU", "accion": "COMPRA",
+                         "estado": "PENDIENTE", "cantidad": 65, "precio_pagado": 77300.,
+                         "comision": 0.}])
+    assert invertido(ops) == {}

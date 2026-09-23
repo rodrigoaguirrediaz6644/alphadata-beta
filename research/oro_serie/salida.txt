@@ -1,0 +1,36 @@
+##############################################################################
+# PARTE 1 — que serie es
+##############################################################################
+  ticker de origen: IAU   2947 filas, 2015-01-02 a 2026-09-22
+  ultimo precio: 82.03   volumen tipico: 5,843,250 unidades
+
+  dias con precio exactamente repetido: 80 de 2946 (2.7%)
+  huecos de mas de 4 dias corridos: 0
+
+  los movimientos diarios mas grandes, con su volumen:
+    2026-01-30   -10,21%   volumen   76,121,500
+    2026-02-03    +6,24%   volumen   36,182,400
+    2025-10-21    -6,21%   volumen   39,834,100
+    2020-08-11    -5,33%   volumen   25,563,550
+
+  Un CDV sin libro daria saltos grandes CON volumen bajo o nulo.
+  Acá los 1 saltos sobre 8% vienen con 76,121,500 unidades de mediana,
+  contra 5,843,250 de un dia normal. Son sesiones reales.
+
+##############################################################################
+# PARTE 2 — cuanto de la diversificacion del oro es el dolar
+##############################################################################
+  1209 dias en comun, desde 2021-07-09
+
+                                 en pesos   sin el dolar
+  oro contra Gamma-6               +0.549         +0.182
+  oro contra Delta-12              +0.125         +0.174
+
+  El oro en pesos contra el dolar: +0.669
+  El oro en dolares contra el dolar: -0.008
+
+  volatilidad anual del oro: 18.4% en dolares, 25.6% en pesos
+  El dolar le agrega 7.2% de volatilidad, no se la quita.
+
+  Regresion del oro en pesos sobre el dolar: beta 0.97, R2 45%
+  O sea que **el 45% de la varianza de la pieza de oro es tipo de cambio**.

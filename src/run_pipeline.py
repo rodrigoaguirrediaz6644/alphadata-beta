@@ -11,7 +11,7 @@ import pandas as pd
 from src.fetch_prices import load_universe, operables
 from src.ingest_recommendations import ingest
 from src.ingreso import cartera_de_ingreso, markdown as markdown_ingreso
-from src.operaciones import cargar as cargar_operaciones, descalce as descalce_real
+from src.operaciones import cargar as cargar_operaciones, descalce as descalce_real, invertido as invertido_real
 from src.cdv import cargar as cargar_cdv, cargar_simbolos as cargar_simbolos_cdv, estado as estado_cdv, premio as premio_cdv
 from src.libro import abiertas as libro_abiertas, anotar, cargar as cargar_libro, cartera_publicada, guardar as guardar_libro, guardar_publicada, movimientos_de, precios_de_entrada
 from src.strategy_registry import validate_registry
@@ -696,7 +696,7 @@ def main()->None:
     ingreso=cartera_de_ingreso({'Sigma-6':sigma,'Delta-12':delta,'Gamma-6':gamma,'Oro':oro_portfolio},as_of,costos,simbolos=puerta_cdv)
     (REPORTS/'cartera_de_ingreso.md').write_text(markdown_ingreso(ingreso,as_of),encoding='utf-8')
     ingreso.to_csv(DATA/'cartera_de_ingreso.csv',index=False)
-    md,html=build_public_report(as_of,delta,dmove,coverage,errors,history,gamma=gamma,gamma_moves=gmove,oro=oro_portfolio,oro_moves=omove,movimientos=movimientos_libro,capital_por_pieza=por_pieza,vigencia=vigencia,salud=salud,conocidos=conocidos,ha_entrado=ha_entrado,generacional=registro_generacional);(REPORTS/'latest_report.md').write_text(md,encoding='utf-8');(REPORTS/'latest_report.html').write_text(html,encoding='utf-8')
+    md,html=build_public_report(as_of,delta,dmove,coverage,errors,history,gamma=gamma,gamma_moves=gmove,oro=oro_portfolio,oro_moves=omove,movimientos=movimientos_libro,capital_por_pieza=por_pieza,invertido_por_pieza=invertido_real(cargar_operaciones(DATA/'operaciones_reales.csv')),vigencia=vigencia,salud=salud,conocidos=conocidos,ha_entrado=ha_entrado,generacional=registro_generacional);(REPORTS/'latest_report.md').write_text(md,encoding='utf-8');(REPORTS/'latest_report.html').write_text(html,encoding='utf-8')
     guardar_publicada(vigente,as_of,PUBLICADA)
     sigma.to_csv(DATA/'portfolio_sigma6.csv',index=False);delta.to_csv(DATA/'portfolio_delta12.csv',index=False);gamma.to_csv(DATA/'portfolio_gamma6.csv',index=False);oro_portfolio.to_csv(DATA/'portfolio_oro.csv',index=False)
     s_audit.to_csv(DATA/'audit_sigma6.csv',index=False);d_audit.to_csv(DATA/'audit_delta12.csv',index=False)

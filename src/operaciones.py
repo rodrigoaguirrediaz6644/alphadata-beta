@@ -60,3 +60,28 @@ def descalce(operaciones: pd.DataFrame, carteras: dict[str, list[str] | set[str]
     """
     del_modelo = {t for lista in carteras.values() for t in lista}
     return sorted(t for t in tenencias(operaciones) if t not in del_modelo)
+
+
+def invertido(operaciones: pd.DataFrame) -> dict[str, float]:
+    """`{estrategia: pesos efectivamente invertidos}`, neto de ventas y con costos.
+
+    Existe porque el informe publicaba el reparto **de diseño** —Oro 25%,
+    $5.000.000— cuando lo comprado eran $619.504. Los dos números son
+    correctos y decían cosas distintas sin que nada lo dijera: un valor con más
+    de una casa, en la forma más cara, que es cuando las dos casas tienen razón.
+
+    El costo va sumado a la compra y restado de la venta porque es plata que
+    salió de la cuenta en los dos casos.
+    """
+    if operaciones.empty or "estrategia" not in operaciones:
+        return {}
+    d = operaciones.loc[operaciones.estado.isin(EJECUTADAS)].copy()
+    if d.empty:
+        return {}
+    cantidad = pd.to_numeric(d.cantidad, errors="coerce").fillna(0)
+    precio = pd.to_numeric(d.precio_pagado, errors="coerce").fillna(0)
+    comision = pd.to_numeric(d.get("comision"), errors="coerce").fillna(0)
+    signo = d.accion.map(lambda a: 1 if a in COMPRAS else (-1 if a in VENTAS else 0))
+    d["monto"] = signo * cantidad * precio + comision
+    total = d.groupby("estrategia").monto.sum()
+    return {str(k): float(v) for k, v in total.items()}

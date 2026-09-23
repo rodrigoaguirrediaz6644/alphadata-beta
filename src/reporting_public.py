@@ -314,6 +314,35 @@ def _negritas(texto: str) -> str:
     return "".join(p if i % 2 == 0 else f"<strong>{p}</strong>" for i, p in enumerate(partes))
 
 
+def _ejecutado(diseno: dict | None, real: dict | None) -> list[str]:
+    """Lo comprado de verdad, al lado del reparto de diseño.
+
+    **El informe publicaba «Oro 25%, $5.000.000» cuando lo comprado eran
+    $619.504.** Los dos números eran correctos y decían cosas distintas sin que
+    nada lo dijera, que es un valor con más de una casa en su forma más cara:
+    cuando las dos casas tienen razón.
+
+    No reemplaza al diseño —de ahí salen los montos por posición y la guía de
+    ingreso— sino que va pegado a él, para que no se pueda leer uno sin el otro.
+    """
+    if not diseno:
+        return []
+    real = real or {}
+    capital = sum(diseno.values())
+    puesto = sum(real.values())
+    if not capital:
+        return []
+    lineas = [f"**Comprado de verdad: {_pesos(puesto, '$')} de {_pesos(capital, '$')}**, "
+              f"o sea {pct(puesto / capital)} del capital de referencia. El reparto de "
+              "arriba es el diseño, no lo que hay en la cuenta."]
+    for nombre, monto in diseno.items():
+        hay = real.get(nombre, 0.)
+        lineas.append(f"- {nombre}: {_pesos(hay, '$')} de {_pesos(monto, '$')}"
+                      + (f" ({pct(hay / monto)} de su pieza)" if monto else "")
+                      + ("" if hay else " — sin comprar todavía"))
+    return lineas
+
+
 def _deriva(real, objetivo, limite: float | None = LIMITE_CONCENTRACION) -> str:
     """El peso al que llegó la posición, contra el que el modelo supone.
 
@@ -469,6 +498,7 @@ def build_public_report(
     oro_moves: pd.DataFrame | None = None,
     movimientos: pd.DataFrame | None = None,
     capital_por_pieza: dict | None = None,
+    invertido_por_pieza: dict | None = None,
     vigencia: dict | None = None,
     salud: list | None = None,
     conocidos: list | None = None,
@@ -553,6 +583,12 @@ def build_public_report(
         for name in STRATEGIES if name in portfolios
     )
 
+    ejecutado = _ejecutado(capital_por_pieza, invertido_por_pieza)
+    _bloque_ejecutado = ("".join(
+        f'<p class="lead">{_negritas(l)}</p>' if not l.startswith("- ")
+        else f'<p class="muted" style="margin:2px 0">{_negritas(l[2:])}</p>'
+        for l in ejecutado) if ejecutado else "")
+
     html = f'''<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>
     body{{margin:0;background:#f2f4f7;font:15px/1.5 -apple-system,Segoe UI,Arial,sans-serif;color:#1d2939}}
     .wrap{{max-width:760px;margin:auto;background:#fff}}
@@ -598,6 +634,7 @@ def build_public_report(
 
     <section><h2>La cartera completa</h2>
     <p class="lead">{reparto}</p>
+    {_bloque_ejecutado}
     {positions_blocks}
     {nota_dividendos}
     <p class="muted"><strong>Va ganando</strong> es cuánto se movió el precio de esa acción desde el día en que se compró, que es distinto del rendimiento de la estrategia desde el {inicio:%d-%m-%Y}: una acción comprada hace ocho meses puede ir muy arriba aunque la estrategia lleve poco medida. Los dos números son correctos y no tienen por qué calzar.</p>
@@ -643,6 +680,8 @@ def build_public_report(
         lines.append(f"- {name}: {_signed(metrics[name]['return'])} desde el {inicio:%d-%m-%Y}; peor caída {pct(metrics[name]['mdd'])}.")
     if not benchmark_usable:
         lines.append("- La comparación con la bolsa chilena no está disponible: la serie del IPSA tiene un salto y quedó fuera hasta corregirla.")
+    if ejecutado:
+        lines += ["", "## Lo comprado de verdad", ""] + ejecutado
     lines += ["", "## Ahorro Generacional", ""] + _generacional_lineas(generacional, as_of)
     lines += ["", "## ¿Hay que preocuparse?", "", _salud_md(salud, conocidos) if salud else "- Sin panel de salud en esta corrida.", ""]
     lines += ["", "El informe HTML incluye el gráfico y las carteras. La metodología y sus parámetros son información reservada.", ""]
