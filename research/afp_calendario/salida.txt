@@ -1,0 +1,31 @@
+##############################################################################
+# EL PRIVILEGIO DEL CALENDARIO
+##############################################################################
+  Las mismas doce reglas, leidas en otro dia del mes.
+  Rezago de ejecucion real: 7 dias corridos, igual en las cuatro.
+  Ventana: 2014-01-01 en adelante, Cuprum.
+  regla                          +0d                 +7d                +14d                +21d
+                     anual     caida     anual     caida     anual     caida     anual     caida
+  propia-3m         +9,91%   -16,58%   +10,72%   -19,75%    +9,77%   -26,09%   +10,13%   -26,48%
+  mercado-3m        +8,11%   -26,48%   +10,60%   -26,48%    +8,03%   -26,48%    +9,56%   -26,48%
+  propia-6m         +9,85%   -26,48%   +10,45%   -26,48%    +9,75%   -26,09%    +9,81%   -26,48%
+  mercado-6m        +7,52%   -26,48%    +9,49%   -26,48%   +10,21%   -26,48%    +9,34%   -26,48%
+  propia-9m         +8,83%   -26,48%    +9,29%   -26,48%   +10,55%   -26,09%    +9,03%   -26,48%
+  mercado-9m        +8,18%   -26,48%    +8,42%   -26,48%   +10,71%   -26,48%    +9,85%   -26,48%
+  propia-12m        +8,64%   -26,48%    +9,06%   -26,48%    +9,81%   -26,09%    +9,86%   -26,48%
+  mercado-12m       +9,39%   -26,48%    +8,79%   -26,48%    +8,94%   -26,48%   +10,11%   -26,48%
+  vol-p70          +11,68%   -11,04%   +10,02%   -19,75%    +8,09%   -28,45%    +9,62%   -25,17%
+  vol-p80          +11,95%   -14,19%   +12,07%   -19,75%   +10,25%   -28,45%   +10,52%   -27,00%
+  vol-p90          +10,19%   -26,48%   +11,83%   -26,48%   +10,07%   -26,09%   +10,85%   -26,48%
+  vol-p95           +9,75%   -26,48%   +10,32%   -26,48%    +9,43%   -26,09%   +10,05%   -26,48%
+  Fondo A          +10,01%   -26,48%   +10,01%   -26,48%   +10,01%   -26,48%   +10,01%   -26,48%
+  Caida del Fondo A en la ventana: -26,48%
+  Protege = caida al menos 5% mejor que esa.
+  No protegen en NINGUN dia de corte: 9 de 12
+  Protegen en algun dia de corte:     3 de 12
+    - propia-3m    mejor -16,58%   peor -26,48%
+    - vol-p70      mejor -11,04%   peor -28,45%
+    - vol-p80      mejor -14,19%   peor -28,45%
+  Protegen en LOS CUATRO dias:        0 de 12
+  Esa ultima fila es la prueba. Una regla que protege solo si se
+  lee el cierre de mes no es una regla: es el calendario.
