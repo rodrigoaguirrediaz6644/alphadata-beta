@@ -1,0 +1,65 @@
+##############################################################################
+# LOS EPISODIOS (regla mecanica: caida del Fondo A de mas de 10%)
+##############################################################################
+  6 episodios entre 2002-08-01 y 2026-09-20
+  beta del Fondo A al MSCI World en pesos: 0.201
+  (una sola, sobre 5766 dias, con el mercado rezagado un dia;
+   no se estima por episodio)
+##############################################################################
+# H1 — EL COLCHON DICE CUANTO VALE SALIRSE
+##############################################################################
+  prediccion escrita antes: correlacion NEGATIVA entre el peso y el beneficio
+  episodio                  dias   Fondo A   Fondo E  beneficio      peso
+  2021-12-27 a 2023-03-15    443   -14,37%   +21,75%    +36,12%    -7,26%
+  2015-11-24 a 2016-02-15     83   -11,04%    +1,12%    +12,16%    -1,48%
+  2006-05-10 a 2006-06-15     36   -11,72%    +0,34%    +12,06%    +1,77%
+  2011-01-06 a 2011-10-05    272   -17,42%    +9,01%    +26,42%    +2,91%
+  2020-02-24 a 2020-03-24     29   -26,48%    -3,36%    +23,11%    +7,08%
+  2007-10-31 a 2009-03-04    490   -44,00%   +13,23%    +57,23%   +23,83%
+  Spearman(peso, beneficio) = +0.314   p = 0.544   n = 6
+  -> REFUTA: el signo sale al reves
+##############################################################################
+# H2 — LOS EMERGENTES EXPLICAN EL RESIDUO
+##############################################################################
+  prediccion escrita antes: correlacion POSITIVA entre residuo y em_vs_dev
+  episodio                   Fondo A  explicado   residuo    em-dev
+  2011-01-06 a 2011-10-05    -17,42%     -2,43%   -14,98%   -10,58%
+  2006-05-10 a 2006-06-15    -11,72%     -1,48%   -10,24%    -9,87%
+  2021-12-27 a 2023-03-15    -14,37%     -4,92%    -9,45%    -5,34%
+  2015-11-24 a 2016-02-15    -11,04%     -2,54%    -8,50%    -4,86%
+  2007-10-31 a 2009-03-04    -44,00%     -9,40%   -34,60%    -4,25%
+  2020-02-24 a 2020-03-24    -26,48%     -4,02%   -22,46%    +4,21%
+  Spearman(residuo, em-dev) = -0.371   p = 0.468   n = 6
+  -> REFUTA: el signo sale al reves
+  tabla completa en research/afp_mecanismos/episodios.csv
+##############################################################################
+# REPLICA EN HABITAT
+##############################################################################
+  7 episodios   Spearman(peso, beneficio) = +0.429   p = 0.337
+##############################################################################
+# SECUNDARIO (no pre-registrado): normalizado por la severidad
+##############################################################################
+  La severidad arrastra las dos variables de H1. Aca se mide la tasa:
+  cuanto aporta cambiarse **por cada punto que cae el Fondo A**.
+  episodio       cae el A      peso   beneficio por punto
+  2021-12-27      -14,37%    -7,26%                 2.51x
+  2015-11-24      -11,04%    -1,48%                 1.10x
+  2006-05-10      -11,72%    +1,77%                 1.03x
+  2011-01-06      -17,42%    +2,91%                 1.52x
+  2020-02-24      -26,48%    +7,08%                 0.87x
+  2007-10-31      -44,00%   +23,83%                 1.30x
+  Spearman(peso, beneficio por punto) = -0.371   p = 0.468   n = 6
+  (la prediccion de H1 seguia siendo signo NEGATIVO)
+  Spearman(residuo por punto, em-dev) = +0.371   p = 0.468   n = 6
+=== El tope de dos cambios por anio calendario ===
+regla                      tope     anual   peor caida  cambios/anio
+random forest               sin    +9,54%      -23,80%          23.3
+random forest                 2    +7,98%      -26,54%           2.1
+tendencia 50d               sin    +9,63%      -15,10%          30.0
+tendencia 50d                 2    +9,80%      -39,70%           2.0
+tendencia 100d              sin   +10,70%      -10,82%          18.0
+tendencia 100d                2    +9,77%      -40,43%           2.0
+tendencia 200d              sin    +9,61%      -19,42%          15.2
+tendencia 200d                2    +9,43%      -40,10%           1.9
+comprar A y no mirar          —    +9,07%      -26,06%           0.0
+comprar E y no mirar          —    +6,76%      -21,18%           0.0
