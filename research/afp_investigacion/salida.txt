@@ -1,0 +1,138 @@
+Cuprum, 272 meses, 2004-01-31 a 2026-08-31
+
+##############################################################################
+# 1. LA REPLICA, CON LA COMPOSICION PUBLICADA
+##############################################################################
+  pesos fijados por la composicion publicada, no ajustados:
+    renta variable extranjera 65% | local 15% | renta fija 20%
+  exposicion cambiaria sin cobertura: 50% (limite regulatorio A03)
+
+ sin cobertura    EM 0%   EM 15%   EM 25%   EM 35%   EM 50%
+           0%      7.9%     7.8%     7.8%     8.0%     8.3%
+          25%      7.1%     6.9%     6.8%     6.9%     7.1%
+          50%      6.9%     6.5%     6.4%     6.3%     6.4%
+          75%      7.4%     6.9%     6.6%     6.5%     6.5%
+         100%      8.4%     7.8%     7.5%     7.3%     7.2%
+
+  mejor: emergentes 35% de la RV extranjera, sin cobertura 50%
+  **El ajuste cae exactamente en el limite regulatorio de 50%.**
+  error de seguimiento 6.3% anual | correlacion 0.857
+  (la replica de tres componentes del estudio anterior: 8,0% y 0,751)
+
+  Pero 6.3% sigue siendo mucho mas que la ventaja que se busca
+  (0,5 a 1,6 puntos). **Sirve para entender el fondo, no para operarlo.**
+
+##############################################################################
+# 2. QUE MUEVE AL FONDO A
+##############################################################################
+factor             beta       t   aporte a la varianza
+mundo             0.419     9.8                   50%
+emergente         0.226     6.8                   35%
+dolar             0.381    11.4                   -5%
+chile             0.269     8.9                   19%
+renta fija (E)    0.065     1.0                    0%
+
+  R2 0.753 | volatilidad del Fondo A 12.2% anual
+  residuo no explicado 6.1% anual
+
+  **El dolar aporta varianza NEGATIVA.** No es un error de signo: su
+  correlacion con la bolsa global es -0.44, asi que sus
+  terminos de covarianza restan. La exposicion cambiaria **reduce** el
+  riesgo del fondo en vez de aumentarlo.
+
+##############################################################################
+# 3. EL COLCHON CAMBIARIO, MEDIDO
+##############################################################################
+  meses con bolsa global en baja: 104 de 272
+    dolar en esos meses   +1,59%
+    dolar en los demas    -0,58%
+    correlacion dolar / bolsa global -0.442
+
+  caidas fuertes (bolsa global bajo -5%, 23 meses):
+    bolsa global -8,80% | dolar +4,26% | Fondo A -4,87%
+    **el Fondo A cae solo el 55% de lo que cae la bolsa global**
+
+  la hipotesis de que el peligro es que el colchon falle:
+    caidas CON colchon (18 meses): Fondo A -5,06%
+    caidas SIN colchon (5 meses): Fondo A -4,21%
+    -> al fondo le fue **mejor** cuando el colchon fallo. Con 5 casos
+       no es concluyente, pero no respalda la hipotesis.
+
+##############################################################################
+# 4. LOS CINCO FONDOS, Y LO QUE NADIE MIRA
+##############################################################################
+fondo       anual     vol   peor caida  Calmar   cuando la peor
+A          +9,27%   12.2%      -41,83%    0.22       2009-02-28
+B          +8,86%    9.2%      -28,91%    0.31       2008-10-31
+C          +8,28%    6.7%      -15,29%    0.54       2008-10-31
+D          +7,43%    5.8%      -11,15%    0.67       2021-10-31
+E          +6,88%    5.7%      -14,61%    0.47       2021-10-31
+
+  **El Fondo E rinde menos que el D y cae mas.** Y los dos tocan su peor
+  caida en octubre de 2021, que no fue una crisis de bolsa sino el shock
+  de tasas: el Fondo E es renta fija larga, no es caja.
+
+##############################################################################
+# 5. PERO E NO ESTA DOMINADO COMO COBERTURA
+##############################################################################
+  A igual peor caida objetivo, cuanto retorno da cada refugio:
+
+  caida maxima              con Fondo E              con Fondo D
+         -15%  +8,05% con  40% en A   +8,00% con  25% en A
+         -20%  +8,33% con  51% en A   +8,26% con  38% en A
+         -25%  +8,56% con  61% en A   +8,53% con  52% en A
+         -30%  +8,81% con  73% en A   +8,77% con  66% en A
+
+  Son equivalentes. E rinde menos pero cubre mejor, asi que se necesita
+  menos. **La eleccion no es cual rinde mas, es contra que se cubre:**
+
+episodio            Fondo A    Fondo D    Fondo E
+2008 bolsa          -41,83%     -0,94%    +13,38%
+2020 bolsa          -19,60%    -10,16%     -4,12%
+2022 bolsa          -13,37%    +14,65%    +22,98%
+2021 tasas          +15,79%     -8,69%    -12,97%
+
+##############################################################################
+# 6. LA FRONTERA: ELEGIR MEZCLA, NO MOMENTO
+##############################################################################
+  % en A     anual     vol   peor caida  Calmar     02-13     14-26
+    100%    +9,27%   12.2%      -41,83%    0.22    +8,26%   +10,07%
+     80%    +8,94%   10.0%      -32,95%    0.27    +8,29%    +9,45%
+     60%    +8,53%    7.9%      -24,09%    0.35    +8,24%    +8,77%
+     40%    +8,05%    6.2%      -14,96%    0.54    +8,08%    +8,03%
+     30%    +7,79%    5.7%      -10,82%    0.72    +7,98%    +7,64%
+     20%    +7,50%    5.4%      -10,16%    0.74    +7,84%    +7,24%
+     10%    +7,20%    5.4%      -12,41%    0.58    +7,69%    +6,82%
+      0%    +6,88%    5.7%      -14,61%    0.47    +7,52%    +6,38%
+
+  mejor Calmar: 20% en A / 80% en E
+    y en 2002-2013 por separado: 0% en A
+    y en 2014-2026 por separado: 30% en A
+
+##############################################################################
+# 7. QUE CAMBIA EN ABRIL DE 2027
+##############################################################################
+  La Etapa 10 tiene ~29% de activos de crecimiento. El Fondo C tiene 27,5%
+  de renta variable de referencia, asi que es el equivalente mas cercano.
+
+  % en A          con Fondo E (hoy)      con Etapa 10 ~ C (2027)
+                 anual        caida          anual         caida
+    100%        +9,27%      -41,83%         +9,27%       -41,83%
+     60%        +8,53%      -24,09%         +8,94%       -31,51%
+     40%        +8,05%      -14,96%         +8,74%       -26,28%
+     20%        +7,50%      -10,16%         +8,52%       -20,92%
+      0%        +6,88%      -14,61%         +8,28%       -15,29%
+
+  **El piso de proteccion sube de -10,16% a -15,29%.**
+  Despues de 2027 no se puede bajar de ahi, porque el refugio mas
+  conservador del menu nuevo ya trae 29% de activos de crecimiento.
+  A cambio rinde mas: +8,28% contra +6,88% del Fondo E.
+
+##############################################################################
+# REPLICA EN HABITAT
+##############################################################################
+fondo     Cuprum anual   Habitat anual   Cuprum caida   Habitat caida
+A               +9,27%          +9,43%        -41,83%         -40,48%
+C               +8,28%          +8,53%        -15,29%         -13,95%
+D               +7,43%          +7,74%        -11,15%         -11,19%
+E               +6,88%          +7,18%        -14,61%         -14,90%
