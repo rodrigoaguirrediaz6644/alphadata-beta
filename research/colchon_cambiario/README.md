@@ -1,10 +1,27 @@
-# El colchón existe. Y mi predicción se cayó.
+# El dólar se justifica por lo que protege, no por lo que rinde
 
 Diseño congelado en `HIPOTESIS.md`, en un commit anterior a cualquier resultado.
 Investigación pura: no toca `data/`, `reports/`, el pipeline ni el informe.
 
-**Los dos criterios pre-registrados se cumplen: el colchón cambiario es real.**
-Y la predicción que yo me había jugado en contra falló por 5,25 puntos.
+**Ésta es la única afirmación que el proyecto puede sostener sobre el dólar, y
+va primero porque dentro de un año la tabla se va a leer sola.**
+
+La tabla dice +9,06% anual con dólar contra +7,01% sin dólar, y cualquiera va a
+concluir que el dólar gana plata. **No está demostrado que gane plata.** Esos
++2,05 puntos son, en el fondo, «el peso se depreció de 500 a 970 en diecinueve
+años»: un movimiento direccional que pudo haber sido al revés, no un mecanismo
+repetible.
+
+**Lo que sí está demostrado es que amortigua:** 3,56 puntos en los episodios,
+sobre trece eventos distintos y separados en el tiempo. *Eso* es un mecanismo.
+
+| | de dónde viene | ¿se repite? |
+|---|---|---|
+| **el retorno** (+2,05 pts anuales) | una tendencia del peso en una ventana | **no se sabe** |
+| **la protección** (3,56 pts en episodios) | trece eventos distintos | **sí** |
+
+Los dos criterios pre-registrados se cumplen: el colchón es real. Y la
+predicción que yo me había jugado en contra falló por 5,25 puntos.
 
 ---
 
@@ -124,3 +141,78 @@ que esa caída sale subestimada.
 ---
 
 Reproducir: `PYTHONPATH=. python research/colchon_cambiario/estudio.py`
+
+## Verificación 1: los siete fracasos **no** son los episodios chicos
+
+Era la pregunta correcta y la respuesta es la incómoda. Ordenados de la caída
+más profunda a la más leve:
+
+| # | episodio | cae Chile | USD/CLP | beneficio |
+|---:|---|---:|---:|---:|
+| 1 | 2019-11 a 2020-03 | −43,41% | +5,53% | +2,91% |
+| 2 | 2013-02 a 2016-01 | −32,78% | +53,53% | +24,86% |
+| 3 | 2008-09 a 2008-10 | −29,95% | +9,14% | +7,60% |
+| **4** | **2011-05 a 2011-08** | **−28,45%** | **−4,24%** | **−2,14%** |
+| **5** | **2007-12 a 2008-01** | **−24,67%** | **−5,79%** | **−1,89%** |
+| 6 | 2021-03 a 2021-10 | −23,61% | +12,02% | +7,33% |
+
+| | beneficio mediano | fracasos |
+|---|---:|---:|
+| los 10 más profundos | +2,26% | **3 de 10** |
+| los 10 más leves | +2,60% | **4 de 10** |
+
+**Están repartidos.** Tres de los diez más profundos fallaron, incluidos el
+cuarto y el quinto peor. El beneficio mediano es prácticamente igual en los dos
+grupos.
+
+**Entonces el resultado no es más fuerte que «13 de 20»: es exactamente eso.**
+El seguro no discrimina entre caídas grandes y chicas — falla un tercio de las
+veces en las dos.
+
+Y no se salió a buscar qué distingue a los siete. Veinte episodios con siete
+fracasos no sostienen una sub-regla, y buscarla es como se fabrica un backtest
+bonito.
+
+## Verificación 2: ECH es un proxy pobre del IPSA — y eso jugaba **en contra**
+
+Era la preocupación metodológica correcta, y el proxy sale mal parado:
+
+| | |
+|---|---|
+| correlación de retornos diarios | **+0,634** |
+| error de seguimiento anualizado | **24,03%** |
+| en episodios, correlación mediana | +0,718 |
+| en episodios, error de seguimiento mediano | 20,6% |
+
+**ECH × FX no es la bolsa chilena en pesos: es un primo lejano.** Y exagera las
+caídas — en 10 de 11 episodios cae más que el IPSA, con una diferencia mediana
+de **−2,66%**.
+
+### Pero el veredicto no sólo sobrevive: mejora
+
+Misma regla, mismo umbral, misma ventana (2015-2026, 2.779 días), cambiando sólo
+la serie chilena:
+
+| bolsa chilena | episodios | peso sube | benef. mediano | caída con | caída sin |
+|---|---:|---:|---:|---:|---:|
+| ECH × FX | 11 | 9 de 11 | +2,92% | −26,74% | −29,41% |
+| **IPSA** | **5** | **5 de 5** | **+9,30%** | **−25,03%** | **−28,57%** |
+
+**Con el IPSA el colchón aparece en 5 de 5 episodios y el beneficio mediano
+triplica.** La contaminación que temías existe y es grande, pero empujaba en
+contra del resultado, no a favor: ECH inventa episodios que el IPSA no tiene
+—once contra cinco— y son justamente los sustos menores donde el colchón falla.
+
+**Lo que hay que decir con esto:** los números de los veinte episodios están
+medidos sobre una serie que no es el IPSA, y la mitad de los fracasos
+probablemente sean episodios que no existieron. **No los corrijo** —eso exigiría
+rehacer todo sobre una serie que no llega a 2008— pero la dirección del sesgo
+está medida y es ésta.
+
+### Lo que no se pudo verificar
+
+El IPSA del proyecto **empieza en 2015 y queda congelado el 17-07-2026**, así
+que la comparación cubre 11 de los 20 episodios. **Los dos fracasos más
+profundos —2011 y 2007-08— quedan fuera y no se pueden re-medir con el IPSA.**
+Conseguir una serie del IPSA que llegue a 2007 cambiaría eso; con lo que hay en
+el repositorio, no.
