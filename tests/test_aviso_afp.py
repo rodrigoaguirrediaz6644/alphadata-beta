@@ -1,11 +1,20 @@
-"""El aviso de cambio de fondo. Lo que se prueba es que no falle callado.
+"""El aviso de cambio de fondo.
 
-Un aviso que no llega es peor que no tener aviso, porque Rodrigo va a estar
-confiando. Entonces las pruebas que importan no son las de que dispare: son
-las de que cuando no dispara, se sepa.
+Lo que se prueba, en orden de cuánto duele que falle:
+
+**Que mande al fondo correcto.** Un aviso que llega a tiempo y manda al fondo
+equivocado es peor que no tener aviso. Es lo único que este correo tiene que
+acertar y tiene prueba dedicada.
+
+**Que las dos fechas sean distintas.** El día del envío manda; la del valor
+cuota dice qué tan viejo es el dato. Las tuve confundidas y la fecha de
+materialización salía del último día con dato.
+
+**Que no falle callado**, y que el ensayo no se pueda confundir con uno real.
 """
 
 import datetime as dt
+import re
 
 import pytest
 
@@ -13,124 +22,265 @@ from src import aviso_afp as av
 from src import registro_afp as r
 
 
-def _fila(fecha, posicion, votos, **extra):
+def _fila(fecha, posicion, fuera=(), **extra):
     f = {c: "" for c in r.columnas()}
-    f.update(fecha=fecha, posicion=posicion, votos=str(votos),
-             vc_a="100.00", vc_e="50.00", vc_d="70.00")
+    f.update(fecha=fecha, posicion=posicion, vc_a="99224.01", vc_e="65846.31",
+             vc_d="57330.19")
+    for m in r.MEDIAS:
+        f[f"pos_{m}"] = r.FUERA if m in fuera else r.DENTRO
+        f[f"razon_{m}"] = "-0.024" if m in fuera else "0.018"
+    f["votos"] = str(len(fuera))
     f.update(extra)
     return f
 
 
 def _historia(*pares):
-    """(posicion, votos) por dia, en dias habiles consecutivos."""
-    d = dt.date(2026, 11, 2)                       # un lunes
+    """(posición, medias que indican salir) por día hábil consecutivo."""
+    d = dt.date(2026, 11, 2)
     filas = []
-    for pos, vot in pares:
-        filas.append(_fila(d.isoformat(), pos, vot))
+    for pos, fuera in pares:
+        filas.append(_fila(d.isoformat(), pos, fuera))
         d += dt.timedelta(days=1 if d.weekday() < 4 else 3)
     return filas
 
 
+def _salida():
+    """La historia que importa: venía en el agresivo y hoy toca refugio."""
+    return _historia(("A", ()), ("A", ()), ("E", (45, 64)))
+
+
 # --------------------------------------------------------------------------
-# cuando dispara
+# LO ÚNICO QUE TIENE QUE ACERTAR: el fondo destino
+# --------------------------------------------------------------------------
+
+def test_una_transicion_real_manda_al_refugio_y_lo_dice_en_todas_partes():
+    """La prueba que decide.
+
+    No basta con que la línea de valores se vea bien: hay que ver el nombre
+    del fondo destino en un aviso de salida de verdad.
+    """
+    a = av.pendiente(_salida())
+    assert a["hacia"] == r.REFUGIO and a["desde"] == r.DENTRO
+    assert "cambiar a Fondo E" in av.asunto(a)
+    assert "CAMBIAR A FONDO E" in av.texto(a)
+    assert "<h1>Cambiar a Fondo E</h1>" in av.html(a)
+
+
+def test_los_dos_fondos_de_la_linea_de_valores_son_distintos():
+    """Salían dos veces el mismo. Era el ensayo, pero la prueba va igual."""
+    a = av.pendiente(_salida())
+    assert a["cuota_a"] != a["cuota_destino"]
+    for cuerpo in (av.texto(a), av.html(a)):
+        assert "99.224,01" in cuerpo and "65.846,31" in cuerpo
+
+
+def test_la_vuelta_al_agresivo_tambien_nombra_bien_el_destino():
+    a = av.pendiente(_historia(("E", (45, 64)), ("E", (45, 64)), ("A", ())))
+    assert a["hacia"] == r.DENTRO and "Cambiar a Fondo A" in av.html(a)
+
+
+def test_el_nombre_del_fondo_sale_del_registro_y_no_del_codigo():
+    """En abril de 2027 los multifondos desaparecen."""
+    a = av.pendiente(_historia(("A", ()), ("Consolidacion", (45, 64))))
+    assert "Fondo Consolidacion" in av.asunto(a)
+    assert "Fondo Consolidacion" in av.html(a)
+
+
+# --------------------------------------------------------------------------
+# LAS DOS FECHAS
+# --------------------------------------------------------------------------
+
+def test_la_materializacion_sale_del_envio_y_no_del_ultimo_dia_con_dato():
+    """Después de Fiestas Patrias el dato tiene seis días.
+
+    Con la fecha vieja el aviso habría dicho «materializado el 23» cuando
+    pidiéndolo ese día se materializa cerca del 29.
+    """
+    a = av.pendiente(_salida())
+    assert a["fecha_envio"] == dt.date.today()
+    assert a["fecha_dato"] != a["fecha_envio"]
+    assert a["materializa"] == av.habiles_adelante(a["fecha_envio"])
+    assert a["materializa"] > a["fecha_envio"]
+
+
+def test_el_asunto_lleva_la_fecha_del_envio():
+    a = av.pendiente(_salida())
+    assert dt.date.today().strftime("%d-%m-%Y") in av.asunto(a)
+
+
+def test_se_ve_que_tan_viejo_es_el_dato():
+    """Si tiene seis días, que se vea que tiene seis días."""
+    a = av.pendiente(_salida())
+    for cuerpo in (av.texto(a), av.html(a)):
+        assert f"{a['dias_de_dato']} d" in cuerpo
+        assert a["fecha_dato"].strftime("%d-%m-%Y") in cuerpo
+
+
+def test_los_dias_habiles_saltan_el_fin_de_semana():
+    assert av.habiles_adelante(dt.date(2026, 11, 5), 4) == dt.date(2026, 11, 11)
+
+
+# --------------------------------------------------------------------------
+# CUÁNDO DISPARA
 # --------------------------------------------------------------------------
 
 def test_dispara_en_la_transicion():
-    filas = _historia(("A", 0), ("A", 1), ("E", 3))
-    a = av.pendiente(filas)
-    assert a and a["hacia"] == "E" and a["desde"] == "A" and a["cual"] == 1
+    assert av.pendiente(_salida()) is not None
 
 
 def test_no_dispara_si_la_posicion_no_cambio():
-    assert av.pendiente(_historia(("A", 0), ("A", 1), ("A", 1))) is None
+    assert av.pendiente(_historia(("A", ()), ("A", ()), ("A", ()))) is None
 
 
 def test_no_dispara_todos_los_dias_que_esta_en_refugio():
-    """Sólo la transición. Si no, serían meses de correos diarios."""
-    filas = _historia(("A", 0), ("E", 3), ("E", 3), ("E", 3), ("E", 4), ("E", 5))
+    filas = _historia(("A", ()), *[("E", (45, 64))] * 5)
     assert av.pendiente(filas) is None
 
 
 def test_se_repite_tres_dias_y_despues_para():
     """Un correo se pierde; tres no."""
-    base = [("A", 0), ("E", 3)]
-    for extra, esperado in [([], 1), ([("E", 3)], 2), ([("E", 3)] * 2, 3)]:
-        a = av.pendiente(_historia(*base, *extra))
-        assert a and a["cual"] == esperado
-    assert av.pendiente(_historia(*base, *[("E", 3)] * 3)) is None
+    base = [("A", ()), ("E", (45, 64))]
+    for extra, esperado in [([], 1), ([("E", (45, 64))], 2), ([("E", (45, 64))] * 2, 3)]:
+        assert av.pendiente(_historia(*base, *extra))["cual"] == esperado
+    assert av.pendiente(_historia(*base, *[("E", (45, 64))] * 3)) is None
 
 
 def test_no_avisa_dos_veces_por_el_mismo_dia():
-    filas = _historia(("A", 0), ("E", 3))
+    filas = _salida()
     filas[-1]["aviso_estado"] = "enviado"
     assert av.pendiente(filas) is None
 
 
-def test_un_intento_fallido_no_bloquea_el_reintento_del_mismo_dia():
-    """Si el correo falló, la fila queda marcada `fallo` y se puede reintentar."""
-    filas = _historia(("A", 0), ("E", 3))
+def test_un_intento_fallido_no_bloquea_el_reintento():
+    filas = _salida()
     filas[-1]["aviso_estado"] = "fallo"
     assert av.pendiente(filas) is not None
 
 
-# --------------------------------------------------------------------------
-# que dice
-# --------------------------------------------------------------------------
-
-def test_el_asunto_lleva_la_instruccion_completa():
-    """Se lee desde la pantalla bloqueada del teléfono."""
-    a = av.pendiente(_historia(("A", 0), ("E", 3)))
-    s = av.asunto(a)
-    assert s.startswith("AFP: cambiar a Fondo E")
-    assert "solicitar hoy 03-11-2026" in s
-
-
-def test_el_cuerpo_dice_cuantas_medias_y_cuando_se_materializa():
-    a = av.pendiente(_historia(("A", 0), ("E", 3)))
-    c = av.cuerpo(a)
-    assert "3 de las 5 medias" in c
-    assert f"sale con {r.VOTOS_PARA_SALIR} o mas" in c
-    # 03-11-2026 es martes; cuatro habiles despues es el lunes 09.
-    assert "09-11-2026" in c
-
-
-def test_el_cuerpo_no_recomienda_nada():
-    """Dice qué indica la regla. La decisión de operarla no es del aviso."""
-    c = av.cuerpo(av.pendiente(_historia(("A", 0), ("E", 3)))).lower()
-    for palabra in ("conviene", "recomend", "deberia", "urgente"):
-        assert palabra not in c
-
-
-def test_el_nombre_del_fondo_sale_del_registro_y_no_del_codigo():
-    """En abril de 2027 los multifondos desaparecen.
-
-    Si el nombre estuviera escrito acá, ese día el correo diría «cambiar a
-    Fondo E» sobre un fondo que ya no existe.
-    """
-    filas = _historia(("A", 0), ("Consolidacion", 3))
-    a = av.pendiente(filas)
-    assert "Fondo Consolidacion" in av.asunto(a)
-
-
-def test_los_dias_habiles_saltan_el_fin_de_semana():
-    assert av.habiles_adelante("2026-11-05", 4) == dt.date(2026, 11, 11)
+def test_dice_desde_cuando_venia_en_el_fondo_anterior():
+    a = av.pendiente(_salida())
+    assert a["desde_cuando"] == "2026-11-02"
+    assert "02-11-2026" in av.texto(a)
 
 
 # --------------------------------------------------------------------------
-# cuando falla
+# LA FORMA
 # --------------------------------------------------------------------------
 
-def test_si_el_correo_falla_la_corrida_queda_en_rojo_y_la_fila_lo_dice():
-    filas = _historia(("A", 0), ("E", 3))
+def test_el_texto_plano_lleva_la_misma_instruccion_y_las_mismas_dos_fechas():
+    """Hay clientes que no muestran HTML y el aviso no se puede perder por eso."""
+    a = av.pendiente(_salida())
+    t, h = av.texto(a), av.html(a)
+    for dato in (a["fecha_envio"].strftime("%d-%m-%Y"),
+                 a["fecha_dato"].strftime("%d-%m-%Y"),
+                 av._largo(a["materializa"])):
+        assert dato in t and dato in h
+    assert "Fondo E" in t and "Fondo E" in h
+
+
+def test_el_correo_no_depende_de_imagenes():
+    """Se bloquean por defecto en la mitad de los clientes."""
+    h = av.html(av.pendiente(_salida()))
+    for prohibido in ("<img", "background-image", "<svg"):
+        assert prohibido not in h
+
+
+def test_cabe_en_un_telefono_sin_desplazar():
+    h = av.html(av.pendiente(_salida()))
+    assert 'name="viewport"' in h
+    assert int(re.search(r"max-width:(\d+)px", h).group(1)) <= 640
+    assert "@media(max-width:640px)" in h
+
+
+def test_usa_la_tipografia_y_la_paleta_del_informe():
+    """No un estilo nuevo: el aviso tiene que reconocerse como parte de lo mismo."""
+    h = av.html(av.pendiente(_salida()))
+    assert "-apple-system,Segoe UI,Arial,sans-serif" in h
+    for color in ("#101828", "#475467", "#f2f4f7", "#eaecf0"):
+        assert color in h
+
+
+def test_las_medias_que_disparan_quedan_marcadas():
+    h = av.html(av.pendiente(_salida()))
+    assert h.count('class="sale"') == 2
+
+
+def test_el_pie_explica_la_regla_dentro_de_un_ano():
+    pie = av._pie(av.pendiente(_salida()))
+    assert "45, 64, 90, 105, 126" in pie and "2%" in pie
+    assert r.CONGELADO[:4] in pie          # el anio del congelamiento
+
+
+def test_el_aviso_no_recomienda_nada():
+    t = av.texto(av.pendiente(_salida())).lower()
+    for palabra in ("conviene", "recomend", "urgente", "deberia"):
+        assert palabra not in t
+
+
+# --------------------------------------------------------------------------
+# EL ENSAYO
+# --------------------------------------------------------------------------
+
+def test_el_ensayo_mueve_de_fondo_de_verdad():
+    """El primero usaba la posición de hoy como destino y decía «Fondo A» dos
+    veces: un ensayo que no se parece al aviso real no prueba lo que uno cree."""
+    a = av.ensayo(_historia(("A", ())))
+    assert a["hacia"] == r.REFUGIO
+    assert a["cuota_a"] != a["cuota_destino"]
+
+
+def test_el_ensayo_sale_al_otro_lado_tambien_desde_el_refugio():
+    assert av.ensayo(_historia(("E", (45, 64))))["hacia"] == r.DENTRO
+
+
+def test_el_ensayo_es_imposible_de_confundir_con_uno_real():
+    a = av.ensayo(_historia(("A", ())))
+    assert av.asunto(a).startswith("[ENSAYO]")
+    assert av.texto(a).startswith("ESTO ES UN ENSAYO")
+
+
+def test_la_franja_del_ensayo_va_antes_de_la_instruccion():
+    """Si el aviso de que es ensayo aparece después, ya se leyó la instrucción."""
+    h = av.html(av.ensayo(_historia(("A", ()))))
+    assert h.index("Esto es un ensayo") < h.index("<h1>Cambiar a")
+
+
+def test_un_aviso_real_no_lleva_franja_de_ensayo():
+    """La clase existe siempre en el estilo; lo que no puede estar es la franja."""
+    h = av.html(av.pendiente(_salida()))
+    assert 'class="ensayo"' not in h
+    assert "Esto es un ensayo" not in h
+
+
+def test_el_ensayo_se_manda_cuando_no_hay_nada_que_avisar(monkeypatch):
+    monkeypatch.setenv("SIMULAR_AVISO", "true")
+    mandados = []
+    ok, dicho = av.avisar(_historia(("A", ()), ("A", ())),
+                          enviador=lambda a: (mandados.append(a), (True, "ok"))[1])
+    assert ok and dicho == "ensayo enviado"
+    assert mandados[0]["ensayo"] is True
+
+
+def test_el_ensayo_no_marca_la_fila(monkeypatch):
+    monkeypatch.setenv("SIMULAR_AVISO", "1")
+    filas = _historia(("A", ()), ("A", ()))
+    av.avisar(filas, enviador=lambda a: (True, "ok"))
+    assert filas[-1]["aviso"] == "" and filas[-1]["aviso_estado"] == ""
+
+
+# --------------------------------------------------------------------------
+# CUANDO FALLA
+# --------------------------------------------------------------------------
+
+def test_si_el_correo_falla_queda_en_rojo_y_la_fila_lo_dice():
+    filas = _salida()
     ok, dicho = av.avisar(filas, enviador=lambda a: (False, "SMTPAuthenticationError"))
-    assert ok is False
-    assert "AVISO NO ENVIADO" in dicho
-    assert filas[-1]["aviso_estado"] == "fallo"
-    assert filas[-1]["aviso"].startswith("a E")
+    assert ok is False and "AVISO NO ENVIADO" in dicho
+    assert filas[-1]["aviso_estado"] == "fallo" and filas[-1]["aviso"].startswith("a E")
 
 
-def test_si_el_correo_sale_queda_anotado_en_la_misma_fila():
-    filas = _historia(("A", 0), ("E", 3))
+def test_si_el_correo_sale_queda_anotado():
+    filas = _salida()
     ok, _ = av.avisar(filas, enviador=lambda a: (True, "alguien@ejemplo.cl"))
     assert ok and filas[-1]["aviso_estado"] == "enviado"
 
@@ -138,57 +288,13 @@ def test_si_el_correo_sale_queda_anotado_en_la_misma_fila():
 def test_sin_secretos_no_finge_que_salio(monkeypatch):
     for s in av.SECRETOS:
         monkeypatch.delenv(s, raising=False)
-    ok, detalle = av.enviar(av.pendiente(_historia(("A", 0), ("E", 3))))
+    ok, detalle = av.enviar(av.pendiente(_salida()))
     assert ok is False and "faltan secretos" in detalle
 
 
-def test_sin_transicion_no_toca_la_fila():
-    filas = _historia(("A", 0), ("A", 0))
+def test_sin_transicion_no_toca_la_fila(monkeypatch):
+    monkeypatch.delenv("SIMULAR_AVISO", raising=False)
+    filas = _historia(("A", ()), ("A", ()))
     ok, dicho = av.avisar(filas, enviador=lambda a: pytest.fail("no debio enviar"))
     assert ok and dicho == "sin transicion pendiente"
     assert filas[-1]["aviso"] == ""
-
-
-# --------------------------------------------------------------------------
-# el ensayo
-# --------------------------------------------------------------------------
-
-def test_el_ensayo_se_manda_cuando_no_hay_nada_que_avisar(monkeypatch):
-    """El primer aviso real no puede ser la primera prueba del SMTP.
-
-    Las pruebas unitarias cubren cuándo dispara y qué dice; lo que no pueden
-    cubrir es si el correo sale desde el runner. Con FRED ya nos pasó que algo
-    respondía en local y no en GitHub.
-    """
-    monkeypatch.setenv("SIMULAR_AVISO", "true")
-    mandados = []
-    ok, dicho = av.avisar(_historia(("A", 0), ("A", 0)),
-                          enviador=lambda a: (mandados.append(a), (True, "ok"))[1])
-    assert ok and dicho == "ensayo enviado"
-    assert mandados and mandados[0]["ensayo"] is True
-
-
-def test_el_ensayo_no_se_puede_confundir_con_una_instruccion_real():
-    """Uno que se lea como aviso de verdad sería peor que no ensayar."""
-    a = av.ensayo(_historia(("A", 0)))
-    assert av.asunto(a).startswith("[ENSAYO]")
-    assert av.cuerpo(a).startswith("ESTO ES UN ENSAYO")
-
-
-def test_el_ensayo_no_marca_la_fila():
-    """No pasó nada: el historial no debe decir que hubo un aviso."""
-    import os
-    os.environ["SIMULAR_AVISO"] = "1"
-    try:
-        filas = _historia(("A", 0), ("A", 0))
-        av.avisar(filas, enviador=lambda a: (True, "ok"))
-        assert filas[-1]["aviso"] == "" and filas[-1]["aviso_estado"] == ""
-    finally:
-        os.environ.pop("SIMULAR_AVISO", None)
-
-
-def test_un_ensayo_que_no_sale_tambien_deja_rojo(monkeypatch):
-    monkeypatch.setenv("SIMULAR_AVISO", "true")
-    ok, dicho = av.avisar(_historia(("A", 0), ("A", 0)),
-                          enviador=lambda a: (False, "sin red"))
-    assert ok is False and "ENSAYO NO ENVIADO" in dicho
