@@ -1,0 +1,33 @@
+##############################################################################
+# PRIMERA — ECH y el IPSA sobre la MISMA ventana
+##############################################################################
+  La tabla anterior comparaba ECH en 2007-2026 contra IPSA en 2015-2026.
+  Los dos fracasos mas profundos quedaban fuera por construccion.
+
+  --- 2007-11 a 2026-09, solo ECH, 4698 dias
+      serie       episodios   peso sube  benef. mediano   fracasos   caida con   caida sin
+      ECH x FX           19    12 de 19          +2,68%    7 de 19     -26,75%     -31,78%
+
+  --- 2015-01 a 2026-07, ventana comun, 2779 dias
+      serie       episodios   peso sube  benef. mediano   fracasos   caida con   caida sin
+      ECH x FX           11     9 de 11          +2,92%    2 de 11     -26,74%     -29,41%
+      IPSA                5      5 de 5          +9,30%     0 de 5     -25,03%     -28,57%
+
+##############################################################################
+# SEGUNDA — el seguimiento malo, ¿es horario o es mercado?
+##############################################################################
+  ECH cierra en Nueva York y el IPSA en Santiago. Si el retorno «del
+  mismo dia» no cubre el mismo tramo, un corrimiento de un dia lo arregla.
+
+  --- IPSA archivada 2015-2026, 2786 dias (2015-01-05 a 2026-07-17)
+      alineacion                    correlacion   error segu.
+      ECH(t) contra IPSA(t-1)            -0.074        37.9%
+      ECH(t) contra IPSA(t)              +0.634        24.0%
+      ECH(t) contra IPSA(t+1)            +0.050        35.8%
+
+  --- IPSA viva 2021-2026, 1378 dias (2021-01-05 a 2026-09-17)
+      alineacion                    correlacion   error segu.
+      ECH(t) contra IPSA(t-1)            -0.011        37.9%
+      ECH(t) contra IPSA(t)              +0.625        25.8%
+      ECH(t) contra IPSA(t+1)            +0.063        36.7%
+

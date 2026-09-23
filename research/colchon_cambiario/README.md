@@ -216,3 +216,77 @@ que la comparación cubre 11 de los 20 episodios. **Los dos fracasos más
 profundos —2011 y 2007-08— quedan fuera y no se pueden re-medir con el IPSA.**
 Conseguir una serie del IPSA que llegue a 2007 cambiaría eso; con lo que hay en
 el repositorio, no.
+
+## Las dos corridas que pediste, y una aclaración
+
+### La comparación anterior sí estaba sobre la misma ventana
+
+Tu crítica es la correcta en general —es el defecto que ya encontramos cinco
+veces— pero acá no aplica: `verificaciones.py` construía el índice como la
+intersección **incluyendo el IPSA**, así que las dos filas eran 2015-2026 y la
+salida decía «misma ventana (2.779 días)». Las 11 y las 5 salen del mismo
+período.
+
+Lo que sí faltaba era la tercera fila, y ahora están las tres:
+
+| ventana | serie | episodios | peso sube | benef. mediano | fracasos | caída con | caída sin |
+|---|---|---:|---:|---:|---:|---:|---:|
+| 2007-2026 | ECH × FX | 19 | 12 de 19 | +2,68% | **7 de 19** | −26,75% | −31,78% |
+| 2015-2026 | ECH × FX | 11 | 9 de 11 | +2,92% | **2 de 11** | −26,74% | −29,41% |
+| 2015-2026 | **IPSA** | **5** | **5 de 5** | **+9,30%** | **0 de 5** | −25,03% | −28,57% |
+
+**Sobre la ventana común, ECH sigue inventando episodios: 11 contra 5.** Ésa era
+tu segunda rama, así que «el sesgo iba en contra» **queda demostrado y no
+deducido**.
+
+Y aparece un hecho nuevo que la tabla de veinte no dejaba ver: **cinco de los
+siete fracasos son anteriores a 2015.** Sobre 2015-2026 ECH falla 2 de 11. Los
+episodios donde el peso se fortaleció mientras Chile caía están todos al
+principio de la muestra, y son justamente los que el IPSA no puede verificar.
+
+*(Diferencia de conteo con la tabla de veinte: el estudio largo usa ECH a precio
+y esta verificación usa ECH ajustado, para ser comparable con un IPSA de retorno
+total. Son dos series distintas y por eso salen 19 episodios y no 20. Lo dice
+también que la pata chilena del estudio largo excluye dividendos, aunque eso se
+cancela entre «con dólar» y «sin dólar».)*
+
+### No es desfase horario. Es la serie.
+
+| alineación | correlación | error segu. |
+|---|---:|---:|
+| ECH(t) contra IPSA(t−1) | −0,074 | 37,9% |
+| **ECH(t) contra IPSA(t)** | **+0,634** | **24,0%** |
+| ECH(t) contra IPSA(t+1) | +0,050 | 35,8% |
+
+Y con el IPSA vivo (2021-2026, otra serie y otra fuente): −0,011 / **+0,625** /
++0,063.
+
+**Correr un día en cualquier dirección derrumba la correlación a cero.** La
+alineación del mismo día ya es la mejor que hay, así que el 24% de error de
+seguimiento **no es horario: es comportamiento propio de ECH.**
+
+Esa era la rama mala de tu punto 2, y es la que salió: **el estudio de diecinueve
+años está apoyado en una serie que sigue a la bolsa chilena con correlación
+0,63.** La dirección del sesgo está medida —ECH inventa episodios menores donde
+el colchón falla— pero la serie sigue siendo pobre, y lo que se puede verificar
+con el IPSA cubre 11 de los 20 episodios y ninguno de los dos fracasos profundos.
+
+**Conclusión honesta: el colchón se sostiene en lo que se pudo verificar y se
+apoya en una serie mala en lo que no.** Conseguir un IPSA que llegue a 2007 es
+lo único que cerraría el asunto, y ahora sabemos que hace falta.
+
+## El IPSA congelado: nada de producción lo lee
+
+`data/archivo/ipsa_tr_proxy_cfmitnipsa.csv` es la serie **vieja**, archivada por
+`tools/reemplazar_benchmark.py` cuando el proxy `CFMITNIPSA.SN` se congeló con el
+incidente del feed chileno. **Sólo la escribió esa herramienta y nadie la lee**;
+en este estudio la uso porque cubre 2015-2026.
+
+El benchmark **vivo** —`IPSA_TR`, MSCI IPSA Gross de descarga manual semanal—
+está al día: último dato 2026-09-17, **cero días planos en los últimos 60**, y
+los 5 días de rezago contra el resto del almacén son las Fiestas Patrias.
+
+Y no depende de que alguien lo mire: `src/fetch_prices.py` **aborta la corrida
+con `SystemExit`** si el benchmark no está vigente, diciendo estado, última
+fecha y rezago hábil. Es lo contrario de la falla silenciosa —no entrega el
+mismo valor todos los viernes: no entrega nada—.
