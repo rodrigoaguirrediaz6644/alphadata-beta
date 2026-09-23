@@ -1,0 +1,126 @@
+##############################################################################
+# PARTE 1 — de donde sale mi -40,43%
+##############################################################################
+  Habitat, tendencia 100d sobre el MSCI World en pesos, refugio Fondo E.
+  Pipeline original: dias calendario, rezago de 6 dias corridos.
+  Tope codicioso por anio calendario, posicion pegada al agotarse.
+  desde           tope     anual     caida  cam/anio |   Fondo A     caida |         peor caida va de
+  2004-01-07       sin   +10,70%   -10,82%      18.0 |    +9,40%   -42,71% |  2022-07-15 a 2022-10-07
+  2004-01-07    2/anio    +9,77%   -40,43%       2.0 |    +9,40%   -42,71% |  2008-06-02 a 2009-03-04
+  2010-01-01       sin    +9,21%   -10,82%      18.1 |    +9,07%   -26,06% |  2022-07-15 a 2022-10-07
+  2010-01-01    2/anio    +9,44%   -17,24%       2.1 |    +9,07%   -26,06% |  2011-04-07 a 2011-10-05
+  2014-01-01       sin   +10,43%   -10,82%      16.7 |   +10,00%   -26,06% |  2022-07-15 a 2022-10-07
+  2014-01-01    2/anio   +10,48%   -13,93%       2.1 |   +10,00%   -26,06% |  2021-12-28 a 2022-03-16
+  La regla sin tope queria 6 cambios en 2008 y 16 en 2020.
+  Con dos por anio se queda adentro del desplome de 2008 entero.
+##############################################################################
+# PARTE 2 — la banda de histeresis en las siete AFP, refugio Fondo E
+##############################################################################
+  Media de 126 dias habiles, rezago de 5 dias habiles.
+  Senal sobre el valor cuota del Fondo A de cada AFP.
+  Banda fija en 2.0%: viene de la otra sesion y no se re-elige.
+  AFP               desde     anual     caida  cam/anio | Fondo A anual     caida |  ventaja
+  capital      2008-10-01   +10,54%   -19,43%       1.7 |        +9,08%   -26,66% |   +7,22%
+  cuprum       2003-01-31   +12,25%   -19,02%       1.5 |       +10,04%   -44,00% |  +24,98%
+  habitat      2003-01-31   +11,95%   -18,67%       1.5 |       +10,17%   -42,71% |  +24,05%
+  modelo       2011-03-03    +9,24%   -19,80%       1.7 |        +8,77%   -27,64% |   +7,84%
+  planvital    2003-01-31   +11,89%   -19,33%       1.6 |        +9,70%   -42,42% |  +23,10%
+  provida      2003-01-31   +11,82%   -19,91%       1.6 |        +9,97%   -44,19% |  +24,27%
+  uno          2020-04-01   +12,22%   -26,51%       1.6 |       +13,48%   -15,42% |  -11,09%
+  Dispersion de la ventaja entre AFP: -11,09% a +24,98%  (rango 36.1%)
+  Pero esa dispersion es de VENTANAS, no de AFP: las que arrancan
+  despues de 2009 no ven 2008. Hay que compararlas en ventana comun.
+  Ventana comun desde 2008-10-01  (5 AFP):
+  AFP             anual     caida  cam/anio | Fondo A anual     caida |  ventaja
+  capital       +11,55%   -19,43%       1.7 |        +9,08%   -26,66% |   +7,22%
+  cuprum        +11,39%   -19,02%       1.6 |        +9,09%   -26,48% |   +7,46%
+  habitat       +11,39%   -18,67%       1.6 |        +9,26%   -26,06% |   +7,39%
+  planvital     +11,14%   -19,33%       1.7 |        +9,14%   -26,62% |   +7,29%
+  provida       +10,99%   -19,91%       1.7 |        +8,97%   -26,69% |   +6,78%
+    rango de la ventaja entre AFP: 0.7%
+  Ventana comun desde 2011-04-01  (6 AFP):
+  AFP             anual     caida  cam/anio | Fondo A anual     caida |  ventaja
+  capital        +9,70%   -19,43%       1.7 |        +8,60%   -26,66% |   +7,22%
+  cuprum         +9,81%   -19,02%       1.6 |        +8,70%   -26,48% |   +7,46%
+  habitat        +9,81%   -18,67%       1.6 |        +8,70%   -26,06% |   +7,39%
+  modelo         +9,24%   -19,80%       1.7 |        +8,55%   -27,64% |   +7,84%
+  planvital      +9,30%   -19,33%       1.7 |        +8,56%   -26,62% |   +7,29%
+  provida        +9,44%   -19,91%       1.7 |        +8,53%   -26,69% |   +6,78%
+    rango de la ventaja entre AFP: 1.1%
+  Ventana comun desde 2020-05-01  (7 AFP):
+  AFP             anual     caida  cam/anio | Fondo A anual     caida |  ventaja
+  capital       +14,84%   -11,56%       1.6 |       +12,54%   -14,36% |   +2,80%
+  cuprum        +14,61%   -11,20%       1.6 |       +12,52%   -14,37% |   +3,17%
+  habitat       +14,38%   -11,35%       1.6 |       +12,29%   -14,42% |   +3,07%
+  modelo        +13,91%   -11,65%       1.6 |       +12,21%   -15,52% |   +3,88%
+  planvital     +14,81%   -11,19%       1.6 |       +12,48%   -14,13% |   +2,95%
+  provida       +14,05%   -11,27%       1.6 |       +12,27%   -14,95% |   +3,67%
+  uno           +14,21%   -11,14%       1.6 |       +12,16%   -15,42% |   +4,28%
+    rango de la ventaja entre AFP: 1.5%
+  El barrido completo (caida), para ver si la meseta esta o no:
+  AFP            0.0%    0.5%    1.0%    1.5%    2.0%    2.5%    3.0%    3.5%    5.0%   10.0%
+  capital     -18,89% -17,90% -19,43% -19,43% -19,43% -19,43% -19,43% -19,43% -24,86% -28,38%
+  cuprum      -18,16% -17,42% -19,02% -19,02% -19,02% -19,02% -19,02% -21,80% -24,36% -28,08%
+  habitat     -17,91% -17,14% -18,67% -18,67% -18,67% -18,67% -18,67% -22,18% -23,93% -27,38%
+  modelo      -19,85% -15,87% -14,87% -19,80% -19,80% -19,80% -19,80% -19,80% -19,80% -27,40%
+  planvital   -18,57% -17,76% -19,33% -19,33% -19,33% -19,33% -19,33% -19,91% -24,73% -28,92%
+  provida     -18,97% -18,29% -19,91% -19,91% -19,91% -19,91% -20,99% -20,99% -25,13% -28,27%
+  uno         -26,51% -26,51% -26,51% -26,51% -26,51% -26,51% -26,51% -26,51% -26,51% -26,51%
+  Y la rotacion en las mismas bandas (cambios/anio):
+  AFP            0.0%    0.5%    1.0%    1.5%    2.0%    2.5%    3.0%    3.5%    5.0%   10.0%
+  capital         8.0     4.2     2.9     2.2     1.7     1.6     1.5     1.2     0.8     0.4
+  cuprum          7.7     3.5     2.5     1.9     1.5     1.5     1.4     1.2     0.7     0.3
+  habitat         7.0     3.5     2.6     1.9     1.5     1.5     1.4     1.4     0.7     0.3
+  modelo          8.2     4.2     3.1     2.1     1.7     1.6     1.4     1.3     0.7     0.3
+  planvital       7.7     3.8     2.7     2.2     1.6     1.5     1.5     1.3     0.9     0.3
+  provida         6.9     3.6     2.8     1.9     1.6     1.5     1.5     1.4     0.7     0.3
+  uno             5.6     3.0     3.0     1.9     1.6     1.6     1.6     1.3     1.0     0.4
+  Y ahora el tope de 2/anio sobre la banda de 2.0%:
+  AFP                     sin tope        con tope 2/anio
+                  anual      caida       anual      caida
+  capital       +10,54%    -19,43%      +9,28%    -20,17%
+  cuprum        +12,25%    -19,02%      +9,92%    -41,62%
+  habitat       +11,95%    -18,67%      +9,62%    -41,78%
+  modelo         +9,24%    -19,80%      +8,20%    -20,23%
+  planvital     +11,89%    -19,33%      +9,59%    -39,09%
+  provida       +11,82%    -19,91%      +9,15%    -43,48%
+  uno           +12,22%    -26,51%     +11,12%    -26,51%
+  Anios que pasan de dos cambios, con la banda de 2.0%:
+    capital      4 de 19 anios   peor: 2022:5 2011:3 2012:3
+    cuprum       4 de 25 anios   peor: 2022:5 2007:3 2012:3
+    habitat      4 de 25 anios   peor: 2022:5 2008:3 2011:3
+    modelo       4 de 17 anios   peor: 2022:5 2011:3 2012:3
+    planvital    5 de 25 anios   peor: 2022:5 2007:3 2011:3
+    provida      5 de 25 anios   peor: 2022:5 2008:3 2011:3
+    uno          1 de  8 anios   peor: 2022:5
+##############################################################################
+# EL REFUGIO: Fondo E contra Fondo D, misma banda, misma ventana
+##############################################################################
+  Es la diferencia de convencion que queda entre las dos mediciones.
+  AFP                    refugio E            refugio D |        el refugio solo
+                  anual      caida     anual      caida |    E caida    D caida
+  capital       +10,54%    -19,43%    +9,94%    -21,75% |    -20,69%    -16,40%
+  cuprum        +12,25%    -19,02%   +11,75%    -21,83% |    -20,81%    -16,17%
+  habitat       +11,95%    -18,67%   +11,62%    -21,41% |    -21,18%    -16,23%
+  modelo         +9,24%    -19,80%    +9,13%    -22,45% |    -21,23%    -16,37%
+  planvital     +11,89%    -19,33%   +11,51%    -21,77% |    -20,79%    -16,41%
+  provida       +11,82%    -19,91%   +11,42%    -22,25% |    -23,87%    -18,31%
+  uno           +12,22%    -26,51%   +12,27%    -26,51% |    -21,88%    -16,76%
+##############################################################################
+# VEREDICTO contra el criterio pre-registrado
+##############################################################################
+  1) «la banda de 2,0% deja la caida al menos 8 puntos mejor»
+     capital     ventaja en caida   +7,22%  NO CUMPLE
+     cuprum      ventaja en caida   +7,46%  NO CUMPLE
+     habitat     ventaja en caida   +7,39%  NO CUMPLE
+     modelo      ventaja en caida   +7,84%  NO CUMPLE
+     planvital   ventaja en caida   +7,29%  NO CUMPLE
+     provida     ventaja en caida   +6,78%  NO CUMPLE
+     -> 0 de 6 llegan a 8 puntos. **La condicion 1 no se cumple.**
+  2) «el retorno no queda por debajo del Fondo A»
+     -> 6 de 6 lo cumplen (rango +0.69% a +1.11%).
+  3) «la dispersion entre AFP no puede ser del orden del efecto»
+     -> rango de la ventaja: 1.1% contra un efecto de 7.3%. **La condicion 3 se cumple con holgura.**
+  4) «el punto elegido cae dentro de la region buena en cada AFP»
+     -> ver el barrido: la meseta va de 1,0% a 3,0% en las siete y el
+        precipicio esta en 3,5% o mas tarde. **Se cumple.**
