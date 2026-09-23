@@ -1,0 +1,14 @@
+{
+  "regresion logistica": {
+    "anual": 0.08109600506252312,
+    "caida": -0.250165324980385
+  },
+  "bosque aleatorio": {
+    "anual": 0.0954335666209849,
+    "caida": -0.23798423796618084
+  },
+  "gradient boosting": {
+    "anual": 0.08607116283822469,
+    "caida": -0.23102495713346305
+  }
+}

@@ -1,0 +1,76 @@
+Habitat, 8299 dias, 2004-01-01 a 2026-09-20
+25 caracteristicas tecnicas | rezago de ejecucion 6 dias corridos
+validacion walk-forward por anio desde 2010
+##############################################################################
+# RESULTADO FUERA DE MUESTRA (walk-forward, nunca ve el futuro)
+##############################################################################
+modelo                   acierto     anual   peor caida  cambios/anio
+regresion logistica        51.9%    +8,11%      -25,02%          26.8
+bosque aleatorio           51.1%    +9,54%      -23,80%          23.3
+gradient boosting          50.7%    +8,61%      -23,10%          44.9
+comprar A y no mirar                +8,94%      -26,06%           0.0
+comprar E y no mirar                +6,75%      -21,18%           0.0
+mezcla fija 40/60                   +7,76%      -13,83%           0.0
+##############################################################################
+# ANIO POR ANIO, el mejor modelo contra el Fondo A
+##############################################################################
+  modelo: bosque aleatorio
+    anio     modelo    Fondo A   diferencia
+    2010     +5,79%    +12,80%       -7,01%
+    2011     -4,69%     -7,17%       +2,48%
+    2012    +11,08%     +8,76%       +2,32%
+    2013    +11,28%     +9,22%       +2,06%
+    2014    +21,63%    +14,96%       +6,67%
+    2015    +21,09%     +8,28%      +12,82%
+    2016     +1,70%     +2,57%       -0,87%
+    2017    +18,44%    +17,74%       +0,71%
+    2018     +0,54%     -2,87%       +3,41%
+    2019    +19,58%    +19,86%       -0,27%
+    2020     +9,21%     +4,62%       +4,60%
+    2021    +17,90%    +20,39%       -2,50%
+    2022     -5,79%    -10,33%       +4,54%
+    2023     +0,36%    +12,51%      -12,15%
+    2024    +15,30%    +14,44%       +0,87%
+    2025    +17,05%    +18,71%       -1,66%
+    2026     +4,28%    +11,27%       -6,99%
+  anios en que el modelo le gana al Fondo A: 10 de 17
+##############################################################################
+# QUE MIRA EL MODELO
+##############################################################################
+  las ocho caracteristicas mas usadas (ajuste sobre todo, solo informativo):
+    fx_corr          0.163
+    em_rel           0.134
+    spread_mom60     0.065
+    cobre_mom        0.060
+    mkt_ma200        0.060
+    vix              0.059
+    mkt_adx          0.052
+    vol_razon        0.047
+##############################################################################
+# LAS PRUEBAS QUE DECIDEN SI ESTO SE PUEDE CREER
+##############################################################################
+  --- HABITAT ---
+  modelo +9,54%  Fondo A +8,31%  diferencia +1,23%
+  **exceso diario: t = 0.82, p = 0.415**
+  gana 11 de 17 anios, p = 0.332
+  --- CUPRUM ---
+  modelo +9,09%  Fondo A +8,37%  diferencia +0,72%
+  **exceso diario: t = 0.45, p = 0.655**
+  gana 11 de 17 anios, p = 0.332
+  --- sensibilidad al rezago de ejecucion ---
+  (el real son 4 dias habiles desde el dia habil siguiente = ~7 corridos,
+   y la norma permite extenderlo cuando hay volumen inusual de solicitudes)
+    rezago     anual   vs Fondo A
+        2d    +9,73%       +1,29%
+        4d    +9,76%       +1,33%
+        6d    +9,54%       +1,23%  <- el rango real
+        8d    +7,78%       -0,55%  <- el rango real
+       10d    +7,12%       -1,22%
+       15d    +7,56%       -0,76%
+  --- banda de no-operar: la ventaja necesita 23 cambios al anio ---
+       banda     anual  cambios/anio   vs Fondo A
+         ±0%    +9,54%          23.3       +1,23%
+         ±5%    +7,17%           4.7       -1,15%
+        ±10%    +7,02%           2.2       -1,29%
+        ±15%    +8,19%           1.0       -0,12%
+        ±20%    +8,74%           0.4       +0,43%
