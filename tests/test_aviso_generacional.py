@@ -191,7 +191,7 @@ def test_el_texto_plano_lleva_la_misma_instruccion_y_las_mismas_dos_fechas():
     """Hay clientes que no muestran HTML y el aviso no se puede perder por eso."""
     a = av.pendiente(_salida())
     t, h = av.texto(a), av.html(a)
-    for dato in (a["fecha_envio"].strftime("%d-%m-%Y"),
+    for dato in (av._largo(a["fecha_envio"]),
                  a["fecha_dato"].strftime("%d-%m-%Y"),
                  av._largo(a["materializa"])):
         assert dato in t and dato in h
