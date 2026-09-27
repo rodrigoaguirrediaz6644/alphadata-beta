@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0.0",
+  "strategy_id": "colombia-baseline-v1",
+  "status": "experimental",
+  "country": "COLOMBIA",
+  "base_currency": "COP",
+  "start_date": "2015-01-01",
+  "transaction_cost_rate": 0.001785,
+  "rebalance_frequency": "month_end",
+  "price_field": "Adj Close",
+  "benchmark": {
+    "local_ticker": "ICOLCAP",
+    "provider_symbol": "ICOLCAP.CL"
+  },
+  "universe": [
+    {"local_ticker": "PFCIBEST", "provider_symbol": "PFCIBEST.CL"},
+    {"local_ticker": "ISA", "provider_symbol": "ISA.CL"},
+    {"local_ticker": "ECOPETROL", "provider_symbol": "ECOPETROL.CL"},
+    {"local_ticker": "GEB", "provider_symbol": "GEB.CL"},
+    {"local_ticker": "GRUPOSURA", "provider_symbol": "GRUPOSURA.CL"},
+    {"local_ticker": "CEMARGOS", "provider_symbol": "CEMARGOS.CL"},
+    {"local_ticker": "GRUPOARGOS", "provider_symbol": "GRUPOARGOS.CL"},
+    {"local_ticker": "PFAVAL", "provider_symbol": "PFAVAL.CL"},
+    {"local_ticker": "CELSIA", "provider_symbol": "CELSIA.CL"},
+    {"local_ticker": "CORFICOLCF", "provider_symbol": "CORFICOLCF.CL"},
+    {"local_ticker": "EXITO", "provider_symbol": "EXITO.CL"}
+  ],
+  "methodology_notes": [
+    "Current validated universe baseline; not a point-in-time historical membership backtest.",
+    "One share class per issuer.",
+    "Adjusted prices are required.",
+    "No forward filling of missing prices.",
+    "An asset enters the equal-weight portfolio only after its first valid adjusted price."
+  ]
+}
