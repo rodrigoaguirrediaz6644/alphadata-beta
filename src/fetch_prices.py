@@ -249,6 +249,43 @@ def build_coverage(
     return pd.DataFrame(rows)
 
 
+def frescura_de_la_canasta(prices: pd.DataFrame, universe: pd.DataFrame, hoy: pd.Timestamp) -> tuple[pd.Timestamp, int | None]:
+    """Hasta qué rueda llega la canasta del benchmark y cuántos días hábiles lleva atrasada.
+
+    El benchmark publicado es la canasta igual peso desde el 22-09-2026, y la
+    guardia seguía exigiéndole vigencia a `IPSA_TR`, la serie de descarga manual
+    que la canasta reemplazó. Pasó el 22-09 con rezago 3 justo y desde entonces
+    abortaba todas las corridas por una serie que el cálculo ya no lee.
+
+    **Se mide contra el calendario y no contra el propio almacén**: comparada
+    con su última fecha, una serie detenida siempre tiene rezago cero.
+
+    La fecha de la canasta es la última rueda que alcanza **al menos la mitad**
+    de sus integrantes. Con el máximo bastaría un papel al día para declarar
+    fresca una canasta que promedia cuarenta detenidos.
+    """
+    estado = universe["estado"] if "estado" in universe else pd.Series("activo", index=universe.index)
+    integrantes = universe.loc[universe.tipo.isin(TIPOS_DE_CAPTURA_DIARIA) & (estado == "activo"), "alphadata_ticker"]
+    if integrantes.empty:
+        return pd.NaT, None
+    fechas = pd.to_datetime(prices["date"], errors="coerce")
+    ultimas = fechas.groupby(prices["alphadata_ticker"]).max().reindex(integrantes).sort_values(ascending=False)
+    fecha = ultimas.iloc[(len(ultimas) + 1) // 2 - 1]
+    if pd.isna(fecha):
+        return pd.NaT, None
+    return fecha, max(0, len(pd.bdate_range(fecha.normalize(), hoy.normalize())) - 1)
+
+
+def exigir_canasta_fresca(prices: pd.DataFrame, universe: pd.DataFrame, hoy: pd.Timestamp) -> None:
+    fecha, rezago = frescura_de_la_canasta(prices, universe, hoy)
+    if rezago is None or rezago > MAX_BENCHMARK_LAG_BUSINESS_DAYS:
+        raise SystemExit(
+            "La canasta del benchmark no está vigente: "
+            f"última_fecha={fecha.date().isoformat() if pd.notna(fecha) else 'sin datos'}, "
+            f"rezago_hábil={rezago}. Los precios chilenos vienen de la captura diaria; revisar si está corriendo."
+        )
+
+
 def main() -> None:
     import yfinance as yf
     universe = load_universe(); tickers = se_descargan(universe)["yahoo_ticker"].tolist()
@@ -317,7 +354,6 @@ def main() -> None:
     if missing_coverage: print("Cobertura incompleta: " + ", ".join(missing_coverage))
     cached_symbols = coverage.loc[coverage["data_source"] == "CACHE_VALIDADA", "alphadata_ticker"].tolist()
     if cached_symbols: print("ADVERTENCIA: se usó caché validada para: " + ", ".join(cached_symbols))
-    benchmark_ok = coverage.loc[(coverage.alphadata_ticker == "IPSA_TR") & (coverage.status == "OK")]
     detenidos = coverage.loc[coverage["status"] == "DETENIDO", "alphadata_ticker"].tolist()
     if detenidos: print(f"ADVERTENCIA: {len(detenidos)} instrumentos sin variación de precio: " + ", ".join(detenidos))
     # El ADR cotiza en Nueva York y no depende del feed chileno. Si se mueve
@@ -351,13 +387,7 @@ def main() -> None:
         detalle = "; ".join(f"{r.adr} se movió {r.movimiento_adr:.1%} y {r.local} no se movió nada" for r in alarma_adr.itertuples())
         raise SystemExit(f"Mercado local detenido según el contraste con los ADR ({detalle}). No se valoriza nada con precios que no se están publicando.")
     if daily.empty or len(local_ok) < 20: raise SystemExit("Menos de 20 acciones locales tienen historia suficiente; se cancela el cálculo para evitar una cartera incompleta")
-    if benchmark_ok.empty:
-        benchmark = coverage.loc[coverage.alphadata_ticker == "IPSA_TR"].iloc[0]
-        raise SystemExit(
-            "El benchmark IPSA_TR no está vigente: "
-            f"estado={benchmark.status}, última_fecha={benchmark.last_date}, "
-            f"rezago_hábil={benchmark.lag_business_days}"
-        )
+    exigir_canasta_fresca(daily, universe, pd.Timestamp.now(tz="America/Santiago").tz_localize(None))
 
 
 if __name__ == "__main__":
