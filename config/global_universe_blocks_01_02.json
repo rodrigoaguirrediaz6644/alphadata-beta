@@ -1,0 +1,29 @@
+{
+  "block_code": "GLOBAL_ETF_DEVELOPED_EMERGING_01_02",
+  "status": "diagnostic",
+  "start_date": "2010-01-01",
+  "benchmark": "ACWI",
+  "cost_rate": 0.001785,
+  "instruments": [
+    {"ticker": "SPY", "country": "United States", "sector": "Country ETF"},
+    {"ticker": "EWC", "country": "Canada", "sector": "Country ETF"},
+    {"ticker": "EWU", "country": "United Kingdom", "sector": "Country ETF"},
+    {"ticker": "EWG", "country": "Germany", "sector": "Country ETF"},
+    {"ticker": "EWQ", "country": "France", "sector": "Country ETF"},
+    {"ticker": "EWL", "country": "Switzerland", "sector": "Country ETF"},
+    {"ticker": "EWD", "country": "Sweden", "sector": "Country ETF"},
+    {"ticker": "EWJ", "country": "Japan", "sector": "Country ETF"},
+    {"ticker": "EWA", "country": "Australia", "sector": "Country ETF"},
+    {"ticker": "EWS", "country": "Singapore", "sector": "Country ETF"},
+    {"ticker": "EWZ", "country": "Brazil", "sector": "Country ETF"},
+    {"ticker": "EWW", "country": "Mexico", "sector": "Country ETF"},
+    {"ticker": "ECH", "country": "Chile", "sector": "Country ETF"},
+    {"ticker": "EPU", "country": "Peru", "sector": "Country ETF"},
+    {"ticker": "INDA", "country": "India", "sector": "Country ETF"},
+    {"ticker": "EWT", "country": "Taiwan", "sector": "Country ETF"},
+    {"ticker": "EWY", "country": "South Korea", "sector": "Country ETF"},
+    {"ticker": "EIDO", "country": "Indonesia", "sector": "Country ETF"},
+    {"ticker": "THD", "country": "Thailand", "sector": "Country ETF"},
+    {"ticker": "EZA", "country": "South Africa", "sector": "Country ETF"}
+  ]
+}
