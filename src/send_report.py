@@ -13,6 +13,11 @@ def main() -> None:
     required = ["SMTP_HOST", "SMTP_USER", "SMTP_PASSWORD", "REPORT_RECIPIENTS"]
     missing = [name for name in required if not os.getenv(name)]
     if missing:
+        # En GitHub un informe que no se envía **tiene que fallar**: omitirlo en
+        # verde se veía igual que haberlo enviado. En local sigue siendo un
+        # aviso, porque ahí los secretos no están y no tienen por qué estar.
+        if os.getenv("GITHUB_ACTIONS") == "true":
+            raise SystemExit("El informe no se envió; faltan secretos: " + ", ".join(missing))
         print("Correo omitido; faltan secretos: " + ", ".join(missing))
         return
     html = (ROOT / "reports" / "latest_report.html").read_text(encoding="utf-8")

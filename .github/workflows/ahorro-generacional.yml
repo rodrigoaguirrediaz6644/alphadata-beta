@@ -32,6 +32,8 @@ on:
 
 permissions:
   contents: write
+  # Para que el aviso de falla pueda leer que paso fallo.
+  actions: read
 
 concurrency:
   group: alphadata-escritura-en-main
@@ -95,3 +97,17 @@ jobs:
           done
           echo "No fue posible guardar el registro tras 3 intentos." >&2
           exit 1
+
+      # Ultimo paso a proposito: corre solo si algo de arriba fallo, y avisa el
+      # mismo dia. Ver src/aviso_falla.py.
+      - name: Avisar por correo que la corrida falló
+        if: failure()
+        env:
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          SMTP_FROM: ${{ secrets.SMTP_FROM }}
+          REPORT_RECIPIENTS: ${{ secrets.REPORT_RECIPIENTS }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: PYTHONPATH=. python3 -m src.aviso_falla
