@@ -7,20 +7,72 @@ name: Ejecutar AlphaData
 # operando, más contraste manual mensual— que está documentada y justificada en
 # INCIDENTE_FEED_CHILENO.md. Los precios chilenos ya no se descargan acá: los
 # trae la captura diaria desde la cotización viva.
+#
+# **Recuperación.** Si la corrida del viernes no publica informe, se reintenta
+# sola cada vez que termina bien la captura diaria, hasta que salga. La del
+# 25-09-2026 falló y lo único que quedaba era lanzarla a mano. Qué cuenta como
+# pendiente lo decide src/recuperacion.py; si los datos sirven lo siguen
+# decidiendo las guardias, que corren igual en una recuperación.
 on:
   workflow_dispatch:
   schedule:
     - cron: "30 20 * * 5"
+  workflow_run:
+    workflows: ["Captura diaria del cierre chileno"]
+    types: [completed]
 
 permissions:
   contents: write
+  # Para que el aviso de falla pueda leer que paso fallo.
+  actions: read
 
 concurrency:
   group: alphadata-escritura-en-main
   cancel-in-progress: false
 
 jobs:
+  decidir:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      correr: ${{ steps.decision.outputs.correr }}
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v6
+        with:
+          # El historial completo: la fecha del último informe se lee del
+          # historial, igual que en Vigilancia.
+          fetch-depth: 0
+
+      - name: Preparar Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Decidir si hay una corrida que calcular
+        id: decision
+        env:
+          EVENTO: ${{ github.event_name }}
+          CAPTURA: ${{ github.event.workflow_run.conclusion }}
+        run: PYTHONPATH=. python -m src.recuperacion
+
+      # Ultimo paso a proposito: corre solo si algo de arriba fallo, y avisa el
+      # mismo dia. Ver src/aviso_falla.py.
+      - name: Avisar por correo que la corrida falló
+        if: failure()
+        env:
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          SMTP_FROM: ${{ secrets.SMTP_FROM }}
+          REPORT_RECIPIENTS: ${{ secrets.REPORT_RECIPIENTS }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: PYTHONPATH=. python3 -m src.aviso_falla
+
   calculate-and-report:
+    needs: decidir
+    if: needs.decidir.outputs.correr == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -113,3 +165,17 @@ jobs:
           done
           echo "No fue posible guardar los resultados tras 3 intentos." >&2
           exit 1
+
+      # Ultimo paso a proposito: corre solo si algo de arriba fallo, y avisa el
+      # mismo dia. Ver src/aviso_falla.py.
+      - name: Avisar por correo que la corrida falló
+        if: failure()
+        env:
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          SMTP_FROM: ${{ secrets.SMTP_FROM }}
+          REPORT_RECIPIENTS: ${{ secrets.REPORT_RECIPIENTS }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: PYTHONPATH=. python3 -m src.aviso_falla
