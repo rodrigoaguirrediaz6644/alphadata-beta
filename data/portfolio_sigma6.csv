@@ -1,5 +1,4 @@
 ticker,target_weight,opened_at,entry_price,current_price,open_return,con_dividendo,dividendos_clp,peso_real,caduca,dias_para_caducar,monto_clp
-BCI,0.1,,,,,False,,0.1,2027-07-01,283,0.0
-LTM,0.1,,,,,False,,0.1,2027-07-09,291,0.0
-PARAUCO,0.1,,,,,False,,0.1,2027-07-01,283,0.0
-VAPORES,0.1,,,,,False,,0.1,2026-11-24,64,0.0
+BCI,0.1,,,,,False,,0.1,2027-07-01,276,0.0
+LTM,0.1,,,,,False,,0.1,2027-07-09,284,0.0
+VAPORES,0.1,,,,,False,,0.10000000000000002,2026-11-24,57,0.0
