@@ -18,15 +18,30 @@ BENCHMARK = "Mercado chileno"
 SERIES = [CONJUNTO, *STRATEGIES, BENCHMARK]
 SERIES_RECONSTRUCCION = [CONJUNTO, *STRATEGIES, *RETIRADAS, BENCHMARK]
 COLORS = {CONJUNTO: "#101828", "Sigma-6": "#1570ef", "Delta-12": "#0e9384", "Gamma-6": "#dc6803", "Oro": "#ca8504", BENCHMARK: "#98a2b3"}
+# Cómo se llaman las series **en lo que se publica**. Adentro —columnas, libro,
+# configuración— siguen con su nombre de siempre: cambiar el nombre de una
+# columna guardada es reescribir historia por un asunto de presentación.
+NOMBRE_PUBLICO = {"Delta-12": "Delta12", "Gamma-6": "Gamma6", CONJUNTO: "AlphaData", BENCHMARK: "Ipsa"}
+TITULO_GRAFICO = "Desempeño AlphaData últimos 5 años"
+ARCHIVO_GRAFICO = "reconstruccion.png"
+# AlphaData en rojo y grueso; las demás delgadas y en tonos que no se le
+# parezcan. El naranjo y el dorado de antes se confundían con el rojo.
+COLORES_GRAFICO = {"AlphaData": "#d92d20", "Delta12": "#1570ef", "Gamma6": "#099250",
+                   "Oro": "#eaaa08", "Ipsa": "#98a2b3"}
+GROSOR_PRINCIPAL, GROSOR_RESTO = 3, 1
+
+
+def _publico(texto: str) -> str:
+    """Los nombres de las estrategias como se publican, en todo el informe."""
+    return texto.replace("Delta-12", "Delta12").replace("Gamma-6", "Gamma6")
 QUE_INVIERTE = {
     "Sigma-6": "Acciones chilenas (retirada)",
     "Delta-12": "Acciones chilenas",
-    "Gamma-6": "Acciones de EE.UU. (en pesos)",
-    "Oro": "Oro, como seguro del conjunto",
+    "Gamma-6": "Acciones de EE.UU.",
+    "Oro": "ETF de Oro",
     BENCHMARK: "La bolsa chilena completa",
 }
 HISTORICAL = ROOT / "data" / "reconstruccion_historica.csv"
-from src.nav_historico import LIMITE_CONCENTRACION  # noqa: E402  (el límite es del modelo, no del informe)
 # Las pruebas lo redirigen a un directorio temporal. Sin eso, correr la suite
 # sobrescribe los gráficos publicados con los de un fixture sintético, y lo que
 # queda commiteado es una curva que no existió.
@@ -37,6 +52,20 @@ def pct(value: float | None, digits: int = 1) -> str:
     if value is None or pd.isna(value):
         return "—"
     return f"{value:.{digits}%}".replace(".", ",")
+
+
+MESES = ("enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto",
+         "septiembre", "octubre", "noviembre", "diciembre")
+
+
+def _fecha_larga(fecha: pd.Timestamp) -> str:
+    """«01 de Enero del 2026». Sin `locale`, que en un runner no está puesto."""
+    return f"{fecha.day:02d} de {MESES[fecha.month - 1].capitalize()} del {fecha.year}"
+
+
+def _porcentaje_corto(valor: float) -> str:
+    """«37,5%» y «25%»: sin el decimal cuando no dice nada."""
+    return f"{valor * 100:.1f}".rstrip("0").rstrip(".").replace(".", ",") + "%"
 
 
 def _signed(value: float | None) -> str:
@@ -86,12 +115,64 @@ def _series_metrics(frame: pd.DataFrame) -> dict[str, dict]:
     return {name: _metrics(frame[name], frame["date"]) if name in frame else _metrics(pd.Series(dtype=float), pd.Series(dtype=float)) for name in SERIES}
 
 
+def _suavizar(fechas: pd.Series, valores: pd.Series, pasos: int = 12) -> tuple[list, list]:
+    """Una curva suave que pasa por el cierre de cada mes y por el último dato.
+
+    **No es un promedio móvil.** Un promedio desplaza la curva y la hace
+    terminar en un valor que no es el de hoy, y el número rotulado al final de
+    la línea tiene que ser el mismo de la tabla. Esto toma el cierre de cada
+    mes, que son valores reales, y los une con una curva (Catmull-Rom) en vez
+    de con rectas. Lo que se pierde es el zigzag diario dentro del mes.
+    """
+    serie = pd.Series(pd.to_numeric(valores, errors="coerce").to_numpy(),
+                      index=pd.to_datetime(fechas)).dropna()
+    if len(serie) < 4:
+        return list(serie.index), list(serie.to_numpy())
+    mensual = serie.groupby(serie.index.to_period("M")).tail(1)
+    puntos = pd.concat([serie.iloc[[0]], mensual])
+    puntos = puntos[~puntos.index.duplicated(keep="last")].sort_index()
+    x = puntos.index.astype("int64").to_numpy(dtype=float)
+    y = puntos.to_numpy(dtype=float)
+    if len(y) < 4:
+        return list(puntos.index), list(y)
+    xs, ys = [], []
+    for i in range(len(y) - 1):
+        p0, p1, p2, p3 = y[max(i - 1, 0)], y[i], y[i + 1], y[min(i + 2, len(y) - 1)]
+        for k in range(pasos):
+            u = k / pasos
+            xs.append(x[i] + (x[i + 1] - x[i]) * u)
+            ys.append(.5 * (2 * p1 + (p2 - p0) * u + (2 * p0 - 5 * p1 + 4 * p2 - p3) * u ** 2
+                            + (3 * p1 - p0 - 3 * p2 + p3) * u ** 3))
+    xs.append(x[-1])
+    ys.append(y[-1])
+    return list(pd.to_datetime(np.array(xs).astype("int64"))), ys
+
+
+def _separar(valores: dict[str, float], minimo: float) -> dict[str, float]:
+    """Dónde va el rótulo de cada línea para que dos finales parecidos no se tapen."""
+    puestos, anterior = {}, None
+    for nombre, valor in sorted(valores.items(), key=lambda par: par[1]):
+        anterior = valor if anterior is None else max(valor, anterior + minimo)
+        puestos[nombre] = anterior
+    return puestos
+
+
 def _dibujar(data: pd.DataFrame, nombres: list[str], titulo: str, archivo: str,
-             pie: str) -> str:
-    """Dibuja una serie de NAV y devuelve el bloque HTML."""
+             pie: str, colores: dict | None = None, principal: str = CONJUNTO,
+             suave: bool = False, grosores: tuple[float, float] = (3.2, 1.8),
+             años: int | None = 5) -> str:
+    """Dibuja una serie de NAV y devuelve el bloque HTML.
+
+    `titulo` es el texto alternativo de la imagen; adentro del gráfico no va
+    título, que ya lo lleva la sección.
+    """
+    colores = colores or COLORS
     if len(data) < 2 or not nombres:
         return ""
-    ventana = data.loc[data["date"] >= data["date"].max() - pd.DateOffset(years=5), ["date", *nombres]].copy()
+    # `años=None`: la serie ya viene recortada por quien la calcula, y recortarla
+    # de nuevo podría sacarle el primer día, que es donde vale 100.
+    ventana = (data[["date", *nombres]].copy() if años is None else
+               data.loc[data["date"] >= data["date"].max() - pd.DateOffset(years=años), ["date", *nombres]].copy())
     normalizado = ventana[nombres].apply(pd.to_numeric, errors="coerce")
     for nombre in nombres:
         validos = normalizado[nombre].dropna()
@@ -103,18 +184,26 @@ def _dibujar(data: pd.DataFrame, nombres: list[str], titulo: str, archivo: str,
     salida = DIRECTORIO_GRAFICOS / archivo
     salida.parent.mkdir(parents=True, exist_ok=True)
     figura, eje = plt.subplots(figsize=(10, 4.6), dpi=150)
+    finales = {}
     for nombre in nombres:
         serie = normalizado[nombre]
-        eje.plot(ventana["date"], serie, label=nombre, color=COLORS[nombre],
-                 linewidth=3.2 if nombre == CONJUNTO else 1.8)
+        x, y = _suavizar(ventana["date"], serie) if suave else (ventana["date"], serie)
+        # La principal se dibuja encima de las demás.
+        eje.plot(x, y, label=nombre, color=colores[nombre],
+                 linewidth=grosores[0] if nombre == principal else grosores[1],
+                 zorder=3 if nombre == principal else 2,
+                 solid_capstyle="round", solid_joinstyle="round")
         validos = serie.dropna()
         if len(validos):
-            eje.annotate(f"{validos.iloc[-1]:,.0f}".replace(",", "."),
-                         (ventana.loc[validos.index[-1], "date"], validos.iloc[-1]),
-                         xytext=(6, 0), textcoords="offset points", color=COLORS[nombre],
-                         weight="bold", va="center", fontsize=9)
+            finales[nombre] = (ventana.loc[validos.index[-1], "date"], float(validos.iloc[-1]))
+    # El rótulo dice el valor real del último día aunque se corra para no taparse.
+    bajo, alto = eje.get_ylim()
+    alturas = _separar({n: v for n, (_, v) in finales.items()}, (alto - bajo) * .045)
+    for nombre, (fecha, valor) in finales.items():
+        eje.annotate(f"{valor:,.0f}".replace(",", "."), (fecha, alturas[nombre]),
+                     xytext=(6, 0), textcoords="offset points", color=colores[nombre],
+                     weight="bold", va="center", fontsize=9)
     eje.axhline(100, color="#98a2b3", linewidth=1, linestyle="--")
-    eje.set_title(titulo, loc="left", weight="bold")
     eje.grid(True, color="#eceff3", linewidth=.7)
     eje.spines[["top", "right"]].set_visible(False)
     eje.legend(frameon=False, ncol=len(nombres), loc="upper left", fontsize=9)
@@ -126,7 +215,7 @@ def _dibujar(data: pd.DataFrame, nombres: list[str], titulo: str, archivo: str,
     # reescribe a `cid:` al armar el adjunto, que es donde esa forma sí sirve.
     return (f'<img src="{archivo}" alt="{titulo}" '
             'style="display:block;width:100%;max-width:900px;height:auto">'
-            f'<p class="muted">{pie}</p>')
+            + (f'<p class="muted">{pie}</p>' if pie else ""))
 
 
 def _series_presentes(data: pd.DataFrame, series: list[str] | None = None) -> list[str]:
@@ -134,37 +223,24 @@ def _series_presentes(data: pd.DataFrame, series: list[str] | None = None) -> li
             if n in data and pd.to_numeric(data[n], errors="coerce").notna().sum() > 1]
 
 
-def _chart(frame: pd.DataFrame, benchmark_usable: bool = True) -> str:
-    """Dos gráficos separados: el seguimiento en vivo y la reconstrucción.
+def _chart(serie: pd.DataFrame | None) -> str:
+    """El gráfico de los últimos cinco años, con la misma serie que la tabla.
 
-    **No se encadenan, y la separación es estructural y no visual.** Son dos
-    archivos distintos —`strategy_nav.csv` y `reconstruccion_historica.csv`—
-    que se leen por separado y se dibujan por separado. Antes se pegaban en
-    memoria escalando una sobre la otra, y eso fue lo que hizo que un +30%
-    inventado se leyera como resultado. Un corte dibujado se borra; dos
-    gráficos con dos títulos no se juntan solos.
+    Es **un solo gráfico**. El del seguimiento en vivo salió del informe: medía
+    desde el 16-09-2026 y todo lo demás mide desde el 1 de enero o a cinco años.
+
+    Sale de la serie que produce `desempeño_del_modelo` y no del archivo de la
+    reconstrucción, que termina en julio de 2026: con el archivo, el gráfico y
+    la tabla de arriba habrían contado períodos distintos con el mismo nombre.
     """
-    vivo = frame.copy()
-    vivo["date"] = pd.to_datetime(vivo["date"])
-    nombres_vivo = [n for n in _series_presentes(vivo) if n != BENCHMARK or benchmark_usable]
-    bloques = []
-    if len(vivo) >= 2 and nombres_vivo:
-        bloques.append(_dibujar(vivo, nombres_vivo, "Seguimiento en vivo", "seguimiento_vivo.png",
-                                f"Desde el {vivo.date.min():%d-%m-%Y}, cuando empezó esta serie."))
-    else:
-        bloques.append(f'<p class="muted">El seguimiento en vivo empezó el '
-                       f'{vivo.date.min():%d-%m-%Y}; el gráfico aparece con la segunda jornada.</p>')
-
-    if HISTORICAL.exists():
-        recon = pd.read_csv(HISTORICAL, parse_dates=["date"]).rename(
-            columns={"Mercado chileno (canasta igual peso)": BENCHMARK, "IPSA TR": BENCHMARK}).sort_values("date")
-        nombres = _series_presentes(recon, SERIES_RECONSTRUCCION)
-        if nombres:
-            bloques.append("<h3>Reconstrucción</h3>" + _dibujar(
-                recon, nombres, "Aplicando las mismas reglas hacia atrás", "reconstruccion.png",
-                f"De {recon.date.min():%m-%Y} a {recon.date.max():%m-%Y}. Es una serie distinta "
-                "de la de arriba y no se encadena con ella."))
-    return "".join(bloques)
+    if serie is None or len(serie) < 2:
+        return ""
+    datos = serie.rename(columns=NOMBRE_PUBLICO)
+    datos["date"] = pd.to_datetime(datos["date"])
+    nombres = _series_presentes(datos, list(COLORES_GRAFICO))
+    return _dibujar(datos.sort_values("date"), nombres, TITULO_GRAFICO, ARCHIVO_GRAFICO, "",
+                    colores=COLORES_GRAFICO, principal="AlphaData", suave=True,
+                    grosores=(GROSOR_PRINCIPAL, GROSOR_RESTO)) if nombres else ""
 
 
 def _precio(valor, moneda: str) -> str:
@@ -174,24 +250,18 @@ def _precio(valor, moneda: str) -> str:
 
 
 def _positions(portfolio: pd.DataFrame, currency: str = "$") -> str:
-    """Qué hay comprado, cuántos pesos es, desde cuándo y cómo va.
+    """Qué hay en cada cartera, desde cuándo y cómo va.
 
-    El precio de entrada va al lado del de hoy a propósito: sin él, «va
-    ganando 22,9%» es un número que el lector tiene que creer. Con los dos
+    El precio de ingreso va al lado del actual a propósito: sin él, la
+    rentabilidad es un número que el lector tiene que creer. Con los dos
     precios a la vista, lo puede verificar de memoria.
 
-    Y cuando hubo dividendo de por medio, la columna dice cuántos pesos por
-    acción llegaron a la cuenta. Nueve de veinte filas lo tienen: son
-    demasiadas para una nota al pie, y el monto es información que igual se
-    quiere. La variación queda algo por encima de sumarlo a mano porque
-    reinvierte el dividendo el día en que se pagó; eso va dicho en una línea
-    bajo la tabla, no fila por fila.
+    La columna de dividendos aparece sólo donde hay dividendos itemizados, que
+    hoy es el mercado chileno.
     """
     if portfolio is None or portfolio.empty:
         return '<p class="muted">Sin posiciones abiertas.</p>'
-    hay_montos = "monto_clp" in portfolio and portfolio["monto_clp"].notna().any()
     hay_dividendos = "dividendos_clp" in portfolio and portfolio["dividendos_clp"].notna().any()
-    hay_deriva = "peso_real" in portfolio and portfolio["peso_real"].notna().any()
     hay_caducidad = "caduca" in portfolio and portfolio["caduca"].notna().any()
     rows = []
     for record in portfolio.to_dict("records"):
@@ -200,31 +270,19 @@ def _positions(portfolio: pd.DataFrame, currency: str = "$") -> str:
         gain = record.get("open_return")
         gain_text = _signed(float(gain)) if pd.notna(gain) else "—"
         color = "" if gain_text == "—" else ' class="up"' if float(gain) >= 0 else ' class="down"'
-        if gain_text != "—" and record.get("con_dividendo"):
-            gain_text += " *"
-        celdas = [escape(str(record["ticker"]))]
-        if hay_montos:
-            celdas.append(_pesos(record.get("monto_clp"), currency))
-        celdas.append(pct(float(record["target_weight"])))
-        if hay_deriva:
-            celdas.append(_deriva(record.get("peso_real"), record.get("target_weight")))
-        celdas += [fecha,
-                   _precio(record.get("entry_price"), currency),
-                   _precio(record.get("current_price"), currency)]
+        celdas = [escape(str(record["ticker"])), pct(float(record["target_weight"])), fecha,
+                  _precio(record.get("entry_price"), currency),
+                  _precio(record.get("current_price"), currency)]
         if hay_dividendos:
             celdas.append(_precio(record.get("dividendos_clp"), currency))
         if hay_caducidad:
             celdas.append(_caducidad(record.get("caduca"), record.get("dias_para_caducar")))
         rows.append("<tr>" + "".join(f"<td>{c}</td>" for c in celdas)
                     + f'<td{color}>{gain_text}</td></tr>')
-    cabecera = (["Acción"]
-                + (["Cuánto invertir"] if hay_montos else [])
-                + ["Peso de entrada"]
-                + (["Peso hoy"] if hay_deriva else [])
-                + ["Comprada el", "Precio de entrada", "Precio hoy"]
-                + (["Dividendos cobrados"] if hay_dividendos else [])
+    cabecera = (["Acción", "Inversión", "Fecha de ingreso", "Precio de ingreso", "Precio actual"]
+                + (["Dividendos recibidos"] if hay_dividendos else [])
                 + (["Recomendación vigente hasta"] if hay_caducidad else [])
-                + ["Va ganando"])
+                + ["Rentabilidad"])
     return ("<table><thead><tr>" + "".join(f"<th>{c}</th>" for c in cabecera)
             + f'</tr></thead><tbody>{"".join(rows)}</tbody></table>')
 
@@ -237,194 +295,98 @@ def _dias_registro() -> int:
     return DIAS_REGISTRO
 
 
-def _generacional_lineas(g: dict | None, as_of) -> list[str]:
-    """Las líneas de Ahorro Generacional, en texto plano. El HTML las envuelve.
+TITULO_GENERACIONAL = "Estrategia Ahorro Generacional"
+QUE_ES_GENERACIONAL = ("Estrategia diseñada para ahorro en la cuenta 2 de la AFP. Consiste en cambiar la "
+                       "inversión entre el fondo de renta variable y el de renta fija (más riesgoso y más "
+                       "conservador).")
+TITULO_GRAFICO_GENERACIONAL = "Desempeño Ahorro Generacional últimos 10 años"
+ARCHIVO_GRAFICO_GENERACIONAL = "ahorro_generacional.png"
+COLORES_GENERACIONAL = {"Ahorro Generacional": "#d92d20", "Fondo A": "#1570ef", "Fondo E": "#099250"}
 
-    **El encuadre lo hacen el título y lo que se muestra, no un párrafo de
-    descargo.** La sección dice qué indica cada configuración y qué está en
-    vigor; no dice «señal de salida» ni «conviene mover», porque la decisión de
-    operarla no es del informe.
+
+def _generacional(g: dict | None, as_of) -> dict:
+    """Lo que la sección muestra, una sola vez para el HTML y para el texto plano.
 
     Los nombres de los fondos vienen del registro. En abril de 2027 los
     multifondos desaparecen y esto tiene que seguir diciendo la verdad sin que
     nadie edite la plantilla.
     """
     if g is None:
-        return ["- El registro no se pudo leer en esta corrida. El resto del informe no depende de él."]
+        return {"aviso": "El registro no se pudo leer en esta corrida. El resto del informe no depende de él.",
+                "cambios": [], "cabecera": [], "filas": [], "serie": None}
     dias = (pd.Timestamp(as_of).normalize() - pd.Timestamp(g["fecha"]).normalize()).days
-    agresivo, refugio = f"Fondo {g['agresivo']}", f"Fondo {g['refugio']}"
+    # Una tabla que dejó de actualizarse se ve igual que una al día: si el
+    # registro se quedó atrás, se dice.
+    aviso = (f"El registro dejó de crecer: el último día es el {pd.Timestamp(g['fecha']):%d-%m-%Y}, "
+             f"hace {int(dias)} días." if dias > _dias_registro() else "")
+    evolucion = g.get("evolucion") or {}
+    cabecera = ([f"Desde el {pd.Timestamp(evolucion['inicio_año']):%d-%m-%Y}", "Últimos 5 años", "Últimos 10 años"]
+                if evolucion else [])
+    return {"aviso": aviso,
+            "cambios": [(f"{pd.Timestamp(fecha):%d-%m-%Y}", f"Cambiar de Fondo {desde} a Fondo {hacia}")
+                        for fecha, desde, hacia in g.get("cambios") or []],
+            "cabecera": cabecera,
+            "filas": [(nombre, [_signed(r.get(p)) for p in ("año", "cinco_años", "diez_años")])
+                      for nombre, r in evolucion.get("filas", [])],
+            "serie": evolucion.get("serie")}
 
-    lineas = [f"**Qué dice hoy** — la razón es cuánto le falta al umbral de salida."]
-    for m, senal, razon, _ in g["medias"]:
-        donde = agresivo if senal == "A" else refugio
-        lineas.append(f"- media {m} d · {donde} · razón {_signed(razon)}")
-    if g["posicion"]:
-        desde = (f" desde el {pd.Timestamp(g['desde']):%d-%m-%Y}" if g["desde"] else "")
-        votos = g["votos"]
-        lineas.append(
-            f"- **En vigor hoy: Fondo {g['posicion']}**{desde} "
-            f"({votos} de {len(g['medias'])} indican salir; la regla sale con "
-            f"{g['votos_para_salir']} o más). Es la posición que corresponde al rezago de "
-            "ejecución, no la señal de hoy.")
 
-    if g["acum_a"] is not None:
-        lineas += ["", f"**Cuánto lleva costando** — desde el "
-                       f"{pd.Timestamp(g['congelado']):%d-%m-%Y}, contra quedarse en "
-                       f"{agresivo} ({_signed(g['acum_a'])})."]
-        for m, p in g["peaje"]:
-            lineas.append(f"- media {m} d · {_signed(p) if p is not None else '—'}")
-        if g["acum_voto"] is not None:
-            lineas.append(f"- **la regla en vigor · "
-                          f"{_signed(g['acum_voto'] - g['acum_a'])}**")
-    else:
-        lineas += ["", f"**Cuánto lleva costando** — el registro se congeló el "
-                       f"{pd.Timestamp(g['congelado']):%d-%m-%Y} y todavía no hay días "
-                       "posteriores que medir."]
+def _grafico_generacional(serie: dict | None) -> str:
+    """El gráfico de diez años, con la misma serie que sostiene la tabla."""
+    if not serie or len(serie.get("fechas", [])) < 2:
+        return ""
+    datos = pd.DataFrame({"date": pd.to_datetime(serie["fechas"]),
+                          **{n: v for n, v in serie.items() if n != "fechas"}})
+    nombres = _series_presentes(datos, list(COLORES_GENERACIONAL))
+    return _dibujar(datos, nombres, TITULO_GRAFICO_GENERACIONAL, ARCHIVO_GRAFICO_GENERACIONAL, "",
+                    colores=COLORES_GENERACIONAL, principal="Ahorro Generacional", suave=True,
+                    grosores=(GROSOR_PRINCIPAL, GROSOR_RESTO), años=None) if nombres else ""
 
-    estado = (f"{g['filas']:,}".replace(",", ".") + " días de cotización, el último del "
-              f"{pd.Timestamp(g['fecha']):%d-%m-%Y}")
-    if dias > _dias_registro():
-        lineas += ["", f"**El registro dejó de crecer:** {estado}, hace {int(dias)} días."]
-    else:
-        lineas += ["", f"**El registro** — {estado}."]
-    if g["aviso"]:
-        lineas.append(f"- Último aviso: {g['aviso']} ({g['aviso_estado']}).")
+
+def _generacional_lineas(g: dict | None, as_of) -> list[str]:
+    """La sección en texto plano: la evolución primero y los cambios al final."""
+    s = _generacional(g, as_of)
+    lineas = [QUE_ES_GENERACIONAL]
+    if s["aviso"]:
+        lineas += ["", f"**{s['aviso']}**"]
+    if s["filas"]:
+        lineas += ["", "**Evolución**"]
+        lineas += [f"- {nombre}: " + "; ".join(f"{valor} {titulo[0].lower() + titulo[1:]}"
+                                               for titulo, valor in zip(s["cabecera"], valores)) + "."
+                   for nombre, valores in s["filas"]]
+    if s["cambios"]:
+        lineas += ["", f"**Últimos {len(s['cambios'])} cambios**"]
+        lineas += [f"- {fecha}: {cambio}" for fecha, cambio in s["cambios"]]
     return lineas
 
 
 def _generacional_html(g: dict | None, as_of) -> str:
-    lineas = _generacional_lineas(g, as_of)
-    out, lista = [], []
-    for l in lineas:
-        if l.startswith("- "):
-            lista.append(f"<li>{_negritas(l[2:])}</li>")
-            continue
-        if lista:
-            out.append("<ul>" + "".join(lista) + "</ul>")
-            lista = []
-        if l:
-            out.append(f'<p class="lead">{_negritas(l)}</p>')
-    if lista:
-        out.append("<ul>" + "".join(lista) + "</ul>")
+    """Explicación, evolución, gráfico y, al final, los últimos cambios."""
+    s = _generacional(g, as_of)
+    out = [f'<p class="lead">{escape(QUE_ES_GENERACIONAL)}</p>']
+    if s["aviso"]:
+        out.append(f'<div class="warn">{escape(s["aviso"])}</div>')
+    if s["filas"]:
+        out.append("<h3>Evolución</h3><table><thead><tr><th>Fondo</th>"
+                   + "".join(f"<th>{escape(c)}</th>" for c in s["cabecera"]) + "</tr></thead><tbody>"
+                   + "".join(f'<tr{" class=\"row-strong\"" if nombre == "Ahorro Generacional" else ""}>'
+                             f"<td>{escape(nombre)}</td>" + "".join(f"<td>{v}</td>" for v in valores) + "</tr>"
+                             for nombre, valores in s["filas"])
+                   + "</tbody></table>")
+    dibujo = _grafico_generacional(s["serie"])
+    if dibujo:
+        out.append(f"<h3>{TITULO_GRAFICO_GENERACIONAL}</h3>{dibujo}")
+    if s["cambios"]:
+        out.append(f'<h3>Últimos {len(s["cambios"])} cambios</h3>'
+                   '<table><thead><tr><th>Fecha</th><th>Cambio recomendado</th></tr></thead><tbody>'
+                   + "".join(f"<tr><td>{fecha}</td><td>{escape(cambio)}</td></tr>" for fecha, cambio in s["cambios"])
+                   + "</tbody></table>")
     return "".join(out)
 
 
 def _negritas(texto: str) -> str:
     partes = texto.split("**")
     return "".join(p if i % 2 == 0 else f"<strong>{p}</strong>" for i, p in enumerate(partes))
-
-
-def _dolar(exposicion: dict | None, invertido_usd: float | None,
-           invertido_total: float | None) -> list[str]:
-    """Cuánto del patrimonio se mueve uno a uno con el tipo de cambio.
-
-    **Estaba decidido sin decidirse.** Gamma-6 y el oro nacen en dólares, así
-    que el 62,5% del reparto está montado en el tipo de cambio, y eso salió de
-    elegir tres piezas por separado —cada una por sus propios motivos— y no de
-    una decisión escrita en ninguna parte.
-
-    Puede que sea lo que se quiere: se vive en pesos y un colchón en dólares
-    contra una caída global es razonable. Pero tiene que ser una decisión y no
-    una consecuencia, y para eso el número tiene que estar a la vista.
-    """
-    if not exposicion:
-        return []
-    lineas = [f"**Expuesto al dólar: {pct(exposicion['fraccion'])} del diseño** "
-              f"({_pesos(exposicion['clp'], '$')}). Gamma-6 y el oro nacen en dólares, "
-              "así que esa parte se mueve uno a uno con el tipo de cambio además de "
-              "moverse con lo que compró."]
-    if invertido_total:
-        real = (invertido_usd or 0.) / invertido_total
-        lineas.append(f"- De lo comprado de verdad, {pct(real)} está en dólares "
-                      f"({_pesos(invertido_usd or 0., '$')} de "
-                      f"{_pesos(invertido_total, '$')}).")
-    return lineas
-
-
-def _ejecutado(diseno: dict | None, real: dict | None) -> list[str]:
-    """Lo comprado de verdad, al lado del reparto de diseño.
-
-    **El informe publicaba «Oro 25%, $5.000.000» cuando lo comprado eran
-    $619.504.** Los dos números eran correctos y decían cosas distintas sin que
-    nada lo dijera, que es un valor con más de una casa en su forma más cara:
-    cuando las dos casas tienen razón.
-
-    No reemplaza al diseño —de ahí salen los montos por posición y la guía de
-    ingreso— sino que va pegado a él, para que no se pueda leer uno sin el otro.
-    """
-    if not diseno:
-        return []
-    real = real or {}
-    capital = sum(diseno.values())
-    puesto = sum(real.values())
-    if not capital:
-        return []
-    lineas = [f"**Comprado de verdad: {_pesos(puesto, '$')} de {_pesos(capital, '$')}**, "
-              f"o sea {pct(puesto / capital)} del capital de referencia. El reparto de "
-              "arriba es el diseño, no lo que hay en la cuenta."]
-    for nombre, monto in diseno.items():
-        hay = real.get(nombre, 0.)
-        lineas.append(f"- {nombre}: {_pesos(hay, '$')} de {_pesos(monto, '$')}"
-                      + (f" ({pct(hay / monto)} de su pieza)" if monto else "")
-                      + ("" if hay else " — sin comprar todavía"))
-    return lineas
-
-
-def _deriva(real, objetivo, limite: float | None = LIMITE_CONCENTRACION) -> str:
-    """El peso al que llegó la posición, contra el que el modelo supone.
-
-    El peso de referencia sólo aplica al entrar: la política dice dejar correr
-    los pesos y operar nada más que entradas y salidas, así que el peso real es
-    el único que existe después. La columna no es una instrucción pendiente.
-    Se marca cuando la diferencia pasa de dos puntos, que es donde deja de ser
-    ruido.
-
-    Y avisa cuando la posición se acerca al límite de concentración, que sí es
-    una instrucción: al pasarlo se recorta hasta el límite en la revisión
-    siguiente.
-    """
-    if real is None or pd.isna(real) or objetivo is None or pd.isna(objetivo):
-        return "—"
-    real = float(real)
-    texto = pct(real)
-    if limite is not None and real >= limite:
-        return f'<strong class="down">{texto}</strong> · se recorta al {pct(limite, 0)}'
-    if limite is not None and real >= limite - .03:
-        return f"<strong>{texto}</strong> · cerca del {pct(limite, 0)}"
-    return f"<strong>{texto}</strong>" if abs(real - float(objetivo)) > .02 else texto
-
-
-def _vigencia(vigencia: dict | None) -> str:
-    """Qué nombres necesitan recomendación nueva y antes de cuándo.
-
-    Y si la más reciente pasó el umbral, que la estrategia está detenida. Un mes
-    saltado tiene que ser ruidoso y no silencioso: todo lo que este sistema
-    reparó fue algo que dejó de actualizarse sin avisar.
-    """
-    if not vigencia or vigencia.get("dias") is None:
-        return ""
-    dias, umbral = int(vigencia["dias"]), int(vigencia["umbral"])
-    renovar = vigencia.get("renovar") or []
-    lista = "".join(
-        f'<li><strong>{escape(str(r["ticker"]))}</strong> — antes del '
-        f'{pd.to_datetime(r["caduca"]):%d-%m-%Y}'
-        + (f' (en {int(r["dias_para_caducar"])} días)' if pd.notna(r.get("dias_para_caducar")) else "")
-        + "</li>"
-        for r in renovar)
-    if vigencia.get("detenida"):
-        return ('<div class="warn"><strong>Sigma-6 está detenida.</strong> La recomendación más '
-                f'reciente tiene {dias} días y el límite son {umbral}. La estrategia conserva su '
-                'cartera y no abre posiciones nuevas. Sí puede vender si el precio lo pide: lo que '
-                'falta son las recomendaciones, no los precios. Se reanuda sola en cuanto entren '
-                f'recomendaciones nuevas.{("<p>Necesitan recomendación nueva:</p><ul>" + lista + "</ul>") if lista else ""}'
-                "</div>")
-    quedan = umbral - dias
-    cuerpo = (f'<p class="muted">La recomendación más reciente tiene {dias} días. Si llega a '
-              f'{umbral} sin que entren nuevas, Sigma-6 conserva la cartera y deja de abrir '
-              f'posiciones: quedan {quedan} días.</p>')
-    if lista:
-        cuerpo += f"<p class=\"muted\">Necesitan recomendación nueva:</p><ul>{lista}</ul>"
-    return cuerpo
 
 
 def _caducidad(fecha, dias) -> str:
@@ -471,45 +433,58 @@ def _caja(portfolio: pd.DataFrame, capital: float | None) -> str:
             f'({pct(libre)} de la pieza), porque no hay más nombres que cumplan las condiciones.</p>')
 
 
-def _movimientos(movimientos: pd.DataFrame | None, ha_entrado: bool = True) -> str:
-    """Qué cambió en el modelo desde el informe anterior.
+def _cambios(movimientos: pd.DataFrame | None, carteras: dict) -> list[tuple[str, str]]:
+    """Qué cambió en cada estrategia, una línea por estrategia.
+
+    Todas aparecen siempre, también las que no cambiaron: tres de las piezas
+    son mensuales y la mayoría de las semanas no hay nada, y una estrategia que
+    no se nombra se lee como una que se olvidó.
+
+    Lo que entra lleva el porcentaje **del capital de su estrategia**, que es
+    el peso con que la cartera lo publica.
+    """
+    if movimientos is None:
+        movimientos = pd.DataFrame(columns=["estrategia", "instrumento", "accion"])
+    otras = [e for e in dict.fromkeys(movimientos["estrategia"].astype(str)) if e not in STRATEGIES]
+    lineas = []
+    for nombre in [*STRATEGIES, *otras]:
+        propios = movimientos.loc[movimientos["estrategia"].astype(str) == nombre].to_dict("records")
+        if not propios:
+            lineas.append((nombre, "Sin cambios" if nombre == "Oro" else "Sin cambios de cartera"))
+            continue
+        cartera = carteras.get(nombre)
+        pesos = (cartera.set_index("ticker")["target_weight"].astype(float).to_dict()
+                 if cartera is not None and len(cartera) else {})
+        frases = [f"Sale {r['instrumento']}." for r in propios if str(r["accion"]) == "VENDER"]
+        for r in propios:
+            if str(r["accion"]) != "COMPRAR":
+                continue
+            entra = str(r["instrumento"])
+            frases.append(f"Entra {entra} con {_porcentaje_corto(pesos[entra])} del capital de {nombre}."
+                          if entra in pesos else f"Entra {entra}.")
+        lineas.append((nombre, " ".join(frases)))
+    return lineas
+
+
+def _movimientos(movimientos: pd.DataFrame | None, ha_entrado: bool = True,
+                 carteras: dict | None = None) -> str:
+    """El bloque «Cambios en las estrategias».
 
     **Es una afirmación sobre el modelo, no una orden al lector**, y esa
     distinción no es de estilo. Al retirarse Sigma-6 el bloque decía «Vender
     BCI, LTM, PARAUCO y VAPORES» a alguien que no tenía ninguna de las cuatro
     porque todavía no había entrado al mercado: cierto sobre el modelo,
     imposible de ejecutar, y al mismo tiempo la guía de ingreso le decía
-    comprar la cartera completa. Dos instrucciones a la vez, una de ellas
-    irrealizable.
-
-    Por eso los verbos describen lo que hizo el modelo —entró, salió— y sólo
-    cuando hay operaciones registradas en `data/operaciones_reales.csv` el
-    bloque se lee como lo que hay que hacer. Mientras no las haya, lo que
-    corresponde es la cartera completa de más abajo.
-
-    Tres de las cuatro piezas son mensuales, así que la mayoría de las semanas
-    esto viene vacío. Un bloque vacío se lee como informe roto: cuando no hay
-    nada, hay que decirlo con todas sus letras.
+    comprar la cartera completa. Por eso dice qué sale y qué entra, y mientras
+    no haya operaciones registradas lo avisa arriba.
     """
     aviso = ("" if ha_entrado else
              '<p class="calm"><strong>Todavía no has comprado nada</strong>, así que esto es '
              'información sobre el modelo y no una lista de órdenes. Lo que te toca hacer es '
-             'la cartera completa que viene más abajo.</p>')
-    if movimientos is None or movimientos.empty:
-        return aviso + ('<p class="calm"><strong>Sin cambios desde el informe anterior.</strong> '
-                        'Las carteras de abajo siguen tal cual.</p>')
-    verbos = ({"COMPRAR": "Comprar", "VENDER": "Vender"} if ha_entrado
-              else {"COMPRAR": "Entró", "VENDER": "Salió"})
-    filas = []
-    for r in movimientos.to_dict("records"):
-        fecha = pd.to_datetime(r.get("fecha"), errors="coerce")
-        desde = f"desde el {fecha:%d-%m-%Y}" if pd.notna(fecha) else "—"
-        filas.append(f'<tr><td><strong>{escape(verbos.get(str(r["accion"]), str(r["accion"])))}</strong></td>'
-                     f'<td>{escape(str(r["instrumento"]))}</td>'
-                     f'<td>{escape(str(r["estrategia"]))}</td><td>{desde}</td></tr>')
-    cabecera = "Qué hacer" if ha_entrado else "Qué hizo el modelo"
-    return (aviso + f'<table><thead><tr><th>{cabecera}</th><th>Acción</th><th>Estrategia</th>'
-            f'<th>En cartera</th></tr></thead><tbody>{"".join(filas)}</tbody></table>')
+             'el detalle de carteras que viene más abajo.</p>')
+    return aviso + "".join(
+        f'<p class="lead" style="margin:0 0 6px"><strong>{escape(nombre)}:</strong> {escape(texto)}</p>'
+        for nombre, texto in _cambios(movimientos, carteras or {}))
 
 
 def build_public_report(
@@ -525,15 +500,19 @@ def build_public_report(
     oro_moves: pd.DataFrame | None = None,
     movimientos: pd.DataFrame | None = None,
     capital_por_pieza: dict | None = None,
-    invertido_por_pieza: dict | None = None,
-    exposicion_dolar: dict | None = None,
-    invertido_en_dolares: float | None = None,
     vigencia: dict | None = None,
     salud: list | None = None,
     conocidos: list | None = None,
     ha_entrado: bool = True,
     generacional: dict | None = None,
+    desempeño: dict | None = None,
 ) -> tuple[str, str]:
+    """El informe que se publica y se envía.
+
+    `coverage`, `errors`, `vigencia`, `salud` y `conocidos` se siguen
+    recibiendo y **ya no se publican**: la sección «¿Hay que preocuparse?»
+    salió del informe. La corrida las sigue calculando.
+    """
     vacio_cartera = pd.DataFrame(columns=["ticker", "target_weight"])
     vacio_movs = pd.DataFrame(columns=["ticker", "action", "target_weight"])
     gamma = gamma if gamma is not None else vacio_cartera
@@ -553,72 +532,64 @@ def build_public_report(
     reparto_corto = (", ".join(f"{n} {pct(v / sum(capital_por_pieza.values()))}"
                                for n, v in capital_por_pieza.items())
                      if capital_por_pieza else "las piezas en partes iguales")
-    orders_block = _movimientos(movimientos, ha_entrado)
-    reparto = ((f"Con un capital de {_pesos(sum(capital_por_pieza.values()), '$')}, a cada pieza le toca "
-                + ", ".join(f"{n} {_pesos(v, '$')}" for n, v in capital_por_pieza.items())
-                + ". La columna dice cuántos pesos va en cada acción.")
-               if capital_por_pieza else
-               "El peso de entrada es dentro de su propia pieza, y cada pieza es un cuarto del total.")
-
+    orders_block = _movimientos(movimientos, ha_entrado, portfolios)
     conjunto = metrics[CONJUNTO]
     headline = _signed(conjunto["return"])
     benchmark_usable = BENCHMARK in history and is_continuous(history[BENCHMARK])
     versus = conjunto["return"] - metrics[BENCHMARK]["return"] if benchmark_usable and conjunto["return"] is not None and metrics[BENCHMARK]["return"] is not None else None
 
-    # Una sola lista para la tabla y para el texto plano: cuando estaban
-    # separadas, el markdown siguió publicando el IPSA roto que el HTML ya
-    # ocultaba.
-    resumen = [CONJUNTO, *STRATEGIES, BENCHMARK] if benchmark_usable else [CONJUNTO, *STRATEGIES]
+    # El titular es la rentabilidad del año calendario con el reparto vigente,
+    # no la del seguimiento en vivo: ésa sigue en la tabla de cada estrategia y
+    # en el gráfico. Sin el dato del año se conserva el titular anterior, que
+    # dice desde cuándo mide, antes que publicar un número con otro rótulo.
+    #
+    # El número va pegado al título y la explicación debajo: arriba del número
+    # no va nada.
+    if desempeño:
+        rinde = desempeño["año"][CONJUNTO]
+        pie_titular = f"Invirtiendo en AlphaData desde el {_fecha_larga(desempeño['desde'])} al día de hoy."
+        titular = (f'<h2>Cómo va tu dinero este año</h2>'
+                   f'<div class="hero {"up" if rinde >= 0 else "down"}">{_signed(rinde)}</div>'
+                   f'<p class="lead">{pie_titular}</p>')
+        titular_md = f"**Cómo va tu dinero este año: {_signed(rinde)}.** {pie_titular}"
+    else:
+        comparacion = ('Eso es ' + _signed(versus) + ' comparado con haber invertido en la bolsa chilena completa.'
+                       if versus is not None else
+                       'La comparación con la bolsa chilena aparecerá cuando su serie esté completa.')
+        titular = (f'<h2>Cómo va tu dinero</h2>'
+                   f'<p class="lead">Repartiendo el capital en {reparto_corto}, desde que empezó el seguimiento llevas:</p>'
+                   f'<div class="hero {"up" if (conjunto["return"] or 0) >= 0 else "down"}">{headline}</div>'
+                   f'<p class="lead">{comparacion}</p>')
+        titular_md = f"**Conjunto ({reparto_corto}): {headline} desde el {pd.to_datetime(history['date']).min():%d-%m-%Y}.**"
+
+    # La tabla de desempeño: cada estrategia y, en la última fila, AlphaData.
+    # Las tres columnas salen de aplicar las reglas a los precios, igual que el
+    # titular. El mercado chileno no va: la tabla es de lo que se invierte.
+    inicio_año = desempeño["desde"] if desempeño else pd.Timestamp(year=as_of.year, month=1, day=1)
+    en_que = dict(QUE_INVIERTE)
+    en_que[CONJUNTO] = (desempeño or {}).get("reparto") or (
+        {n: v / sum(capital_por_pieza.values()) for n, v in capital_por_pieza.items()} if capital_por_pieza else {})
+    resumen = [*STRATEGIES, CONJUNTO]
+
+    def _medida(cual: str, nombre: str) -> float | None:
+        return ((desempeño or {}).get(cual) or {}).get(nombre)
 
     summary_rows = []
     for name in resumen:
-        m = metrics[name]
-        invierte = reparto_corto if name == CONJUNTO else QUE_INVIERTE[name]
-        cuantas = "—" if name in {CONJUNTO, BENCHMARK} else str(len(portfolios[name]))
+        invierte = ("<br>".join(f"{_porcentaje_corto(w)} en {n}" for n, w in en_que[name].items())
+                    if name == CONJUNTO else en_que[name])
         strong = ' class="row-strong"' if name == CONJUNTO else ""
-        summary_rows.append(f'<tr{strong}><td>{name}</td><td>{invierte}</td><td>{_signed(m["return"])}</td><td>{_signed(m["last_year"])}</td><td>{pct(m["mdd"])}</td><td>{cuantas}</td></tr>')
-
-    problems = []
-    aviso_vigencia = _vigencia(vigencia)
-    from src.salud import html as _salud_html, markdown as _salud_md
-    panel = _salud_html(salud, conocidos) if salud else ''
-    if len(errors):
-        problems.append(f"{len(errors)} recomendaciones nuevas no se pudieron usar porque venían incompletas.")
-    if not benchmark_usable:
-        problems.append("La serie del IPSA tiene un salto y quedó fuera de las comparaciones hasta corregirla.")
-    if len(coverage) and (coverage.status != "OK").any():
-        problems.append(f"{int((coverage.status != 'OK').sum())} instrumentos sin datos suficientes esta semana.")
-    problems_block = f'<div class="warn"><strong>Revisar:</strong> {" ".join(problems)}</div>' if problems else '<p class="calm">Todos los datos llegaron completos.</p>'
-
-    inicio = pd.to_datetime(history["date"]).min()
-    # La nota del asterisco sólo se imprime si alguna fila lo lleva.
-    con_dividendo = any(bool(frame["con_dividendo"].any()) for frame in portfolios.values()
-                        if frame is not None and "con_dividendo" in frame and len(frame))
-    con_monto = any(bool(frame["dividendos_clp"].notna().any()) for frame in portfolios.values()
-                    if frame is not None and "dividendos_clp" in frame and len(frame))
-    notas = []
-    if con_monto:
-        notas.append('<p class="muted"><strong>Dividendos cobrados</strong> son pesos por acción que ya'
-                     ' llegaron a la cuenta. Sumarlos al precio de hoy da algo menos que «va ganando»,'
-                     ' porque la variación los reinvierte el día en que se pagaron.</p>')
-    if con_dividendo:
-        notas.append('<p class="muted"><strong>*</strong> Esa acción repartió dividendos que la variación'
-                     ' incluye, pero que no están itemizados: la tabla de dividendos sólo cubre el'
-                     ' mercado chileno.</p>')
-    nota_dividendos = "".join(notas)
+        summary_rows.append(f'<tr{strong}><td>{"AlphaData" if name == CONJUNTO else name}</td><td>{invierte}</td>'
+                            f'<td>{_signed(_medida("año", name))}</td><td>{_signed(_medida("cinco_años", name))}</td>'
+                            f'<td>{pct(_medida("retroceso", name))}</td></tr>')
 
     positions_blocks = "".join(
         f'<h3>{name} · {QUE_INVIERTE[name]}</h3>{_positions(portfolios[name])}{_caja(portfolios[name], (capital_por_pieza or {}).get(name))}'
         for name in STRATEGIES if name in portfolios
     )
 
-    ejecutado = _ejecutado(capital_por_pieza, invertido_por_pieza)
-    ejecutado += _dolar(exposicion_dolar, invertido_en_dolares,
-                        sum((invertido_por_pieza or {}).values()) or None)
-    _bloque_ejecutado = ("".join(
-        f'<p class="lead">{_negritas(l)}</p>' if not l.startswith("- ")
-        else f'<p class="muted" style="margin:2px 0">{_negritas(l[2:])}</p>'
-        for l in ejecutado) if ejecutado else "")
+    dibujo = _chart((desempeño or {}).get("serie"))
+    grafico = f'<section><h2>{TITULO_GRAFICO}</h2>{dibujo}</section>' if dibujo else ""
 
     html = f'''<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>
     body{{margin:0;background:#f2f4f7;font:15px/1.5 -apple-system,Segoe UI,Arial,sans-serif;color:#1d2939}}
@@ -643,43 +614,27 @@ def build_public_report(
     </style></head><body><main class="wrap">
     <header class="head"><div class="brand">AlphaData</div><div class="sub">Informe semanal · {as_of:%d-%m-%Y}</div></header>
 
-    <section><h2>Cómo va tu dinero</h2>
-    <p class="lead">Repartiendo el capital en {reparto_corto}, desde que empezó el seguimiento llevas:</p>
-    <div class="hero {'up' if (conjunto['return'] or 0) >= 0 else 'down'}">{headline}</div>
-    <p class="lead">{'Eso es ' + _signed(versus) + ' comparado con haber invertido en la bolsa chilena completa.' if versus is not None else 'La comparación con la bolsa chilena aparecerá cuando su serie esté completa.'}</p>
-    </section>
+    <section>{titular}</section>
 
-    <section><h2>{'Qué cambió desde el informe anterior' if ha_entrado else 'Qué cambió en el modelo desde el informe anterior'}</h2>
+    <section><h2>Cambios en las estrategias</h2>
     {orders_block}
     </section>
 
-    <section><h2>Cada estrategia por separado</h2>
-    <table><thead><tr><th>Estrategia</th><th>En qué invierte</th><th>Desde el {inicio:%d-%m-%Y}</th><th>Último año</th><th>Peor caída</th><th>Acciones</th></tr></thead>
+    <section><h2>Desempeño separado por estrategia</h2>
+    <table><thead><tr><th>Estrategia</th><th>En qué invierte</th><th>Desde el {inicio_año:%d-%m-%Y}</th><th>Últimos 5 años</th><th>Máximo retroceso en 5 años</th></tr></thead>
     <tbody>{''.join(summary_rows)}</tbody></table>
-    <p class="muted"><strong>Peor caída:</strong> lo máximo que llegó a bajar desde su punto más alto antes de recuperarse. Mientras más chica, más tranquilo el camino.</p>
+    <p class="muted"><strong>Máximo retroceso:</strong> lo máximo que llegó a bajar desde su punto más alto antes de recuperarse. Mientras más chica, más tranquilo el camino.</p>
     </section>
 
-    <section><h2>Evolución</h2>
-    <p class="lead">El seguimiento en vivo corre desde el {inicio:%d-%m-%Y}.</p>
-    {_chart(history, benchmark_usable)}</section>
+    {grafico}
 
-    <section><h2>La cartera completa</h2>
-    <p class="lead">{reparto}</p>
-    {_bloque_ejecutado}
+    <section><h2>Detalle de carteras</h2>
     {positions_blocks}
-    {nota_dividendos}
-    <p class="muted"><strong>Va ganando</strong> es cuánto se movió el precio de esa acción desde el día en que se compró, que es distinto del rendimiento de la estrategia desde el {inicio:%d-%m-%Y}: una acción comprada hace ocho meses puede ir muy arriba aunque la estrategia lleve poco medida. Los dos números son correctos y no tienen por qué calzar.</p>
-    <p class="muted">Las fechas y los precios de entrada salen de aplicar las reglas a la serie histórica, no de operaciones registradas en vivo: «comprada el 27-02-2026» quiere decir que el modelo la seleccionó ese día y no la ha soltado. Sigma-6 se apoya en recomendaciones externas que tienen fecha de vencimiento: la columna dice hasta cuándo vale la que sostiene cada posición, y cuando vence, la venta cae en la primera revisión semanal posterior.</p>
-    <p class="muted">Todos los precios están en pesos. Gamma-6 y el oro se compran en Chile como CDV, así que su resultado ya incluye el efecto del tipo de cambio. El oro no se compra ni se vende por señales: es una posición fija que está para amortiguar las caídas del resto.</p>
     </section>
 
-    <section><h2>Ahorro Generacional</h2>
+    <section><h2>{TITULO_GENERACIONAL}</h2>
     {_generacional_html(generacional, as_of)}
     </section>
-
-    <section><h2>¿Hay que preocuparse?</h2>
-    {panel}
-    {aviso_vigencia}{problems_block}</section>
 
     </main></body></html>'''
 
@@ -688,32 +643,20 @@ def build_public_report(
         "",
         f"**Fecha:** {as_of:%d-%m-%Y}",
         "",
-        f"**Conjunto ({reparto_corto}): {headline} desde el {inicio:%d-%m-%Y}.**",
+        titular_md,
         "",
-        "## Qué cambió desde el informe anterior" if ha_entrado else "## Qué cambió en el modelo desde el informe anterior",
+        "## Cambios en las estrategias",
         "",
     ]
-    if movimientos is not None and len(movimientos):
-        for record in movimientos.to_dict("records"):
-            fecha = pd.to_datetime(record.get("fecha"), errors="coerce")
-            desde = f" — en cartera desde el {fecha:%d-%m-%Y}" if pd.notna(fecha) else ""
-            verbo = ({"COMPRAR": "Comprar", "VENDER": "Vender"} if ha_entrado
-                     else {"COMPRAR": "Entró", "VENDER": "Salió"}).get(str(record["accion"]),
-                                                                       str(record["accion"]))
-            lines.append(f"- {verbo} {record['instrumento']} ({record['estrategia']}){desde}")
-    else:
-        lines.append("- Sin cambios desde el informe anterior. Las carteras siguen tal cual.")
+    lines += [f"- {nombre}: {texto}" for nombre, texto in _cambios(movimientos, portfolios)]
     if not ha_entrado:
         lines.append("- Todavía no has comprado nada: esto es información sobre el modelo, no una "
-                     "lista de órdenes. Lo que te toca hacer es la cartera completa.")
-    lines += ["", "## Cada estrategia", ""]
+                     "lista de órdenes. Lo que te toca hacer es el detalle de carteras.")
+    lines += ["", "## Desempeño separado por estrategia", ""]
     for name in resumen:
-        lines.append(f"- {name}: {_signed(metrics[name]['return'])} desde el {inicio:%d-%m-%Y}; peor caída {pct(metrics[name]['mdd'])}.")
-    if not benchmark_usable:
-        lines.append("- La comparación con la bolsa chilena no está disponible: la serie del IPSA tiene un salto y quedó fuera hasta corregirla.")
-    if ejecutado:
-        lines += ["", "## Lo comprado de verdad", ""] + ejecutado
-    lines += ["", "## Ahorro Generacional", ""] + _generacional_lineas(generacional, as_of)
-    lines += ["", "## ¿Hay que preocuparse?", "", _salud_md(salud, conocidos) if salud else "- Sin panel de salud en esta corrida.", ""]
+        lines.append(f"- {'AlphaData' if name == CONJUNTO else name}: {_signed(_medida('año', name))} desde el {inicio_año:%d-%m-%Y}; "
+                     f"{_signed(_medida('cinco_años', name))} en los últimos 5 años; "
+                     f"máximo retroceso en 5 años {pct(_medida('retroceso', name))}.")
+    lines += ["", f"## {TITULO_GENERACIONAL}", ""] + _generacional_lineas(generacional, as_of)
     lines += ["", "El informe HTML incluye el gráfico y las carteras. La metodología y sus parámetros son información reservada.", ""]
-    return "\n".join(lines), html
+    return _publico("\n".join(lines)), _publico(html)

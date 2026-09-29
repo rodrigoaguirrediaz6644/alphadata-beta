@@ -6,7 +6,7 @@ import smtplib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-GRAFICOS = ("seguimiento_vivo.png", "reconstruccion.png")
+GRAFICOS = ("reconstruccion.png", "ahorro_generacional.png")
 
 
 def main() -> None:
@@ -34,8 +34,6 @@ def main() -> None:
     msg.set_content(md)
     msg.add_alternative(html, subtype="html")
     html_part = msg.get_payload()[-1]
-    # El informe lleva dos gráficos separados: el seguimiento en vivo y la
-    # reconstrucción. Son series distintas y van como imágenes distintas.
     for nombre in GRAFICOS:
         grafico = ROOT / "reports" / nombre
         if grafico.exists():

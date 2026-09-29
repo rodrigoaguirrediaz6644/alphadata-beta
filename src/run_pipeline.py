@@ -279,6 +279,59 @@ def benchmark_return(prices,start,end,fuera=())->float:
     if a.empty or z.empty:return 0.
     return float(z.iloc[0]/a.iloc[0]-1)
 
+def desempeño_del_modelo(as_of,prices,prices_us,prices_oro,fx,universe,reparto,costo,fuera=())->dict|None:
+    """Lo que rindió el reparto vigente: en el año, en cinco años, y cuánto llegó a retroceder.
+
+    Son los números del titular y de la tabla de desempeño. **Salen de aplicar
+    las reglas a los precios, no del seguimiento en vivo**, que partió el
+    16-09-2026 y no tiene con qué contestar por enero ni por 2022.
+
+    El año se mide contra el último cierre del año anterior, que es desde donde
+    se cuenta un año: partir del primer cierre de enero se comería la primera
+    rueda. Los cinco años, contra el último cierre de hace cinco años. Cada
+    pieza viene andando desde 90 días antes, así que al empezar a medir ya está
+    invertida y no en caja; el conjunto se reequilibra cada mes al reparto,
+    igual que en la reconstrucción.
+
+    Las tres medidas salen de **una sola serie por pieza**. Calculadas por
+    separado podrían discrepar entre columnas de la misma fila.
+
+    Devuelve None si a alguna pieza le falta el cierre del año anterior: un
+    conjunto con una pieza menos es un número distinto con el mismo nombre. Si
+    lo que falta es historia para los cinco años, esas dos medidas van en None
+    y el año sale igual.
+    """
+    inicio=pd.Timestamp(year=as_of.year,month=1,day=1); hace_cinco=as_of-pd.DateOffset(years=5)
+    desde=hace_cinco-pd.Timedelta(days=90)
+    calcular={'Delta-12':lambda:delta12_historical_nav(prices,universe,desde,as_of,costo),
+              'Gamma-6':lambda:gamma6_historical_nav(prices_us,universe.drop(columns=['cdv_ticker'],errors='ignore'),fx,desde,as_of,costo),
+              'Oro':lambda:oro_historical_nav(prices_oro,universe,fx,desde,as_of,costo)}
+    if not reparto or set(reparto)-set(calcular): return None
+    series={n:pd.Series(s[n].to_numpy(),index=pd.to_datetime(s.date)).dropna() for n,s in ((n,calcular[n]()) for n in reparto) if len(s)}
+    if set(series)!=set(reparto) or any(s.loc[s.index<inicio].empty or s.loc[s.index>=inicio].empty for s in series.values()): return None
+    tabla=pd.DataFrame(series).sort_index().ffill()
+    # El conjunto parte cuando están todas las piezas: antes de eso sería otro reparto.
+    tabla=tabla.dropna()
+    tabla[CONJUNTO]=combined_equal_weight(tabla.reset_index(names='date'),list(reparto),weights=reparto)
+    def _desde(corte):
+        """La tabla desde el último cierre anterior a `corte`, o None si no lo hay."""
+        previas=tabla.index[tabla.index<corte]
+        return tabla.loc[previas[-1]:] if len(previas) else None
+    año=_desde(inicio); cinco=_desde(hace_cinco+pd.Timedelta(days=1))
+    rinde=lambda t: {n:float(t[n].iloc[-1]/t[n].iloc[0]-1) for n in t}
+    # La serie del gráfico: las mismas cinco columnas de la tabla, más el
+    # mercado chileno, que va sólo dibujado.
+    serie=None
+    if cinco is not None:
+        serie=cinco/cinco.iloc[0]*100
+        mercado=canasta_chilena(prices,fuera=fuera)
+        mercado=mercado.reindex(mercado.index.union(serie.index)).ffill().reindex(serie.index).dropna() if len(mercado) else mercado
+        if len(mercado)>1: serie['Mercado chileno']=mercado/mercado.iloc[0]*100
+        serie=serie.reset_index(names='date')
+    return {'desde':inicio,'reparto':{n:float(w) for n,w in reparto.items()},'año':rinde(año),'serie':serie,
+            'cinco_años':rinde(cinco) if cinco is not None else None,
+            'retroceso':{n:float((cinco[n]/cinco[n].cummax()-1).min()) for n in cinco} if cinco is not None else None}
+
 def turnover_cost(old,new,rate):
     a={x['ticker']:float(x['target_weight']) for x in old};b=dict(zip(new.ticker,new.target_weight))
     risky=sum(abs(b.get(t,0)-a.get(t,0)) for t in set(a)|set(b))
@@ -702,7 +755,7 @@ def main()->None:
     ingreso=cartera_de_ingreso({'Sigma-6':sigma,'Delta-12':delta,'Gamma-6':gamma,'Oro':oro_portfolio},as_of,costos,simbolos=puerta_cdv)
     (REPORTS/'cartera_de_ingreso.md').write_text(markdown_ingreso(ingreso,as_of),encoding='utf-8')
     ingreso.to_csv(DATA/'cartera_de_ingreso.csv',index=False)
-    md,html=build_public_report(as_of,delta,dmove,coverage,errors,history,gamma=gamma,gamma_moves=gmove,oro=oro_portfolio,oro_moves=omove,movimientos=movimientos_libro,capital_por_pieza=por_pieza,invertido_por_pieza=_ops_invertido,exposicion_dolar=_expo_dolar,invertido_en_dolares=_ops_usd,vigencia=vigencia,salud=salud,conocidos=conocidos,ha_entrado=ha_entrado,generacional=registro_generacional);(REPORTS/'latest_report.md').write_text(md,encoding='utf-8');(REPORTS/'latest_report.html').write_text(html,encoding='utf-8')
+    md,html=build_public_report(as_of,delta,dmove,coverage,errors,history,gamma=gamma,gamma_moves=gmove,oro=oro_portfolio,oro_moves=omove,movimientos=movimientos_libro,capital_por_pieza=por_pieza,vigencia=vigencia,salud=salud,conocidos=conocidos,ha_entrado=ha_entrado,generacional=registro_generacional,desempeño=desempeño_del_modelo(as_of,prices,prices_us,prices_oro,fx,universe,reparto,modelo_de_costo()[0],fuera=no_cotizan));(REPORTS/'latest_report.md').write_text(md,encoding='utf-8');(REPORTS/'latest_report.html').write_text(html,encoding='utf-8')
     guardar_publicada(vigente,as_of,PUBLICADA)
     sigma.to_csv(DATA/'portfolio_sigma6.csv',index=False);delta.to_csv(DATA/'portfolio_delta12.csv',index=False);gamma.to_csv(DATA/'portfolio_gamma6.csv',index=False);oro_portfolio.to_csv(DATA/'portfolio_oro.csv',index=False)
     s_audit.to_csv(DATA/'audit_sigma6.csv',index=False);d_audit.to_csv(DATA/'audit_delta12.csv',index=False)

@@ -112,10 +112,12 @@ def test_el_correo_reescribe_los_graficos_a_cid():
     al abrirlo desde el repositorio.
     """
     from src.send_report import GRAFICOS
-    html = '<img src="seguimiento_vivo.png"><img src="reconstruccion.png">'
+    html = '<img src="reconstruccion.png"><img src="ahorro_generacional.png">'
     for nombre in GRAFICOS:
         html = html.replace(f'src="{nombre}"', f'src="cid:{Path(nombre).stem}"')
-    assert html == '<img src="cid:seguimiento_vivo"><img src="cid:reconstruccion">'
+    assert html == '<img src="cid:reconstruccion"><img src="cid:ahorro_generacional">'
+    # El gráfico del seguimiento en vivo salió del informe y no se adjunta.
+    assert GRAFICOS == ("reconstruccion.png", "ahorro_generacional.png")
 
 
 def test_los_pesos_corren_entre_revisiones_y_el_nav_no_lo_modela():

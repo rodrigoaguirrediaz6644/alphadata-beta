@@ -508,6 +508,78 @@ def resumen(filas: list[dict]) -> str:
     return "\n".join(partes)
 
 
+# Cuántos cambios de fondo muestra el informe.
+CAMBIOS_EN_INFORME = 4
+
+
+def cambios(filas: list[dict], cuantos: int = CAMBIOS_EN_INFORME) -> list[tuple[str, str, str]]:
+    """Los últimos cambios de la posición en vigor: (fecha, desde, hacia), del más nuevo al más viejo.
+
+    Sobre `posicion`, igual que `transicion`: es la instrucción única por
+    votación, y dos lugares decidiendo qué es un cambio terminarían
+    discrepando sobre la fecha del último.
+    """
+    con = [f for f in filas if f["posicion"]]
+    todos = [(b["fecha"], a["posicion"], b["posicion"])
+             for a, b in zip(con, con[1:]) if a["posicion"] != b["posicion"]]
+    return todos[-cuantos:][::-1] if cuantos else []
+
+
+def _hace_años(fecha: str, n: int) -> str:
+    año, resto = int(fecha[:4]) - n, fecha[4:]
+    # El 29 de febrero de hace n años puede no existir.
+    return f"{año}{'-02-28' if resto == '-02-29' else resto}"
+
+
+def evolucion(filas: list[dict]) -> dict | None:
+    """Cuánto rindieron el fondo agresivo, el refugio y la regla, en tres períodos.
+
+    **Esto no es evidencia de que la regla funcione.** La historia anterior a
+    `CONGELADO` es la misma sobre la que se eligieron la banda, las medias y
+    los votos, así que la regla le gana a esa historia por construcción. Lo que
+    cuenta como medición es lo posterior, que es lo que lleva `acum_voto`. Se
+    publica porque el informe lo pide, y queda dicho acá de dónde sale.
+
+    La regla se valoriza igual que en `acumulados`: cada día rinde lo que rinde
+    el fondo de la posición en vigor ese día. Mientras las medias no alcanzan
+    no hay posición, y ahí está en el fondo agresivo, que es donde arranca.
+
+    El año se mide contra el último día anterior al 1 de enero; los cinco y los
+    diez años, contra el último día de hace cinco o diez años o antes. Con menos
+    historia que eso el período queda vacío y no se inventa.
+
+    `serie` es la de los diez años, en base 100 desde ese último día, para el
+    gráfico: la misma que sostiene la columna de la tabla, así que el número
+    del final de cada línea y el de la tabla salen del mismo dato.
+    """
+    if len(filas) < 2:
+        return None
+    fechas = [f["fecha"] for f in filas]
+    fondo = {DENTRO: [float(f[f"vc_{DENTRO.lower()}"]) for f in filas],
+             REFUGIO: [float(f[f"vc_{REFUGIO.lower()}"]) for f in filas]}
+    regla = [1.]
+    for i in range(1, len(filas)):
+        serie = fondo[REFUGIO] if filas[i]["posicion"] == REFUGIO else fondo[DENTRO]
+        regla.append(regla[-1] * serie[i] / serie[i - 1])
+
+    def _ultimo(condicion) -> int | None:
+        previos = [i for i, fecha in enumerate(fechas) if condicion(fecha)]
+        return previos[-1] if previos else None
+
+    ultima = fechas[-1]
+    bases = {"año": _ultimo(lambda fecha: fecha < f"{ultima[:4]}-01-01"),
+             "cinco_años": _ultimo(lambda fecha: fecha <= _hace_años(ultima, 5)),
+             "diez_años": _ultimo(lambda fecha: fecha <= _hace_años(ultima, 10))}
+    series = [(f"Fondo {DENTRO}", fondo[DENTRO]), (f"Fondo {REFUGIO}", fondo[REFUGIO]),
+              ("Ahorro Generacional", regla)]
+    b10 = bases["diez_años"]
+    grafico = ({"fechas": fechas[b10:], **{n: [v / s[b10] * 100 for v in s[b10:]] for n, s in series}}
+               if b10 is not None else None)
+    return {"hasta": ultima, "inicio_año": f"{ultima[:4]}-01-01", "serie": grafico,
+            "filas": [(nombre, {p: (s[-1] / s[b] - 1 if b is not None else None) for p, b in bases.items()})
+                      for nombre, s in series]}
+
+
 def para_informe(filas: list[dict] | None = None) -> dict | None:
     """Lo que el informe del viernes necesita, armado aca y no alla.
 
@@ -547,6 +619,8 @@ def para_informe(filas: list[dict] | None = None) -> dict | None:
         "peaje": peaje,
         "aviso": u.get("aviso") or None,
         "aviso_estado": u.get("aviso_estado") or None,
+        "cambios": cambios(filas),
+        "evolucion": evolucion(filas),
     }
 
 

@@ -340,3 +340,97 @@ def test_sin_cambios_no_hay_transicion():
     for f in filas:
         f["posicion"] = "A"
     assert r.transicion(filas) is None
+
+
+# --------------------------------------------------------------------------
+# lo que el informe publica: los últimos cambios y la evolución
+# --------------------------------------------------------------------------
+
+def _dia(fecha, a, e, posicion):
+    return {"fecha": fecha, "vc_a": f"{a:.2f}", "vc_e": f"{e:.2f}", "vc_d": "100.00", "posicion": posicion}
+
+
+HISTORIA = [
+    _dia("2015-01-02", 100., 100., ""),          # sin medias todavía: está en el A
+    _dia("2021-06-29", 110., 101., "A"),
+    _dia("2021-06-30", 120., 102., "A"),         # el último día de hace cinco años o antes
+    _dia("2021-07-01", 60., 103., "E"),          # la regla salió: no se come la caída del A
+    _dia("2025-12-30", 90., 110., "E"),          # el último día de 2025
+    _dia("2026-01-02", 180., 121., "A"),         # vuelve al A y toma su subida
+    _dia("2026-06-30", 198., 110., "A"),
+]
+
+
+def test_los_cambios_salen_del_mas_nuevo_al_mas_viejo_y_con_tope():
+    from src.registro_generacional import CAMBIOS_EN_INFORME, cambios
+    assert CAMBIOS_EN_INFORME == 4
+    assert cambios(HISTORIA) == [("2026-01-02", "E", "A"), ("2021-07-01", "A", "E")]
+    assert cambios(HISTORIA, cuantos=1) == [("2026-01-02", "E", "A")]
+    assert cambios(HISTORIA[:3]) == []
+
+
+def test_con_muchos_cambios_se_queda_con_los_ultimos_cuatro():
+    from src.registro_generacional import cambios
+    dias = [_dia(f"2020-{m:02d}-01", 100., 100., "E" if m % 2 else "A") for m in range(1, 11)]
+    assert [f for f, _, _ in cambios(dias)] == ["2020-10-01", "2020-09-01", "2020-08-01", "2020-07-01"]
+
+
+def test_el_ultimo_cambio_es_el_mismo_que_dice_transicion():
+    """Dos lugares decidiendo qué es un cambio terminarían discrepando sobre la fecha."""
+    from src.registro_generacional import cambios, transicion
+    i, desde, hacia = transicion(HISTORIA)
+    assert cambios(HISTORIA)[0] == (HISTORIA[i]["fecha"], desde, hacia)
+
+
+def test_la_evolucion_mide_los_tres_periodos_desde_donde_corresponde():
+    from src.registro_generacional import evolucion
+    e = evolucion(HISTORIA)
+    assert (e["hasta"], e["inicio_año"]) == ("2026-06-30", "2026-01-01")
+    assert "inicio_historia" not in e
+    filas = dict(e["filas"])
+    assert list(filas) == ["Fondo A", "Fondo E", "Ahorro Generacional"]
+    # El año, desde el 90 del 30-12-2025; los cinco años, desde el 120 del 30-06-2021;
+    # los diez, desde el 100 del 02-01-2015, el último día de hace diez años o antes.
+    assert filas["Fondo A"] == pytest.approx({"año": 198 / 90 - 1, "cinco_años": 198 / 120 - 1, "diez_años": .98})
+    assert filas["Fondo E"] == pytest.approx({"año": 0., "cinco_años": 110 / 102 - 1, "diez_años": .10})
+
+
+def test_la_regla_rinde_lo_del_fondo_en_que_esta_cada_dia():
+    from src.registro_generacional import evolucion
+    regla = dict(evolucion(HISTORIA)["filas"])["Ahorro Generacional"]
+    en_a_hasta_2021 = 120 / 100
+    en_e = (103 / 102) * (110 / 103)
+    en_a_desde_2026 = (180 / 90) * (198 / 180)
+    assert regla["diez_años"] == pytest.approx(en_a_hasta_2021 * en_e * en_a_desde_2026 - 1)
+    assert regla["cinco_años"] == pytest.approx(en_e * en_a_desde_2026 - 1)
+    assert regla["año"] == pytest.approx(en_a_desde_2026 - 1)
+
+
+def test_la_serie_del_grafico_parte_en_100_y_termina_en_lo_que_dice_la_tabla():
+    """El número al final de cada línea y el de la columna salen del mismo dato."""
+    from src.registro_generacional import evolucion
+    e = evolucion(HISTORIA)
+    serie = e["serie"]
+    assert serie["fechas"][0] == "2015-01-02" and serie["fechas"][-1] == "2026-06-30"
+    for nombre, r in e["filas"]:
+        assert serie[nombre][0] == 100.
+        assert serie[nombre][-1] == pytest.approx(100 * (1 + r["diez_años"]))
+
+
+def test_sin_historia_suficiente_el_periodo_queda_vacio_y_no_inventado():
+    from src.registro_generacional import evolucion
+    corta = evolucion(HISTORIA[4:])
+    filas = dict(corta["filas"])["Fondo A"]
+    assert filas["cinco_años"] is None and filas["diez_años"] is None
+    assert filas["año"] == pytest.approx(198 / 90 - 1)
+    assert corta["serie"] is None
+    assert evolucion(HISTORIA[:1]) is None
+
+
+def test_el_informe_recibe_los_cambios_y_la_evolucion():
+    from src.registro_generacional import MEDIAS, columnas, para_informe
+    filas = [{c: "" for c in columnas()} | f for f in HISTORIA]
+    g = para_informe(filas)
+    assert g["cambios"][0] == ("2026-01-02", "E", "A")
+    assert [n for n, _ in g["evolucion"]["filas"]] == ["Fondo A", "Fondo E", "Ahorro Generacional"]
+    assert len(MEDIAS) == 5
