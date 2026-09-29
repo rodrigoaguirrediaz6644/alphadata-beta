@@ -2,52 +2,34 @@
 
 **Fecha:** 28-09-2026
 
-**Conjunto (Delta-12 37,5%, Gamma-6 37,5%, Oro 25,0%): -2,4% desde el 16-09-2026.**
+**Cómo va tu dinero este año: +22,9%.** Invirtiendo en AlphaData desde el 01 de Enero del 2026 al día de hoy.
 
-## Qué cambió desde el informe anterior
+## Cambios en las estrategias
 
-- Sin cambios desde el informe anterior. Las carteras siguen tal cual.
+- Delta12: Sin cambios de cartera
+- Gamma6: Sin cambios de cartera
+- Oro: Sin cambios
 
-## Cada estrategia
+## Desempeño separado por estrategia
 
-- Conjunto AlphaData: -2,4% desde el 16-09-2026; peor caída -2,8%.
-- Delta-12: -2,3% desde el 16-09-2026; peor caída -2,5%.
-- Gamma-6: -1,5% desde el 16-09-2026; peor caída -1,6%.
-- Oro: -4,0% desde el 16-09-2026; peor caída -5,0%.
-- Mercado chileno: -0,5% desde el 16-09-2026; peor caída -1,2%.
+- Delta12: +17,7% desde el 01-01-2026; +221,7% en los últimos 5 años; máximo retroceso en 5 años -15,0%.
+- Gamma6: +41,7% desde el 01-01-2026; +236,4% en los últimos 5 años; máximo retroceso en 5 años -26,9%.
+- Oro: +2,0% desde el 01-01-2026; +184,8% en los últimos 5 años; máximo retroceso en 5 años -23,5%.
+- AlphaData: +22,9% desde el 01-01-2026; +233,8% en los últimos 5 años; máximo retroceso en 5 años -14,3%.
 
-## Lo comprado de verdad
+## Estrategia Ahorro Generacional
 
-**Comprado de verdad: $ 619.504 de $ 20.000.000**, o sea 3,1% del capital de referencia. El reparto de arriba es el diseño, no lo que hay en la cuenta.
-- Delta-12: $ 0 de $ 7.500.000 (0,0% de su pieza) — sin comprar todavía
-- Gamma-6: $ 0 de $ 7.500.000 (0,0% de su pieza) — sin comprar todavía
-- Oro: $ 619.504 de $ 5.000.000 (12,4% de su pieza)
-**Expuesto al dólar: 62,5% del diseño** ($ 12.500.000). Gamma-6 y el oro nacen en dólares, así que esa parte se mueve uno a uno con el tipo de cambio además de moverse con lo que compró.
-- De lo comprado de verdad, 100,0% está en dólares ($ 619.504 de $ 619.504).
+Estrategia diseñada para ahorro en la cuenta 2 de la AFP. Consiste en cambiar la inversión entre el fondo de renta variable y el de renta fija (más riesgoso y más conservador).
 
-## Ahorro Generacional
+**Evolución**
+- Fondo A: +14,1% desde el 01-01-2026; +64,5% últimos 5 años; +165,9% últimos 10 años.
+- Fondo E: -6,0% desde el 01-01-2026; +42,1% últimos 5 años; +67,9% últimos 10 años.
+- Ahorro Generacional: +14,1% desde el 01-01-2026; +103,2% últimos 5 años; +243,1% últimos 10 años.
 
-**Qué dice hoy** — la razón es cuánto le falta al umbral de salida.
-- media 45 d · Fondo A · razón +1,7%
-- media 64 d · Fondo A · razón +1,8%
-- media 90 d · Fondo A · razón +2,6%
-- media 105 d · Fondo A · razón +3,1%
-- media 126 d · Fondo A · razón +4,3%
-- **En vigor hoy: Fondo A** desde el 19-05-2025 (0 de 5 indican salir; la regla sale con 2 o más). Es la posición que corresponde al rezago de ejecución, no la señal de hoy.
-
-**Cuánto lleva costando** — desde el 23-09-2026, contra quedarse en Fondo A (+0,1%).
-- media 45 d · +0,0%
-- media 64 d · +0,0%
-- media 90 d · +0,0%
-- media 105 d · +0,0%
-- media 126 d · +0,0%
-- **la regla en vigor · +0,0%**
-
-**El registro** — 5.997 días de cotización, el último del 24-09-2026.
-
-## ¿Hay que preocuparse?
-
-- **Cobertura:** sin datos suficientes: IPSA_TR
-
+**Últimos 4 cambios**
+- 19-05-2025: Cambiar de Fondo E a Fondo A
+- 13-03-2025: Cambiar de Fondo A a Fondo E
+- 25-07-2024: Cambiar de Fondo E a Fondo A
+- 03-05-2024: Cambiar de Fondo A a Fondo E
 
 El informe HTML incluye el gráfico y las carteras. La metodología y sus parámetros son información reservada.
