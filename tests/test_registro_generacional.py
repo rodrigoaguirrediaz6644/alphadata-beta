@@ -346,27 +346,37 @@ def test_sin_cambios_no_hay_transicion():
 # lo que el informe publica: los últimos cambios y la evolución
 # --------------------------------------------------------------------------
 
-def _dia(fecha, a, e, posicion):
-    return {"fecha": fecha, "vc_a": f"{a:.2f}", "vc_e": f"{e:.2f}", "vc_d": "100.00", "posicion": posicion}
+def _dia(fecha, a, e, posicion, fuera=None):
+    """`fuera`: cuántas de las cinco señales indican refugio ese día; por defecto, las de `posicion`."""
+    n = (2 if posicion == "E" else 0) if fuera is None else fuera
+    fila = {"fecha": fecha, "vc_a": f"{a:.2f}", "vc_e": f"{e:.2f}", "vc_d": "100.00", "posicion": posicion}
+    if posicion or n:
+        from src.registro_generacional import FUERA, MEDIAS
+        for i, m in enumerate(MEDIAS):
+            fila[f"senal_{m}"] = FUERA if i < n else "A"
+    return fila
 
 
+# Las señales cambian una rueda antes que la posición en vigor (en el registro
+# real, cuatro): 2021-06-30 y 2025-12-30 son los días de la recomendación, y
+# 2021-07-01 y 2026-01-02 los de la posición en vigor.
 HISTORIA = [
-    _dia("2015-01-02", 100., 100., ""),          # sin medias todavía: está en el A
+    _dia("2015-01-02", 100., 100., ""),                    # sin medias todavía: está en el A
     _dia("2021-06-29", 110., 101., "A"),
-    _dia("2021-06-30", 120., 102., "A"),         # el último día de hace cinco años o antes
-    _dia("2021-07-01", 60., 103., "E"),          # la regla salió: no se come la caída del A
-    _dia("2025-12-30", 90., 110., "E"),          # el último día de 2025
-    _dia("2026-01-02", 180., 121., "A"),         # vuelve al A y toma su subida
+    _dia("2021-06-30", 120., 102., "A", fuera=2),          # las señales salen; el último día de hace cinco años o antes
+    _dia("2021-07-01", 60., 103., "E"),                    # la posición en vigor llega: no se come la caída del A
+    _dia("2025-12-30", 90., 110., "E", fuera=0),           # las señales vuelven; el último día de 2025
+    _dia("2026-01-02", 180., 121., "A"),                   # la posición en vigor vuelve y toma la subida
     _dia("2026-06-30", 198., 110., "A"),
 ]
 
 
-def test_los_cambios_salen_del_mas_nuevo_al_mas_viejo_y_con_tope():
+def test_los_cambios_son_los_de_la_recomendacion_y_salen_del_mas_nuevo_al_mas_viejo():
     from src.registro_generacional import CAMBIOS_EN_INFORME, cambios
     assert CAMBIOS_EN_INFORME == 4
-    assert cambios(HISTORIA) == [("2026-01-02", "E", "A"), ("2021-07-01", "A", "E")]
-    assert cambios(HISTORIA, cuantos=1) == [("2026-01-02", "E", "A")]
-    assert cambios(HISTORIA[:3]) == []
+    assert cambios(HISTORIA) == [("2025-12-30", "E", "A"), ("2021-06-30", "A", "E")]
+    assert cambios(HISTORIA, cuantos=1) == [("2025-12-30", "E", "A")]
+    assert cambios(HISTORIA[:2]) == []
 
 
 def test_con_muchos_cambios_se_queda_con_los_ultimos_cuatro():
@@ -375,11 +385,31 @@ def test_con_muchos_cambios_se_queda_con_los_ultimos_cuatro():
     assert [f for f, _, _ in cambios(dias)] == ["2020-10-01", "2020-09-01", "2020-08-01", "2020-07-01"]
 
 
-def test_el_ultimo_cambio_es_el_mismo_que_dice_transicion():
+def test_la_senal_es_la_posicion_en_vigor_adelantada_por_el_rezago():
+    """En el registro real: cada cambio de la posición llegó `REZAGO` ruedas después de la votación."""
+    from src.registro_generacional import REZAGO, leer, posicion_de_la_senal
+    filas = [f for f in leer() if f["posicion"]]
+    senal = [posicion_de_la_senal(f) for f in filas]
+    assert all(s is not None for s in senal)
+    assert [f["posicion"] for f in filas[REZAGO:]] == senal[:-REZAGO]
+
+
+def test_posicion_de_la_senal_vota_igual_que_la_regla():
+    from src.registro_generacional import FUERA, MEDIAS, posicion_de_la_senal, VOTOS_PARA_SALIR
+    def fila(n):
+        return {f"senal_{m}": FUERA if i < n else "A" for i, m in enumerate(MEDIAS)}
+    assert posicion_de_la_senal(fila(VOTOS_PARA_SALIR - 1)) == "A"
+    assert posicion_de_la_senal(fila(VOTOS_PARA_SALIR)) == "E"
+    assert posicion_de_la_senal({}) is None                     # sin medias todavía
+
+
+def test_el_ultimo_cambio_de_la_senal_es_el_primero_de_la_lista():
     """Dos lugares decidiendo qué es un cambio terminarían discrepando sobre la fecha."""
-    from src.registro_generacional import cambios, transicion
-    i, desde, hacia = transicion(HISTORIA)
+    from src.registro_generacional import cambios, transicion, transicion_senal
+    i, desde, hacia = transicion_senal(HISTORIA)
     assert cambios(HISTORIA)[0] == (HISTORIA[i]["fecha"], desde, hacia)
+    # La posición en vigor cambia después, y esa es la que se valoriza.
+    assert transicion(HISTORIA)[0] > i
 
 
 def test_la_evolucion_mide_los_tres_periodos_desde_donde_corresponde():
@@ -396,6 +426,7 @@ def test_la_evolucion_mide_los_tres_periodos_desde_donde_corresponde():
 
 
 def test_la_regla_rinde_lo_del_fondo_en_que_esta_cada_dia():
+    """Sobre la posición en vigor: la que habría quedado pidiendo el cambio el día de la recomendación."""
     from src.registro_generacional import evolucion
     regla = dict(evolucion(HISTORIA)["filas"])["Ahorro Generacional"]
     en_a_hasta_2021 = 120 / 100
@@ -431,6 +462,44 @@ def test_el_informe_recibe_los_cambios_y_la_evolucion():
     from src.registro_generacional import MEDIAS, columnas, para_informe
     filas = [{c: "" for c in columnas()} | f for f in HISTORIA]
     g = para_informe(filas)
-    assert g["cambios"][0] == ("2026-01-02", "E", "A")
+    assert g["cambios"][0] == ("2025-12-30", "E", "A")
     assert [n for n, _ in g["evolucion"]["filas"]] == ["Fondo A", "Fondo E", "Ahorro Generacional"]
     assert len(MEDIAS) == 5
+
+
+def _informe(hasta):
+    from src.registro_generacional import columnas, para_informe
+    return para_informe([{c: "" for c in columnas()} | f for f in HISTORIA[:hasta]])
+
+
+def test_sin_cambio_en_curso_la_recomendacion_es_la_posicion_en_vigor():
+    g = _informe(4)                                   # hasta 2021-07-01: señales y posición ya en el refugio
+    assert g["recomendado"] == "E" and g["recomendado_desde"] == "2021-06-30"
+    assert g["cambio_en_curso"] is None
+    g = _informe(7)                                   # hasta el final: de vuelta en el A
+    assert g["recomendado"] == "A" and g["recomendado_desde"] == "2025-12-30" and g["cambio_en_curso"] is None
+
+
+def test_hay_cambio_en_curso_cuando_las_senales_ya_cambiaron_y_la_posicion_en_vigor_todavia_no():
+    g = _informe(3)                                   # hasta 2021-06-30: las señales salen, la posición sigue en el A
+    assert g["recomendado"] == "E" and g["posicion"] == "A"
+    assert g["cambio_en_curso"] == {"desde": "A", "hacia": "E", "fecha": "2021-06-30"}
+
+
+def test_sin_medias_todavia_no_hay_recomendacion():
+    g = _informe(1)
+    assert g["recomendado"] is None and g["cambio_en_curso"] is None
+
+
+def test_con_el_registro_real_el_cambio_en_curso_dura_el_rezago_y_lo_incluye_el_aviso():
+    """En cada cambio real: en curso las `REZAGO` ruedas hasta que llega la posición en vigor, y el aviso cae dentro."""
+    from src.aviso_generacional import pendiente
+    from src.registro_generacional import REZAGO, _cambios_de, leer, para_informe, posicion_de_la_senal
+    filas = leer()
+    for k, _, hacia in _cambios_de(filas, posicion_de_la_senal)[-6:]:
+        for j in range(REZAGO + 2):
+            g = para_informe(filas[:k + 1 + j])
+            assert (g["cambio_en_curso"] is not None) == (j < REZAGO), (filas[k]["fecha"], j)
+            if pendiente(filas[:k + 1 + j]) is not None:
+                assert g["cambio_en_curso"] is not None
+        assert para_informe(filas[:k + 1])["cambio_en_curso"]["hacia"] == hacia

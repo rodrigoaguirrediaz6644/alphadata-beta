@@ -28,6 +28,7 @@ def _fila(fecha, posicion, fuera=(), **extra):
              vc_d="57330.19")
     for m in r.MEDIAS:
         f[f"pos_{m}"] = r.FUERA if m in fuera else r.DENTRO
+        f[f"senal_{m}"] = r.FUERA if m in fuera else r.DENTRO
         f[f"razon_{m}"] = "-0.024" if m in fuera else "0.018"
     f["votos"] = str(len(fuera))
     f.update(extra)
@@ -79,8 +80,9 @@ def test_la_vuelta_al_agresivo_tambien_nombra_bien_el_destino():
     assert a["hacia"] == r.DENTRO and "Cambiar a Fondo A" in av.html(a)
 
 
-def test_el_nombre_del_fondo_sale_del_registro_y_no_del_codigo():
-    """En abril de 2027 los multifondos desaparecen."""
+def test_el_nombre_del_fondo_sale_del_registro_y_no_del_codigo(monkeypatch):
+    """En abril de 2027 los multifondos desaparecen y el refugio se cambia en un solo lugar: `REFUGIO`."""
+    monkeypatch.setattr(r, "REFUGIO", "Consolidacion")
     a = av.pendiente(_historia(("A", ()), ("Consolidacion", (45, 64))))
     assert "Fondo Consolidacion" in av.asunto(a)
     assert "Fondo Consolidacion" in av.html(a)
@@ -371,3 +373,61 @@ def test_el_ensayo_no_anuncia_que_se_va_a_repetir():
 
 def test_un_aviso_real_si_dice_cual_de_los_tres_es():
     assert "Aviso 1 de 3" in av.html(av.pendiente(_salida()))
+
+
+# --------------------------------------------------------------------------
+# EL AVISO DISPARA CON LA SEÑAL, NO CUATRO RUEDAS DESPUÉS
+# --------------------------------------------------------------------------
+
+def _con_rezago(dias_de_rezago=4, salidas=(45, 64)):
+    """Como en el registro real: las señales cambian y la posición en vigor llega después."""
+    filas = _historia(*[("A", ())] * 3, *[("A", ())] * (dias_de_rezago + 1))
+    hasta = 3                                   # la primera fila con las señales ya en refugio
+    for i, fila in enumerate(filas):
+        for m in r.MEDIAS:
+            fila[f"senal_{m}"] = r.FUERA if i >= hasta and m in salidas else r.DENTRO
+            fila[f"pos_{m}"] = r.FUERA if i >= hasta + dias_de_rezago and m in salidas else r.DENTRO
+        fila["posicion"] = r.REFUGIO if i >= hasta + dias_de_rezago else r.DENTRO
+    return filas, hasta
+
+
+def test_avisa_el_dia_en_que_las_senales_cambian():
+    filas, dia = _con_rezago()
+    assert av.pendiente(filas[:dia]) is None                   # la víspera no hay nada
+    a = av.pendiente(filas[:dia + 1])
+    assert a is not None and a["hacia"] == r.REFUGIO and a["desde"] == r.DENTRO
+    # La posición en vigor todavía no cambió, y el aviso sale igual.
+    assert filas[dia]["posicion"] == r.DENTRO
+
+
+def test_el_cambio_de_la_posicion_en_vigor_cuatro_ruedas_despues_no_avisa_de_nuevo():
+    """Era el defecto: el aviso salía cuando la posición en vigor cambiaba."""
+    filas, dia = _con_rezago()
+    tarde = filas[:dia + 4 + 1]
+    assert tarde[-1]["posicion"] == r.REFUGIO
+    assert av.pendiente(tarde) is None                          # ya pasaron los tres días de aviso
+
+
+def test_se_repite_tres_ruedas_desde_la_senal_y_no_desde_la_posicion_en_vigor():
+    filas, dia = _con_rezago()
+    assert [av.pendiente(filas[:dia + 1 + k]) is not None for k in range(4)] == [True, True, True, False]
+    assert av.pendiente(filas[:dia + 3])["cual"] == 3
+
+
+def test_el_correo_muestra_las_senales_que_votaron_y_no_la_posicion_en_vigor():
+    filas, dia = _con_rezago()
+    a = av.pendiente(filas[:dia + 1])
+    assert a["votos"] == 2 and [p for _, p, _ in a["medias"] if p == r.FUERA] == [r.FUERA, r.FUERA]
+    assert "2 de 5 indican refugio" in av.texto(a)
+
+
+def test_desde_cuando_venia_cuenta_con_las_senales():
+    filas, dia = _con_rezago()
+    a = av.pendiente(filas[:dia + 1])
+    assert a["desde_cuando"] == filas[0]["fecha"]
+
+
+def test_la_materializacion_sigue_siendo_cuatro_dias_habiles_despues_del_envio():
+    filas, dia = _con_rezago()
+    a = av.pendiente(filas[:dia + 1])
+    assert a["materializa"] == av.habiles_adelante(a["fecha_envio"]) and r.REZAGO == 4

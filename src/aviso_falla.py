@@ -42,6 +42,15 @@ CONSECUENCIA = {
 }
 
 
+# Lo que se pierde con la falla de un paso puntual, cuando no es lo mismo que lo
+# de todo el flujo: el atraso del IPSA no impide que el cierre chileno se guarde.
+CONSECUENCIA_PASO = {
+    "Vigilar el IPSA":
+        "La línea del Ipsa del informe está atrasada: MSCI no ha entregado ruedas nuevas. "
+        "El cierre chileno de hoy sí quedó guardado y el resto del informe no depende de esto.",
+}
+
+
 def pasos_fallidos(trabajos: list[dict]) -> list[str]:
     """«trabajo › paso» de cada paso que falló, sin contar este aviso."""
     return [f"{t.get('name', '?')} › {p.get('name', '?')}"
@@ -57,10 +66,16 @@ def mensaje(flujo: str, fallidos: list[str], enlace: str, evento: str = "") -> t
         cuerpo += "\nDónde falló:\n" + "".join(f"  - {f}\n" for f in fallidos)
     else:
         cuerpo += "\nNo se pudo leer qué paso falló; está en el enlace.\n"
-    if flujo in CONSECUENCIA:
+    nombres = [f.split(" › ")[-1] for f in fallidos]
+    solo_de_paso = bool(nombres) and all(n in CONSECUENCIA_PASO for n in nombres)
+    if solo_de_paso:
+        cuerpo += "\n" + "\n".join(dict.fromkeys(CONSECUENCIA_PASO[n] for n in nombres)) + "\n"
+    elif flujo in CONSECUENCIA:
         cuerpo += "\n" + CONSECUENCIA[flujo] + "\n"
     cuerpo += f"\nLa corrida, con su log:\n{enlace}\n"
-    return f"AlphaData — falló «{flujo}»", cuerpo
+    asunto = ("AlphaData — el IPSA del informe está atrasado" if solo_de_paso and nombres == ["Vigilar el IPSA"]
+              else f"AlphaData — falló «{flujo}»")
+    return asunto, cuerpo
 
 
 def _trabajos(servidor_api: str, repo: str, corrida: str, token: str) -> list[dict]:   # pragma: no cover - red

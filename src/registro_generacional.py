@@ -450,6 +450,41 @@ def salto_imposible(filas: list[dict]) -> str | None:
     return None
 
 
+def posicion_de_la_senal(fila: dict) -> str | None:
+    """Lo que indican las señales de **hoy**, sin el rezago de ejecución.
+
+    `posicion` es la posición **en vigor**: la que se alcanzaría hoy si se
+    hubiera pedido hace `REZAGO` ruedas, y por eso es la que se valoriza. Pero
+    nadie puede avisar ni pedir en el pasado: la instrucción se da el día en que
+    la votación de las señales cambia, y se materializa `REZAGO` ruedas después.
+    Esto es esa votación, con las mismas reglas que `posicion_por_voto`.
+
+    Es exactamente `posicion` adelantada `REZAGO` ruedas: en los seis cambios de
+    los últimos tres años, la posición en vigor llegó cuatro ruedas después.
+    """
+    senales = [fila.get(f"senal_{m}", "") for m in MEDIAS]
+    if any(not s for s in senales):
+        return None
+    return posicion_por_voto(sum(1 for s in senales if s == FUERA))
+
+
+def _cambios_de(filas: list[dict], posicion_de) -> list[tuple[int, str, str]]:
+    """(índice, desde, hacia) de cada cambio de posición, del más viejo al más nuevo."""
+    con = [(i, p) for i, p in ((i, posicion_de(f)) for i, f in enumerate(filas)) if p]
+    return [(b_i, a_p, b_p) for (a_i, a_p), (b_i, b_p) in zip(con, con[1:]) if a_p != b_p]
+
+
+def transicion_senal(filas: list[dict]) -> tuple[int, str, str] | None:
+    """El último cambio de la votación de las señales: (índice, desde, hacia).
+
+    Es el que dispara el aviso. `transicion` mira la posición en vigor, que
+    cambia `REZAGO` ruedas después: avisar entonces sumaba el rezago dos veces,
+    el de la señal a la posición en vigor y el de pedir a materializar.
+    """
+    todos = _cambios_de(filas, posicion_de_la_senal)
+    return todos[-1] if todos else None
+
+
 def transicion(filas: list[dict]) -> tuple[int, str, str] | None:
     """El ultimo cambio de la posicion en vigor: (indice, desde, hacia).
 
@@ -513,15 +548,15 @@ CAMBIOS_EN_INFORME = 4
 
 
 def cambios(filas: list[dict], cuantos: int = CAMBIOS_EN_INFORME) -> list[tuple[str, str, str]]:
-    """Los últimos cambios de la posición en vigor: (fecha, desde, hacia), del más nuevo al más viejo.
+    """Los últimos cambios recomendados: (fecha, desde, hacia), del más nuevo al más viejo.
 
-    Sobre `posicion`, igual que `transicion`: es la instrucción única por
-    votación, y dos lugares decidiendo qué es un cambio terminarían
-    discrepando sobre la fecha del último.
+    La fecha es **el día en que se recomienda pedir el cambio**, el de la
+    votación de las señales, que es el mismo de «solicitar hoy» en el aviso. El
+    traspaso queda materializado `REZAGO` ruedas después. Sobre la misma
+    votación que `transicion_senal`: dos lugares decidiendo qué es un cambio
+    terminarían discrepando sobre la fecha del último.
     """
-    con = [f for f in filas if f["posicion"]]
-    todos = [(b["fecha"], a["posicion"], b["posicion"])
-             for a, b in zip(con, con[1:]) if a["posicion"] != b["posicion"]]
+    todos = [(filas[i]["fecha"], d, h) for i, d, h in _cambios_de(filas, posicion_de_la_senal)]
     return todos[-cuantos:][::-1] if cuantos else []
 
 
@@ -596,6 +631,13 @@ def para_informe(filas: list[dict] | None = None) -> dict | None:
         return None
     u = filas[-1]
     t = transicion(filas)
+    # Qué recomienda la estrategia hoy y si hay un cambio en curso: las señales
+    # de hoy contra la posición en vigor, que llega `REZAGO` ruedas después. Si
+    # difieren, se recomendó cambiar y el traspaso todavía no se materializa.
+    recomendado = posicion_de_la_senal(u)
+    de_la_senal = transicion_senal(filas)
+    en_vigor = u["posicion"] or None
+    fecha_recomendacion = filas[de_la_senal[0]]["fecha"] if de_la_senal else None
     peaje = []
     if u["acum_a"]:
         a = float(u["acum_a"])
@@ -620,6 +662,11 @@ def para_informe(filas: list[dict] | None = None) -> dict | None:
         "aviso": u.get("aviso") or None,
         "aviso_estado": u.get("aviso_estado") or None,
         "cambios": cambios(filas),
+        "recomendado": recomendado,
+        "recomendado_desde": fecha_recomendacion,
+        "cambio_en_curso": ({"desde": en_vigor, "hacia": recomendado, "fecha": fecha_recomendacion}
+                            if recomendado and en_vigor and recomendado != en_vigor and fecha_recomendacion
+                            else None),
         "evolucion": evolucion(filas),
     }
 

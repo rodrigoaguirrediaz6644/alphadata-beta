@@ -8,6 +8,13 @@ sumados al rezago de ejecucion la proteccion medida se deteriora varios puntos.
 `registro_generacional.posicion_por_voto`: al refugio cuando dos o mas de las cinco lo
 indican, de vuelta al agresivo cuando menos de dos.
 
+**Y cuando avisa: el dia en que las senales cambian, no cuatro ruedas despues.**
+La posicion en vigor (`posicion`) es la senal con el rezago de ejecucion, y avisar
+cuando esa cambia sumaba el rezago dos veces: cuatro ruedas hasta que el registro
+lo notaba y otras cuatro hasta que el traspaso se materializaba. El aviso mira la
+votacion de las senales de hoy (`transicion_senal`); «solicitar hoy» y la fecha
+de materializacion, cuatro dias habiles despues, salen de ahi.
+
 **Las dos fechas son distintas y las dos tienen que estar.** El dia del envio
 manda —de ahi salen «solicitar hoy» y la fecha de materializacion— y la fecha
 del valor cuota dice que tan viejo es el dato con el que se decidio. Las tuve
@@ -34,7 +41,8 @@ from email.message import EmailMessage
 from html import escape
 
 from src.registro_generacional import (AFP, BANDA, CONGELADO, DENTRO, FUERA, MEDIAS,
-                              REFUGIO, REZAGO, VOTOS_PARA_SALIR, transicion)
+                              REFUGIO, REZAGO, VOTOS_PARA_SALIR, posicion_de_la_senal,
+                              transicion_senal)
 
 # Un correo se pierde; tres no. Y asi no hace falta que el sistema sepa en que
 # fondo esta Rodrigo de verdad, que es una complicacion que no vale lo que
@@ -94,10 +102,10 @@ def habiles_adelante(fecha, n: int = REZAGO) -> dt.date:
 
 
 def _desde_cuando(filas: list[dict], idx: int) -> str:
-    """Desde que fecha venia la posicion anterior. Para el bloque de contexto."""
-    previa = filas[idx - 1]["posicion"] if idx else None
+    """Desde que fecha venia indicando la posicion anterior. Para el bloque de contexto."""
+    previa = posicion_de_la_senal(filas[idx - 1]) if idx else None
     i = idx - 1
-    while i > 0 and filas[i - 1]["posicion"] == previa:
+    while i > 0 and posicion_de_la_senal(filas[i - 1]) == previa:
         i -= 1
     return filas[i]["fecha"] if previa else filas[0]["fecha"]
 
@@ -106,12 +114,13 @@ def _detalle(filas: list[dict], idx: int, hacia: str, ensayo: bool = False) -> d
     """Lo que el correo necesita, con las dos fechas separadas y nombradas."""
     hoy = filas[-1]
     envio = dt.date.today()
-    medias = [(m, hoy[f"pos_{m}"], float(hoy[f"razon_{m}"]) if hoy[f"razon_{m}"] else None)
+    # Las senales de hoy, no la posicion en vigor: son las que votaron el cambio.
+    medias = [(m, hoy[f"senal_{m}"], float(hoy[f"razon_{m}"]) if hoy[f"razon_{m}"] else None)
               for m in MEDIAS]
     dato = dt.date.fromisoformat(hoy["fecha"])
     return {
         "hacia": hacia,
-        "desde": filas[idx - 1]["posicion"] if idx else DENTRO,
+        "desde": (posicion_de_la_senal(filas[idx - 1]) or DENTRO) if idx else DENTRO,
         # **La fecha que manda.** De aca salen «solicitar hoy» y la de
         # materializacion: es cuando se puede pedir, no cuando se midio.
         "fecha_envio": envio,
@@ -140,7 +149,7 @@ def pendiente(filas: list[dict]) -> dict | None:
     """
     if not filas:
         return None
-    t = transicion(filas)
+    t = transicion_senal(filas)
     if t is None:
         return None
     idx, _, hacia = t
@@ -164,7 +173,7 @@ def ensayo(filas: list[dict]) -> dict:
     que uno cree que prueba. Ahora sale siempre hacia el otro lado.
     """
     hoy = filas[-1] if filas else {}
-    actual = hoy.get("posicion") or DENTRO
+    actual = posicion_de_la_senal(hoy) or DENTRO
     hacia = REFUGIO if actual == DENTRO else DENTRO
     return _detalle(filas, len(filas) - 1, hacia, ensayo=True) if filas else {}
 

@@ -62,6 +62,14 @@ jobs:
         continue-on-error: true
         run: PYTHONPATH=. python -c "from src.cdv import bajar; from src.fetch_prices import load_universe; bajar(load_universe())"
 
+      # El IPSA real (MSCI IPSA Gross): el historial ya está guardado y esto
+      # agrega la rueda nueva de cada día. Si falla, no se detiene la captura
+      # del cierre chileno; la línea del IPSA en el informe simplemente no
+      # avanza ese día. Ver src/indice_ipsa.py.
+      - name: Capturar el IPSA
+        continue-on-error: true
+        run: PYTHONPATH=. python -m src.indice_ipsa
+
       - name: Guardar el cierre capturado
         run: |
           git config user.name "alphadata-bot"
@@ -85,6 +93,14 @@ jobs:
           done
           echo "No fue posible guardar la captura tras 3 intentos." >&2
           exit 1
+
+      # Un dia sin dato del IPSA no es una falla; que lleve mas de cuatro ruedas
+      # habiles atrasado si, porque la linea del informe deja de ser la de hoy
+      # sin que nadie lo vea. Va despues de guardar, para que el cierre chileno
+      # quede commiteado pase lo que pase con MSCI, y sale en rojo para que el
+      # paso siguiente avise por correo. Ver src/indice_ipsa.py.
+      - name: Vigilar el IPSA
+        run: PYTHONPATH=. python -m src.indice_ipsa vigilar
 
       # Ultimo paso a proposito: corre solo si algo de arriba fallo, y avisa el
       # mismo dia. Ver src/aviso_falla.py.

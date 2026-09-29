@@ -134,6 +134,15 @@ deterioran varios puntos la protección medida.
 `src/aviso_generacional.py` corre dentro del mismo trabajo diario, después de calcular la
 grilla. **Dispara sólo en la transición** —no cada día que la señal esté en
 refugio— y se repite **tres días de cotización**: un correo se pierde, tres no.
+
+**La transición es la de la votación de las señales de hoy, no la de la posición
+en vigor.** Esa llega `REZAGO` ruedas después, y avisar entonces sumaba el rezago
+dos veces: cuatro ruedas hasta que el registro lo notaba y otras cuatro hasta que
+el traspaso se materializaba. Con las señales, «solicitar hoy» es el día en que
+la regla cambia y el correo dice cuándo quedaría materializado. La posición en
+vigor sigue siendo la que se valoriza, porque es la que habría quedado si se
+hubiera pedido ese día. La tabla de cambios del informe lleva las fechas de la
+recomendación, o sea las del aviso.
 Así tampoco hace falta que el sistema sepa en qué fondo está Rodrigo de verdad,
 que es una complicación que no vale lo que cuesta.
 

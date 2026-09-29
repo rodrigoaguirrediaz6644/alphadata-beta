@@ -21,7 +21,10 @@ COLORS = {CONJUNTO: "#101828", "Sigma-6": "#1570ef", "Delta-12": "#0e9384", "Gam
 # Cómo se llaman las series **en lo que se publica**. Adentro —columnas, libro,
 # configuración— siguen con su nombre de siempre: cambiar el nombre de una
 # columna guardada es reescribir historia por un asunto de presentación.
-NOMBRE_PUBLICO = {"Delta-12": "Delta12", "Gamma-6": "Gamma6", CONJUNTO: "AlphaData", BENCHMARK: "Ipsa"}
+# «Ipsa» es el índice real (MSCI IPSA Gross en pesos), que la captura diaria
+# actualiza sola desde src/indice_ipsa.py. No es la canasta igual peso, que rinde
+# unos 6 puntos menos y por eso no puede llevar ese nombre.
+NOMBRE_PUBLICO = {"Delta-12": "Delta12", "Gamma-6": "Gamma6", CONJUNTO: "AlphaData", "IPSA": "Ipsa"}
 TITULO_GRAFICO = "Desempeño AlphaData últimos 5 años"
 ARCHIVO_GRAFICO = "reconstruccion.png"
 # AlphaData en rojo y grueso; las demás delgadas y en tonos que no se le
@@ -304,6 +307,25 @@ ARCHIVO_GRAFICO_GENERACIONAL = "ahorro_generacional.png"
 COLORES_GENERACIONAL = {"Ahorro Generacional": "#d92d20", "Fondo A": "#1570ef", "Fondo E": "#099250"}
 
 
+def _estado_generacional(g: dict) -> dict | None:
+    """En qué fondo está la estrategia y si acaba de cambiar.
+
+    **Describe a la estrategia, no le recomienda nada a nadie**, y no dice
+    cuánto tarda el traspaso: eso depende de la AFP. Hay cambio cuando las
+    señales de hoy y la posición en vigor difieren, o sea que la estrategia ya
+    cambió de fondo y la posición en vigor todavía no lo refleja. Sin eso el
+    informe podía tener un cambio pendiente y no decirlo.
+    """
+    if not g.get("recomendado"):
+        return None
+    fecha = lambda d: f"{pd.Timestamp(d):%d-%m-%Y}"
+    cambio = g.get("cambio_en_curso")
+    return {"fondo": f"Fondo {g['recomendado']}",
+            "desde": fecha(g["recomendado_desde"]) if g.get("recomendado_desde") else None,
+            "cambio": (f"la estrategia pasó de Fondo {cambio['desde']} a Fondo {cambio['hacia']} "
+                       f"el {fecha(cambio['fecha'])}.") if cambio else None}
+
+
 def _generacional(g: dict | None, as_of) -> dict:
     """Lo que la sección muestra, una sola vez para el HTML y para el texto plano.
 
@@ -313,7 +335,7 @@ def _generacional(g: dict | None, as_of) -> dict:
     """
     if g is None:
         return {"aviso": "El registro no se pudo leer en esta corrida. El resto del informe no depende de él.",
-                "cambios": [], "cabecera": [], "filas": [], "serie": None}
+                "cambios": [], "cabecera": [], "filas": [], "serie": None, "estado": None}
     dias = (pd.Timestamp(as_of).normalize() - pd.Timestamp(g["fecha"]).normalize()).days
     # Una tabla que dejó de actualizarse se ve igual que una al día: si el
     # registro se quedó atrás, se dice.
@@ -322,8 +344,8 @@ def _generacional(g: dict | None, as_of) -> dict:
     evolucion = g.get("evolucion") or {}
     cabecera = ([f"Desde el {pd.Timestamp(evolucion['inicio_año']):%d-%m-%Y}", "Últimos 5 años", "Últimos 10 años"]
                 if evolucion else [])
-    return {"aviso": aviso,
-            "cambios": [(f"{pd.Timestamp(fecha):%d-%m-%Y}", f"Cambiar de Fondo {desde} a Fondo {hacia}")
+    return {"aviso": aviso, "estado": _estado_generacional(g),
+            "cambios": [(f"{pd.Timestamp(fecha):%d-%m-%Y}", f"De Fondo {desde} a Fondo {hacia}")
                         for fecha, desde, hacia in g.get("cambios") or []],
             "cabecera": cabecera,
             "filas": [(nombre, [_signed(r.get(p)) for p in ("año", "cinco_años", "diez_años")])
@@ -349,6 +371,10 @@ def _generacional_lineas(g: dict | None, as_of) -> list[str]:
     lineas = [QUE_ES_GENERACIONAL]
     if s["aviso"]:
         lineas += ["", f"**{s['aviso']}**"]
+    if s["estado"]:
+        e = s["estado"]
+        lineas += ["", f"**Cambio de fondo:** {e['cambio']}" if e["cambio"] else
+                   f"La estrategia está en el {e['fondo']}" + (f", sin cambios desde el {e['desde']}." if e["desde"] else ".")]
     if s["filas"]:
         lineas += ["", "**Evolución**"]
         lineas += [f"- {nombre}: " + "; ".join(f"{valor} {titulo[0].lower() + titulo[1:]}"
@@ -366,6 +392,11 @@ def _generacional_html(g: dict | None, as_of) -> str:
     out = [f'<p class="lead">{escape(QUE_ES_GENERACIONAL)}</p>']
     if s["aviso"]:
         out.append(f'<div class="warn">{escape(s["aviso"])}</div>')
+    if s["estado"]:
+        e = s["estado"]
+        out.append(f'<div class="warn"><strong>Cambio de fondo:</strong> {escape(e["cambio"])}</div>' if e["cambio"] else
+                   f'<p class="calm">La estrategia está en el {escape(e["fondo"])}'
+                   + (f", sin cambios desde el {e['desde']}." if e["desde"] else ".") + "</p>")
     if s["filas"]:
         out.append("<h3>Evolución</h3><table><thead><tr><th>Fondo</th>"
                    + "".join(f"<th>{escape(c)}</th>" for c in s["cabecera"]) + "</tr></thead><tbody>"
@@ -378,7 +409,7 @@ def _generacional_html(g: dict | None, as_of) -> str:
         out.append(f"<h3>{TITULO_GRAFICO_GENERACIONAL}</h3>{dibujo}")
     if s["cambios"]:
         out.append(f'<h3>Últimos {len(s["cambios"])} cambios</h3>'
-                   '<table><thead><tr><th>Fecha</th><th>Cambio recomendado</th></tr></thead><tbody>'
+                   '<table><thead><tr><th>Fecha</th><th>Cambio de fondo</th></tr></thead><tbody>'
                    + "".join(f"<tr><td>{fecha}</td><td>{escape(cambio)}</td></tr>" for fecha, cambio in s["cambios"])
                    + "</tbody></table>")
     return "".join(out)

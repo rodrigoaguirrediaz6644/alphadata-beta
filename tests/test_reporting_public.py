@@ -140,7 +140,7 @@ def test_report_refuses_to_compare_against_a_broken_benchmark():
 
 SERIE = pd.DataFrame({"date": pd.to_datetime(["2021-09-28", "2024-01-31", "2026-09-28"]),
                       "Delta-12": [100., 180., 320.], "Gamma-6": [100., 170., 336.], "Oro": [100., 150., 285.],
-                      "Conjunto AlphaData": [100., 175., 334.], "Mercado chileno": [100., 140., 250.]})
+                      "Conjunto AlphaData": [100., 175., 334.], "IPSA": [100., 140., 250.]})
 
 
 def test_el_informe_lleva_un_solo_grafico_y_es_el_de_cinco_años(_graficos_en_temporal):
@@ -171,7 +171,7 @@ def test_el_grafico_dibuja_alphadata_en_rojo_el_ipsa_y_no_a_sigma6(monkeypatch):
     assert visto["nombres"] == ["AlphaData", "Delta12", "Gamma6", "Oro", "Ipsa"]
     assert visto["colores"]["AlphaData"] == "#d92d20" and visto["principal"] == "AlphaData"
     assert visto["pie"] == ""
-    for fuera in ("Sigma-6", "Conjunto AlphaData", "Mercado chileno"):
+    for fuera in ("Sigma-6", "Conjunto AlphaData", "Mercado chileno", "IPSA"):
         assert fuera not in visto["nombres"]
     # AlphaData con grosor 3 y todas las demás con 1, en curvas suavizadas.
     assert visto["grosores"] == (3, 1) and visto["suave"] is True
@@ -352,6 +352,7 @@ def _generacional(**cambios):
             "acum_a": .031, "acum_voto": .026,
             "peaje": [(45, -.004), (64, -.003), (90, -.005), (105, -.005), (126, -.006)],
             "aviso": None, "aviso_estado": None,
+            "recomendado": "A", "recomendado_desde": "2025-05-13", "cambio_en_curso": None,
             "cambios": [("2025-05-19", "E", "A"), ("2025-03-13", "A", "E"),
                         ("2024-07-25", "E", "A"), ("2024-05-03", "A", "E")],
             "evolucion": {"hasta": "2026-11-05", "inicio_año": "2026-01-01", "serie": _serie_generacional(),
@@ -403,13 +404,13 @@ def test_el_orden_es_explicacion_evolucion_grafico_y_al_final_los_cambios():
 def test_muestra_solo_los_ultimos_cuatro_cambios():
     md, html = _report(generacional=_generacional())
     seccion = _seccion(html)
-    assert "<th>Fecha</th><th>Cambio recomendado</th>" in seccion
-    assert seccion.count("Cambiar de Fondo") == 4
-    assert "<tr><td>19-05-2025</td><td>Cambiar de Fondo E a Fondo A</td></tr>" in seccion
-    assert "<tr><td>03-05-2024</td><td>Cambiar de Fondo A a Fondo E</td></tr>" in seccion
+    assert "<th>Fecha</th><th>Cambio de fondo</th>" in seccion
+    assert seccion.count("<td>De Fondo") == 4
+    assert "<tr><td>19-05-2025</td><td>De Fondo E a Fondo A</td></tr>" in seccion
+    assert "<tr><td>03-05-2024</td><td>De Fondo A a Fondo E</td></tr>" in seccion
     assert "03-11-2023" not in seccion
     assert seccion.index("19-05-2025") < seccion.index("13-03-2025") < seccion.index("03-05-2024")
-    assert "- 19-05-2025: Cambiar de Fondo E a Fondo A" in md and md.count("Cambiar de Fondo") == 4
+    assert "- 19-05-2025: De Fondo E a Fondo A" in md and md.count(": De Fondo") == 4
 
 
 def test_el_grafico_de_ahorro_generacional_se_dibuja_y_se_adjunta(_graficos_en_temporal):
@@ -484,7 +485,7 @@ def test_el_informe_sale_completo_sin_registro():
         assert "Estrategia Ahorro Generacional" in texto
         assert "Estrategia diseñada" in texto
     assert "Detalle de carteras" in html
-    assert "<h3>Evolución</h3>" not in html and "Cambio recomendado" not in html and "<img " not in html
+    assert "<h3>Evolución</h3>" not in html and "Cambio de fondo" not in html and "<img " not in html
 
 
 def test_sin_cambios_ni_evolucion_la_seccion_no_inventa_tablas():
@@ -499,7 +500,7 @@ def test_los_nombres_de_los_fondos_salen_del_registro():
         cambios=[("2027-05-03", "Inicial", "Consolidacion")],
         evolucion={"hasta": "2027-05-03", "inicio_año": "2027-01-01", "serie": None,
                    "filas": [("Fondo Inicial", {"año": .01, "cinco_años": .2, "diez_años": 1.})]}))
-    assert "Cambiar de Fondo Inicial a Fondo Consolidacion" in md and "- Fondo Inicial: +1,0%" in md
+    assert "De Fondo Inicial a Fondo Consolidacion" in md and "- Fondo Inicial: +1,0%" in md
 
 
 # --------------------------------------------------------------------------
@@ -733,3 +734,77 @@ def test_las_tres_tablas_llevan_las_columnas_nuevas():
     for fuera in ("Cuánto invertir", "Peso de entrada", "Peso hoy", "Comprada el", "Precio de entrada",
                   "Precio hoy", "se recorta al", "$ 937.500", "+19,3% *"):
         assert fuera not in html
+
+
+def test_la_linea_ipsa_es_el_indice_real_y_no_la_canasta():
+    """«Ipsa» sólo puede rotular el MSCI IPSA Gross: la canasta rinde unos 6 puntos menos."""
+    import src.reporting_public as rp
+    assert rp.NOMBRE_PUBLICO["IPSA"] == "Ipsa" and "Ipsa" in rp.COLORES_GRAFICO
+    assert "Mercado chileno" not in rp.COLORES_GRAFICO
+    assert "Mercado chileno" not in rp.NOMBRE_PUBLICO.values()
+    # Una serie que traiga la canasta como columna no se dibuja con ese nombre.
+    canasta = SERIE.rename(columns={"IPSA": "Mercado chileno"})
+    assert "<img " not in rp._chart(canasta[["date", "Mercado chileno"]])
+
+
+# --------------------------------------------------------------------------
+# EL ESTADO DE LA ESTRATEGIA: en qué fondo y si hay un cambio
+# --------------------------------------------------------------------------
+
+EN_CURSO = {"desde": "A", "hacia": "E", "fecha": "2026-11-03"}
+
+
+def test_dice_en_que_fondo_esta_la_estrategia_y_desde_cuando():
+    md, html = _report(generacional=_generacional())
+    seccion = _seccion(html)
+    assert '<p class="calm">La estrategia está en el Fondo A, sin cambios desde el 13-05-2025.</p>' in seccion
+    assert "La estrategia está en el Fondo A, sin cambios desde el 13-05-2025." in md
+    assert "Cambio de fondo:" not in seccion
+
+
+def test_el_estado_va_sobre_la_tabla_de_evolucion():
+    md, html = _report(generacional=_generacional())
+    seccion = _seccion(html)
+    assert seccion.index("La estrategia está en el Fondo A") < seccion.index("<h3>Evolución</h3>")
+    assert md.index("La estrategia está en el Fondo A") < md.index("**Evolución**")
+
+
+def test_un_cambio_se_dice_de_donde_a_donde_y_cuando_sin_recomendar_ni_dar_plazos():
+    g = _generacional(recomendado="E", recomendado_desde="2026-11-03", cambio_en_curso=EN_CURSO)
+    md, html = _report(generacional=g)
+    seccion = _seccion(html)
+    frase = "la estrategia pasó de Fondo A a Fondo E el 03-11-2026."
+    assert f'<div class="warn"><strong>Cambio de fondo:</strong> {frase}</div>' in seccion
+    assert f"**Cambio de fondo:** {frase}" in md
+    assert "sin cambios desde" not in seccion and "sin cambios desde" not in md
+    # No es una recomendación para nadie y el plazo lo pone la AFP.
+    for texto in (seccion, md):
+        for fuera in ("recomienda", "Recomendado", "recomendado", "materializ", "días hábiles", "pedirlo", "más riesgoso"):
+            assert fuera not in texto.replace("(más riesgoso y más conservador)", "")
+
+
+def test_el_estado_no_se_confunde_con_la_lista_de_cambios_pasados():
+    _, html = _report(generacional=_generacional())
+    seccion = _seccion(html)
+    assert seccion.count("Hay un cambio de fondo") == 0 and "<h3>Últimos 4 cambios</h3>" in seccion
+
+
+def test_sin_estado_en_el_registro_no_se_inventa_una_recomendacion():
+    g = _generacional(recomendado=None, cambio_en_curso=None)
+    md, html = _report(generacional=g)
+    for texto in (md, html):
+        assert "La estrategia está en el" not in texto and "Cambio de fondo:" not in texto
+    assert "<h3>Evolución</h3>" in html
+
+
+def test_sin_registro_tampoco_hay_estado():
+    md, html = _report(generacional=None)
+    assert "La estrategia está en el" not in md + html
+
+
+def test_los_nombres_del_estado_salen_del_registro():
+    g = _generacional(agresivo="Inicial", refugio="Consolidacion", recomendado="Consolidacion",
+                      recomendado_desde="2027-05-03",
+                      cambio_en_curso={"desde": "Inicial", "hacia": "Consolidacion", "fecha": "2027-05-03"})
+    md, _ = _report(generacional=g)
+    assert "la estrategia pasó de Fondo Inicial a Fondo Consolidacion el 03-05-2027" in md
