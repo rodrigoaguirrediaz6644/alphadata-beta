@@ -1,4 +1,4 @@
 ticker,action,previous_weight,target_weight,change
 BCI,MANTIENE,0.1,0.1,0.0
-LTM,SALE,0.1,0.0,-0.1
+LTM,ENTRA,0.0,0.1,0.1
 VAPORES,MANTIENE,0.1,0.1,0.0
