@@ -1,0 +1,19 @@
+{
+  "block_code": "GLOBAL_ETF_DEVELOPED_01",
+  "status": "diagnostic",
+  "start_date": "2010-01-01",
+  "benchmark": "ACWI",
+  "cost_rate": 0.001785,
+  "instruments": [
+    {"ticker": "SPY", "country": "United States", "sector": "Country ETF"},
+    {"ticker": "EWC", "country": "Canada", "sector": "Country ETF"},
+    {"ticker": "EWU", "country": "United Kingdom", "sector": "Country ETF"},
+    {"ticker": "EWG", "country": "Germany", "sector": "Country ETF"},
+    {"ticker": "EWQ", "country": "France", "sector": "Country ETF"},
+    {"ticker": "EWL", "country": "Switzerland", "sector": "Country ETF"},
+    {"ticker": "EWD", "country": "Sweden", "sector": "Country ETF"},
+    {"ticker": "EWJ", "country": "Japan", "sector": "Country ETF"},
+    {"ticker": "EWA", "country": "Australia", "sector": "Country ETF"},
+    {"ticker": "EWS", "country": "Singapore", "sector": "Country ETF"}
+  ]
+}
