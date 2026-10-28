@@ -111,11 +111,28 @@ def main() -> None:                                             # pragma: no cov
     msg["From"] = os.getenv("SMTP_FROM", os.environ["SMTP_USER"])
     msg["To"] = os.environ["REPORT_RECIPIENTS"]
     msg.set_content(cuerpo)
-    with smtplib.SMTP(os.environ["SMTP_HOST"], int(os.getenv("SMTP_PORT", "587"))) as smtp:
-        smtp.starttls()
-        smtp.login(os.environ["SMTP_USER"], os.environ["SMTP_PASSWORD"])
-        smtp.send_message(msg)
-    print("Aviso de falla enviado.")
+    reintentos = max(1, int(os.getenv("SMTP_RETRIES", "3")))
+    timeout = max(5, int(os.getenv("SMTP_TIMEOUT", "30")))
+    ultimo_error = None
+    for intento in range(1, reintentos + 1):
+        try:
+            with smtplib.SMTP(os.environ["SMTP_HOST"],
+                              int(os.getenv("SMTP_PORT", "587")),
+                              timeout=timeout) as smtp:
+                smtp.starttls()
+                smtp.login(os.environ["SMTP_USER"], os.environ["SMTP_PASSWORD"])
+                smtp.send_message(msg)
+            print("Aviso de falla enviado.")
+            return
+        except (OSError, smtplib.SMTPException) as exc:
+            ultimo_error = exc
+            if intento < reintentos:
+                import time
+                espera = 2 ** (intento - 1)
+                print(f"SMTP no disponible (intento {intento}/{reintentos}); "
+                      f"reintentando en {espera}s: {exc}")
+                time.sleep(espera)
+    raise SystemExit(f"No se pudo enviar el aviso SMTP tras {reintentos} intentos: {ultimo_error}")
 
 
 if __name__ == "__main__":                                      # pragma: no cover
