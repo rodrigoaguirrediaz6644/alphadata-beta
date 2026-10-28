@@ -53,15 +53,13 @@ jobs:
           python-version: "3.12"
 
       - name: Calcular la grilla, avisar si cambia, y guardar
-        # Sale en rojo en tres casos, los tres a proposito: si la fuente
-        # reescribio historia ya registrada, si el valor cuota dio un salto
-        # imposible, y **si habia que avisar un cambio de fondo y el correo no
-        # salio**. Ese ultimo es el que importa: un aviso que no llega es peor
-        # que no tener aviso, porque Rodrigo va a estar confiando.
+        # Las correcciones historicas se registran en
+        # registro/ahorro_generacional_revisiones.csv y no bloquean los nuevos
+        # dias. Sale en rojo si aparece un salto imposible o si no se pudo
+        # enviar un aviso de cambio de fondo.
         #
-        # El archivo se guarda igual en los dos ultimos casos: el registro es
-        # lo principal y una falla de la notificacion no puede hacerle perder
-        # un dia. Por eso el paso siguiente lleva `always()`.
+        # El archivo se guarda incluso si falla la notificacion: el registro
+        # es lo principal y el paso siguiente lleva `always()`.
         env:
           SMTP_HOST: ${{ secrets.SMTP_HOST }}
           SMTP_PORT: ${{ secrets.SMTP_PORT }}
@@ -82,6 +80,9 @@ jobs:
           git config user.name "alphadata-bot"
           git config user.email "actions@users.noreply.github.com"
           git add registro/ahorro_generacional.csv
+          if [ -f registro/ahorro_generacional_revisiones.csv ]; then
+            git add registro/ahorro_generacional_revisiones.csv
+          fi
           if git diff --cached --quiet; then
             echo "Sin dias nuevos de cotizacion; no hay nada que guardar."
             exit 0
