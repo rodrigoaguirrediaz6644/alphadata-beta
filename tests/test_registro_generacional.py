@@ -503,3 +503,22 @@ def test_con_el_registro_real_el_cambio_en_curso_dura_el_rezago_y_lo_incluye_el_
             if pendiente(filas[:k + 1 + j]) is not None:
                 assert g["cambio_en_curso"] is not None
         assert para_informe(filas[:k + 1])["cambio_en_curso"]["hacia"] == hacia
+
+
+def test_reconciliar_conserva_la_evidencia_publicada():
+    viejo = r.construir(_serie(200))
+    nuevo = [dict(f) for f in viejo]
+    nuevo[50][f"vc_{r.REFUGIOS[0].lower()}"] = "999.99"
+    reconciliado = r.reconciliar(viejo, nuevo)
+    assert reconciliado[50][f"vc_{r.REFUGIOS[0].lower()}"] == viejo[50][f"vc_{r.REFUGIOS[0].lower()}"]
+
+
+def test_registrar_revisiones_es_auditable_y_no_duplica(tmp_path):
+    ruta = tmp_path / "revisiones.csv"
+    cambios = ["2026-09-30: vc_e era '1' y ahora es '2'"]
+    r.registrar_revisiones(cambios, ruta)
+    r.registrar_revisiones(cambios, ruta)
+    filas = r.leer(ruta)
+    assert len(filas) == 1
+    assert filas[0]["fecha"] == "2026-09-30"
+    assert filas[0]["detalle"] == cambios[0]
