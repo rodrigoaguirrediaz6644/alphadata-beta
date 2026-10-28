@@ -469,7 +469,7 @@ def registrar_revisiones(malas: list[str], ruta: Path = REVISIONES) -> None:
             existentes = list(csv.DictReader(fh))
     ruta.parent.mkdir(parents=True, exist_ok=True)
     with ruta.open("w", encoding="utf-8", newline="") as fh:
-        writer = csv.DictWriter(fh, fieldnames=list(REVISION_CAMPOS), lineterminator="\\n")
+        writer = csv.DictWriter(fh, fieldnames=list(REVISION_CAMPOS), lineterminator="\n")
         writer.writeheader()
         writer.writerows(existentes + nuevas)
 
@@ -761,7 +761,7 @@ def main(argv=None) -> int:
             print("  entran: " + ", ".join(entran))
         if salen:
             print("  salen:  " + ", ".join(salen))
-        print("  (es un cambio de codigo, no de la fuente; la grilla la fija la prueba)\\n")
+        print("  (es un cambio de codigo, no de la fuente; la grilla la fija la prueba)\n")
 
     nuevo = arrastrar(viejo, nuevo)
 
@@ -781,15 +781,15 @@ def main(argv=None) -> int:
 
     guardar(nuevo)
     print(resumen(nuevo))
-    print(f"\\n  Aviso: {aviso_dicho}")
+    print(f"\n  Aviso: {aviso_dicho}")
     if malas:
-        print(f"\\n  Revisiones historicas registradas: {len(malas)}")
+        print(f"\n  Revisiones historicas registradas: {len(malas)}")
     if problema:
-        print(f"\\n{problema}\\nNo se disparo ningun aviso: es dato malo antes que mercado.",
+        print(f"\n{problema}\nNo se disparo ningun aviso: es dato malo antes que mercado.",
               file=sys.stderr)
         return 1
     if not aviso_ok:
-        print(f"\\n{aviso_dicho}\\nEl registro quedo guardado; el aviso se reintenta manana.",
+        print(f"\n{aviso_dicho}\nEl registro quedo guardado; el aviso se reintenta manana.",
               file=sys.stderr)
         return 1
     return 0
