@@ -37,6 +37,7 @@ porque un paquete cambio de version.
 from __future__ import annotations
 
 import csv
+from datetime import datetime, timezone
 import sys
 import urllib.request
 from pathlib import Path
@@ -118,6 +119,8 @@ CONGELADO = "2026-09-23"
 # devolveria "no hay registro" en vez de fallar. Eso convertiria la alarma en
 # lo contrario de una alarma.
 SALIDA = Path(__file__).resolve().parents[1] / "registro" / "ahorro_generacional.csv"
+REVISIONES = Path(__file__).resolve().parents[1] / "registro" / "ahorro_generacional_revisiones.csv"
+REVISION_CAMPOS = ("detectada_en", "fecha", "detalle")
 
 DENTRO, FUERA = "A", "fuera"
 
@@ -434,6 +437,72 @@ def arrastrar(viejo: list[dict], nuevo: list[dict]) -> list[dict]:
     return nuevo
 
 
+def registrar_revisiones(malas: list[str], ruta: Path = REVISIONES) -> None:
+    """Guarda las correcciones de la fuente sin convertirlas en una falla diaria.
+
+    El registro principal conserva la primera versión publicada de cada día.
+    La nueva versión queda anotada aquí para que una revisión legítima no se
+    pierda ni reescriba silenciosamente la evidencia ya observada.
+    """
+    if not malas:
+        return
+    previas = set()
+    if ruta.exists():
+        with ruta.open(encoding="utf-8", newline="") as fh:
+            previas = {
+                (fila.get("fecha", ""), fila.get("detalle", ""))
+                for fila in csv.DictReader(fh)
+            }
+    nuevas = []
+    ahora = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    for detalle in malas:
+        fecha, separador, _ = detalle.partition(": ")
+        clave = (fecha if separador else "", detalle)
+        if clave not in previas:
+            nuevas.append({"detectada_en": ahora, "fecha": clave[0], "detalle": detalle})
+            previas.add(clave)
+    if not nuevas:
+        return
+    existentes = []
+    if ruta.exists():
+        with ruta.open(encoding="utf-8", newline="") as fh:
+            existentes = list(csv.DictReader(fh))
+    ruta.parent.mkdir(parents=True, exist_ok=True)
+    with ruta.open("w", encoding="utf-8", newline="") as fh:
+        writer = csv.DictWriter(fh, fieldnames=list(REVISION_CAMPOS), lineterminator="\\n")
+        writer.writeheader()
+        writer.writerows(existentes + nuevas)
+
+
+def reconciliar(viejo: list[dict], nuevo: list[dict]) -> list[dict]:
+    """Conserva filas históricas y deja avanzar el registro.
+
+    Las filas ya publicadas son la evidencia congelada. Si la fuente cambia o
+    elimina una fecha, se conserva la fila anterior y la discrepancia queda en
+    REVISIONES; las fechas nuevas sí se incorporan normalmente.
+    """
+    if not viejo:
+        return nuevo
+    por_fecha = {fila["fecha"]: fila for fila in nuevo}
+    deterministas = [c for c in columnas() if c not in COLUMNAS_EVENTO]
+    reconciliado = []
+    for anterior in viejo:
+        actual = por_fecha.pop(anterior["fecha"], None)
+        if actual is None:
+            reconciliado.append(dict(anterior))
+            continue
+        fila = dict(actual)
+        for columna in deterministas:
+            if (anterior.get(columna) or "") != (actual.get(columna) or ""):
+                fila[columna] = anterior.get(columna) or ""
+        for columna in COLUMNAS_EVENTO:
+            fila[columna] = anterior.get(columna) or ""
+        reconciliado.append(fila)
+    reconciliado.extend(por_fecha.values())
+    reconciliado.sort(key=lambda fila: fila["fecha"])
+    return reconciliado
+
+
 def salto_imposible(filas: list[dict]) -> str | None:
     """Un movimiento diario del fondo agresivo que no puede ser mercado.
 
@@ -676,14 +745,15 @@ def main(argv=None) -> int:
     nuevo = construir()
     malas = alteraciones(viejo, nuevo)
     if malas:
-        print("La fuente reescribio historia ya registrada:", file=sys.stderr)
+        print("La fuente corrigio historia ya registrada; se conserva la version publicada:",
+              file=sys.stderr)
         for m in malas[:20]:
             print(f"  {m}", file=sys.stderr)
         if len(malas) > 20:
             print(f"  ... y {len(malas) - 20} mas", file=sys.stderr)
-        print("\nNo se sobrescribe. Hay que mirar la fuente antes de seguir.",
-              file=sys.stderr)
-        return 1
+        registrar_revisiones(malas)
+        nuevo = reconciliar(viejo, nuevo)
+
     entran, salen = cambio_de_esquema(viejo)
     if entran or salen:
         print("El esquema del registro cambio en esta corrida:")
@@ -691,13 +761,13 @@ def main(argv=None) -> int:
             print("  entran: " + ", ".join(entran))
         if salen:
             print("  salen:  " + ", ".join(salen))
-        print("  (es un cambio de codigo, no de la fuente; la grilla la fija la prueba)\n")
+        print("  (es un cambio de codigo, no de la fuente; la grilla la fija la prueba)\\n")
+
     nuevo = arrastrar(viejo, nuevo)
 
     # El aviso va antes de guardar para que la fila salga con su marca puesta,
-    # pero **el archivo se guarda pase lo que pase con el correo**: el registro
-    # es lo principal y una falla de la notificacion no puede hacerle perder un
-    # dia. Es el defecto que ya nos costo un informe entero con FRED.
+    # pero el registro y el expediente de revisiones se guardan aunque el correo
+    # falle. La falta de correo queda en rojo y se reintenta al dia siguiente.
     problema = salto_imposible(nuevo)
     aviso_ok, aviso_dicho = True, "sin transicion pendiente"
     if problema:
@@ -711,13 +781,15 @@ def main(argv=None) -> int:
 
     guardar(nuevo)
     print(resumen(nuevo))
-    print(f"\n  Aviso: {aviso_dicho}")
+    print(f"\\n  Aviso: {aviso_dicho}")
+    if malas:
+        print(f"\\n  Revisiones historicas registradas: {len(malas)}")
     if problema:
-        print(f"\n{problema}\nNo se disparo ningun aviso: es dato malo antes que mercado.",
+        print(f"\\n{problema}\\nNo se disparo ningun aviso: es dato malo antes que mercado.",
               file=sys.stderr)
         return 1
     if not aviso_ok:
-        print(f"\n{aviso_dicho}\nEl registro quedo guardado; el aviso se reintenta manana.",
+        print(f"\\n{aviso_dicho}\\nEl registro quedo guardado; el aviso se reintenta manana.",
               file=sys.stderr)
         return 1
     return 0
