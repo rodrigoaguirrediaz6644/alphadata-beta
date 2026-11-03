@@ -1,6 +1,6 @@
 # Cartera de ingreso
 
-Lo que compra hoy el que entra, al cierre del 22-10-2026.
+Lo que compra hoy el que entra, al cierre del 03-11-2026.
 
 Se compra **la cartera vigente completa**, sin mirar si cada posición va
 arriba o abajo del precio de entrada del modelo y sin saltarse las que
@@ -37,47 +37,47 @@ pantalla de conversión de Trii el mismo día. **Difieren en 0,11%.**
 
 | acción | símbolo a operar | unidades | precio teórico | a gastar | residuo | en cartera hace | próxima salida | costo ida y vuelta |
 |---|---|---:|---:|---:|---:|---:|---|---:|
-| ILC | ILC | 39 | $ 23.850 | $ 930.150 | $ 7.350 | 22 días | por ranking, sin fecha | $ 3.321 · 0,36% |
-| ITAUCL | ITAUCL | 41 | $ 22.800 | $ 934.800 | $ 2.700 | 237 días | por ranking, sin fecha | $ 3.337 · 0,36% |
-| BCI | BCI | 14 | $ 63.800 | $ 893.200 | $ 44.300 | 52 días | por ranking, sin fecha | $ 3.189 · 0,36% |
-| ECL | ECL | 498 | $ 1.880 | $ 936.240 | $ 1.260 | 114 días | por ranking, sin fecha | $ 3.342 · 0,36% |
-| CHILE | CHILE | 4.925 | $ 190 | $ 937.474 | $ 26 | 114 días | por ranking, sin fecha | $ 3.347 · 0,36% |
-| BSANTANDER | BSANTANDER | 11.837 | $ 79 | $ 937.490 | $ 10 | 83 días | por ranking, sin fecha | $ 3.347 · 0,36% |
-| ANDINA-B | ANDINA-B | 189 | $ 4.938 | $ 933.320 | $ 4.180 | 52 días | por ranking, sin fecha | $ 3.332 · 0,36% |
-| VAPORES | VAPORES | 19.066 | $ 49 | $ 937.475 | $ 25 | 22 días | por ranking, sin fecha | $ 3.347 · 0,36% |
+| ILC | ILC | 39 | $ 23.599 | $ 920.361 | $ 17.139 | 34 días | por ranking, sin fecha | $ 3.286 · 0,36% |
+| ITAUCL | ITAUCL | 41 | $ 22.349 | $ 916.309 | $ 21.191 | 249 días | por ranking, sin fecha | $ 3.271 · 0,36% |
+| ECL | ECL | 465 | $ 2.015 | $ 936.975 | $ 525 | 126 días | por ranking, sin fecha | $ 3.345 · 0,36% |
+| CHILE | CHILE | 5.008 | $ 187 | $ 937.498 | $ 2 | 126 días | por ranking, sin fecha | $ 3.347 · 0,36% |
+| BSANTANDER | BSANTANDER | 11.927 | $ 79 | $ 937.462 | $ 38 | 95 días | por ranking, sin fecha | $ 3.347 · 0,36% |
+| ANDINA-B | ANDINA-B | 200 | $ 4.685 | $ 937.040 | $ 460 | 64 días | por ranking, sin fecha | $ 3.345 · 0,36% |
+| VAPORES | VAPORES | 19.887 | $ 47 | $ 937.473 | $ 27 | 34 días | por ranking, sin fecha | $ 3.347 · 0,36% |
+| QUINENCO | QUINENCO | 207 | $ 4.509 | $ 933.363 | $ 4.137 | 4 días | por ranking, sin fecha | $ 3.332 · 0,36% |
 
-Residuo de esta pieza: **$ 59.851**, que queda en su caja.
+Residuo de esta pieza: **$ 43.519**, que queda en su caja.
 
 ## Gamma-6
 
 | acción | símbolo a operar | unidades | precio teórico | a gastar | residuo | en cartera hace | próxima salida | costo ida y vuelta |
 |---|---|---:|---:|---:|---:|---:|---|---:|
-| INTC | INTCCL.SN | 14 | $ 83.608 | $ 1.170.505 | $ 79.495 | 387 días | por ranking, sin fecha | $ 4.179 · 0,36% |
-| TGT | TGTCL.SN | 8 | $ 154.628 | $ 1.237.027 | $ 12.973 | 83 días | por ranking, sin fecha | $ 4.416 · 0,36% |
-| MSFT | MSFTCL.SN | 2 | $ 509.606 | $ 1.019.212 | $ 230.788 | 22 días | por ranking, sin fecha | $ 3.639 · 0,36% |
-| FCX | FCXCL.SN | 19 | $ 63.168 | $ 1.200.187 | $ 49.813 | 22 días | por ranking, sin fecha | $ 4.285 · 0,36% |
-| MRK | MRKCL.SN | 8 | $ 143.998 | $ 1.151.982 | $ 98.018 | 83 días | por ranking, sin fecha | $ 4.113 · 0,36% |
-| CVX | CVXCL.SN | 5 | $ 221.688 | $ 1.108.442 | $ 141.558 | 22 días | por ranking, sin fecha | $ 3.957 · 0,36% |
+| MRK | MRKCL.SN | 8 | $ 141.862 | $ 1.134.896 | $ 115.104 | 95 días | por ranking, sin fecha | $ 4.052 · 0,36% |
+| CVX | CVXCL.SN | 5 | $ 220.898 | $ 1.104.488 | $ 145.512 | 34 días | por ranking, sin fecha | $ 3.943 · 0,36% |
+| PFE | PFECL.SN | 42 | $ 29.418 | $ 1.235.543 | $ 14.457 | 4 días | por ranking, sin fecha | $ 4.411 · 0,36% |
+| TGT | TGTCL.SN | 8 | $ 151.403 | $ 1.211.225 | $ 38.775 | 95 días | por ranking, sin fecha | $ 4.324 · 0,36% |
+| AAPL | AAPLCL.SN | 3 | $ 325.458 | $ 976.373 | $ 273.627 | 4 días | por ranking, sin fecha | $ 3.486 · 0,36% |
+| JNJ | JNJCL.SN | 4 | $ 261.004 | $ 1.044.015 | $ 205.985 | 4 días | por ranking, sin fecha | $ 3.727 · 0,36% |
 
-Residuo de esta pieza: **$ 612.644**, que queda en su caja.
+Residuo de esta pieza: **$ 793.460**, que queda en su caja.
 
 ## Oro
 
 | acción | símbolo a operar | unidades | precio teórico | a gastar | residuo | en cartera hace | próxima salida | costo ida y vuelta |
 |---|---|---:|---:|---:|---:|---:|---|---:|
-| IAU | IAUCL.SN | 67 | $ 73.994 | $ 4.957.596 | $ 42.404 | 294 días | posición permanente | $ 17.699 · 0,36% |
+| IAU | IAUCL.SN | 69 | $ 72.240 | $ 4.984.565 | $ 15.435 | 306 días | posición permanente | $ 17.795 · 0,36% |
 
-Residuo de esta pieza: **$ 42.404**, que queda en su caja.
+Residuo de esta pieza: **$ 15.435**, que queda en su caja.
 
 ## Lo que va a cobrar la corredora el primer día
 
-Comprar las 15 posiciones cuesta **$ 34.424** en comisiones.
+Comprar las 15 posiciones cuesta **$ 34.178** en comisiones.
 
 | pieza | se invierte | comisión | tarifa |
 |---|---:|---:|---|
-| Delta-12 | $ 7.440.149 | $ 13.281 | 0,15% + IVA = 0,1785%, con mínimo de $999,99 |
-| Gamma-6 | $ 6.887.356 | $ 12.294 | 0,15% + IVA = 0,1785%, con mínimo de $999,99 |
-| Oro | $ 4.957.596 | $ 8.849 | 0,15% + IVA = 0,1785%, con mínimo de $999,99 |
+| Delta-12 | $ 7.456.481 | $ 13.310 | 0,15% + IVA = 0,1785%, con mínimo de $999,99 |
+| Gamma-6 | $ 6.706.540 | $ 11.971 | 0,15% + IVA = 0,1785%, con mínimo de $999,99 |
+| Oro | $ 4.984.565 | $ 8.897 | 0,15% + IVA = 0,1785%, con mínimo de $999,99 |
 
 **Ninguna posición paga el mínimo**: todas superan el umbral de $ 560.218, bajo el cual el mínimo sale más caro que el porcentual.
 
@@ -86,7 +86,7 @@ durante meses un 0,1% para los CDV, y una pantalla de orden real de IAUCL lo des
 al peso: $612.000 de valor, $1.092,42 de comisión, que es 0,1785% exacto.
 
 **Ojo con una cuenta fácil de hacer mal:** no es el 0,1785% de los $20 millones, porque
-la base no son $20 millones. El redondeo a unidades enteras deja $ 714.899 sin
+la base no son $20 millones. El redondeo a unidades enteras deja $ 852.415 sin
 invertir, y sobre lo que sí se invierte la cuenta da exacta.
 
 Este número es lo primero que se puede contrastar contra la boleta de la corredora, y
@@ -95,7 +95,7 @@ está mal y hay que corregirlo antes de que la diferencia se acumule.
 
 ## El residuo del redondeo
 
-Las acciones se transan por **unidades enteras, hacia abajo, residuo a la caja de la pieza**. De $ 20.000.000 de referencia se gastan $ 19.285.101 y quedan **$ 714.899** en caja, un 3,6%.
+Las acciones se transan por **unidades enteras, hacia abajo, residuo a la caja de la pieza**. De $ 20.000.000 de referencia se gastan $ 19.147.585 y quedan **$ 852.415** en caja, un 4,3%.
 
 **Los pesos efectivos del primer día no van a calzar con los de referencia, y eso
 es esperado, no un error.** Cuanto más caro el instrumento, mayor el residuo: una
