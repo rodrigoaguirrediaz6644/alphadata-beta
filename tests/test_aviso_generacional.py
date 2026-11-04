@@ -92,12 +92,18 @@ def test_el_nombre_del_fondo_sale_del_registro_y_no_del_codigo(monkeypatch):
 # LAS DOS FECHAS
 # --------------------------------------------------------------------------
 
-def test_la_materializacion_sale_del_envio_y_no_del_ultimo_dia_con_dato():
+def test_la_materializacion_sale_del_envio_y_no_del_ultimo_dia_con_dato(monkeypatch):
     """Después de Fiestas Patrias el dato tiene seis días.
 
     Con la fecha vieja el aviso habría dicho «materializado el 23» cuando
     pidiéndolo ese día se materializa cerca del 29.
     """
+    class FechaCongelada(dt.date):
+        @classmethod
+        def today(cls):
+            return cls(2026, 11, 5)
+
+    monkeypatch.setattr(av.dt, "date", FechaCongelada)
     a = av.pendiente(_salida())
     assert a["fecha_envio"] == dt.date.today()
     assert a["fecha_dato"] != a["fecha_envio"]
