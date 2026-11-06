@@ -81,10 +81,11 @@ def test_sin_informe_nunca_tambien_es_pendiente():
     assert rec.decidir("workflow_run", "success", None, LUNES_NOCHE)[0]
 
 
-def test_el_workflow_calcula_solo_si_la_decision_lo_dice():
-    """Si el job de cálculo no dependiera de la decisión, cada captura mandaría un informe."""
+def test_el_workflow_calcula_solo_los_viernes_o_a_pedido():
+    """La recuperación diaria se desactivó: el informe no puede salir fuera del viernes."""
     texto = WORKFLOW.read_text(encoding="utf-8")
-    assert 'workflows: ["Captura diaria del cierre chileno"]' in texto
+    assert 'workflow_run:' not in texto
+    assert 'cron: "30 20 * * 5"' in texto
     assert "python -m src.recuperacion" in texto
     calculo = texto[texto.index("calculate-and-report:"):]
     assert "needs: decidir" in calculo
