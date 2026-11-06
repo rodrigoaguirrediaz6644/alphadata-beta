@@ -99,6 +99,11 @@ jobs:
       - name: Vigilar el IPSA
         run: PYTHONPATH=. python -m src.indice_ipsa vigilar
 
+      # La captura y sus guardias ya quedaron guardadas antes de validar.
+      # Asi una prueba de codigo no puede hacer perder el cierre diario.
+      - name: Validar código después de guardar la captura
+        run: PYTHONPATH=. python -m pytest -q
+
       # Ultimo paso a proposito: corre solo si algo de arriba fallo, y avisa el
       # mismo dia. Ver src/aviso_falla.py.
       - name: Avisar por correo que la corrida falló
