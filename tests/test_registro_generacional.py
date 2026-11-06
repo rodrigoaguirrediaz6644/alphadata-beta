@@ -497,7 +497,11 @@ def test_con_el_registro_real_el_cambio_en_curso_dura_el_rezago_y_lo_incluye_el_
     from src.registro_generacional import REZAGO, _cambios_de, leer, para_informe, posicion_de_la_senal
     filas = leer()
     for k, _, hacia in _cambios_de(filas, posicion_de_la_senal)[-6:]:
-        for j in range(REZAGO + 2):
+        # No inventar ruedas posteriores al final del registro: al cortar más
+        # allá de `filas`, Python devuelve la misma última fila y la prueba
+        # termina evaluando el cambio como si hubiera transcurrido el rezago.
+        dias_disponibles = len(filas) - k
+        for j in range(min(REZAGO + 2, dias_disponibles)):
             g = para_informe(filas[:k + 1 + j])
             assert (g["cambio_en_curso"] is not None) == (j < REZAGO), (filas[k]["fecha"], j)
             if pendiente(filas[:k + 1 + j]) is not None:
