@@ -8,19 +8,12 @@ name: Ejecutar AlphaData
 # INCIDENTE_FEED_CHILENO.md. Los precios chilenos ya no se descargan acá: los
 # trae la captura diaria desde la cotización viva.
 #
-# **Recuperación.** Si la corrida del viernes no publica informe, se reintenta
-# sola cada vez que termina bien la captura diaria, hasta que salga. La del
-# 25-09-2026 falló y lo único que quedaba era lanzarla a mano. Qué cuenta como
-# pendiente lo decide src/recuperacion.py; si los datos sirven lo siguen
-# decidiendo las guardias, que corren igual en una recuperación.
+# El informe se ejecuta únicamente en la corrida programada del viernes o por
+# lanzamiento manual. No se recupera automáticamente en días de semana.
 on:
   workflow_dispatch:
   schedule:
     - cron: "30 20 * * 5"
-  workflow_run:
-    workflows: ["Captura diaria del cierre chileno"]
-    types: [completed]
-
 permissions:
   contents: write
   # Para que el aviso de falla pueda leer que paso fallo.
