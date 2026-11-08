@@ -185,10 +185,10 @@ def test_no_avisa_dos_veces_por_el_mismo_dia():
     assert av.pendiente(filas) is None
 
 
-def test_un_intento_fallido_no_bloquea_el_reintento():
+def test_un_intento_fallido_no_repite_la_misma_transicion():
     filas = _salida()
     filas[-1]["aviso_estado"] = "fallo"
-    assert av.pendiente(filas) is not None
+    assert av.pendiente(filas) is None
 
 
 def test_dice_desde_cuando_venia_en_el_fondo_anterior():
@@ -420,10 +420,9 @@ def test_el_cambio_de_la_posicion_en_vigor_cuatro_ruedas_despues_no_avisa_de_nue
     assert av.pendiente(tarde) is None                          # ya pasaron los tres días de aviso
 
 
-def test_se_repite_tres_ruedas_desde_la_senal_y_no_desde_la_posicion_en_vigor():
+def test_solo_hay_una_ventana_de_aviso_desde_la_senal():
     filas, dia = _con_rezago()
-    assert [av.pendiente(filas[:dia + 1 + k]) is not None for k in range(4)] == [True, True, True, False]
-    assert av.pendiente(filas[:dia + 3])["cual"] == 3
+    assert [av.pendiente(filas[:dia + 1 + k]) is not None for k in range(4)] == [True, False, False, False]
 
 
 def test_el_correo_muestra_las_senales_que_votaron_y_no_la_posicion_en_vigor():
