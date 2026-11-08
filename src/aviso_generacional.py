@@ -44,9 +44,9 @@ from src.registro_generacional import (AFP, BANDA, CONGELADO, DENTRO, FUERA, MED
                               REFUGIO, REZAGO, VOTOS_PARA_SALIR, posicion_de_la_senal,
                               transicion_senal)
 
-# Un correo se pierde; tres no. Y asi no hace falta que el sistema sepa en que
-# fondo esta Rodrigo de verdad, que es una complicacion que no vale lo que
-# cuesta.
+# Una transición genera un solo aviso. El registro conserva el intento y
+# bloquea recordatorios diarios hasta que aparezca una transición hacia el otro
+# fondo.
 DIAS_DE_AVISO = 1
 
 # El ahorro voluntario, que es el unico que se puede traspasar libremente. Va
