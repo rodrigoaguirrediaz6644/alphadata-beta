@@ -165,12 +165,18 @@ def test_no_dispara_todos_los_dias_que_esta_en_refugio():
     assert av.pendiente(filas) is None
 
 
-def test_se_repite_tres_dias_y_despues_para():
-    """Un correo se pierde; tres no."""
-    base = [("A", ()), ("E", (45, 64))]
-    for extra, esperado in [([], 1), ([("E", (45, 64))], 2), ([("E", (45, 64))] * 2, 3)]:
-        assert av.pendiente(_historia(*base, *extra))["cual"] == esperado
-    assert av.pendiente(_historia(*base, *[("E", (45, 64))] * 3)) is None
+def test_un_cambio_se_avisa_una_sola_vez_hasta_el_cambio_contrario():
+    """Una transición no se repite; la siguiente transición vuelve a habilitar."""
+    filas = _historia(("A", ()), ("E", (45, 64)))
+    mandados = []
+    ok, _ = av.avisar(filas, enviador=lambda a: (mandados.append(a), (True, "ok"))[1])
+    assert ok and len(mandados) == 1
+    for extra in (("E", (45, 64)), ("E", (45, 64))):
+        filas.append(_historia(extra)[0])
+        assert av.pendiente(filas) is None
+    vuelta = _historia(("A", ()))
+    filas.append(vuelta[0])
+    assert av.pendiente(filas)["hacia"] == r.DENTRO
 
 
 def test_no_avisa_dos_veces_por_el_mismo_dia():
@@ -377,8 +383,8 @@ def test_el_ensayo_no_anuncia_que_se_va_a_repetir():
     assert "de 3" not in av.texto(a) and "de 3" not in av.html(a)
 
 
-def test_un_aviso_real_si_dice_cual_de_los_tres_es():
-    assert "Aviso 1 de 3" in av.html(av.pendiente(_salida()))
+def test_un_aviso_real_indica_que_es_unico():
+    assert "Aviso único de cambio de fondo." in av.html(av.pendiente(_salida()))
 
 
 # --------------------------------------------------------------------------
