@@ -47,7 +47,7 @@ from src.registro_generacional import (AFP, BANDA, CONGELADO, DENTRO, FUERA, MED
 # Un correo se pierde; tres no. Y asi no hace falta que el sistema sepa en que
 # fondo esta Rodrigo de verdad, que es una complicacion que no vale lo que
 # cuesta.
-DIAS_DE_AVISO = 3
+DIAS_DE_AVISO = 1
 
 # El ahorro voluntario, que es el unico que se puede traspasar libremente. Va
 # en el aviso porque es lo que evita la duda de un segundo al leerlo apurado.
@@ -139,13 +139,24 @@ def _detalle(filas: list[dict], idx: int, hacia: str, ensayo: bool = False) -> d
     }
 
 
-def pendiente(filas: list[dict]) -> dict | None:
-    """Si hoy corresponde avisar, con que decir. None si no.
+def _ya_avisada(filas: list[dict], idx: int) -> bool:
+    """Indica si la transición más reciente ya tuvo un intento de aviso.
 
-    Dispara **solo en la transicion** y en los `DIAS_DE_AVISO` dias de
-    cotizacion siguientes, no cada dia que la senal este en refugio. Y no dos
-    veces por el mismo dia: si la fila de hoy ya quedo marcada como enviada, no
-    se repite.
+    El registro conserva las columnas de evento en la fila donde se produjo la
+    transición. Hay que buscar desde esa fila hasta el final: revisar solo la
+    fila actual hacía que el mismo cambio reapareciera como pendiente cada día.
+    También se bloquean los intentos fallidos para no inundar el correo; el
+    fallo queda registrado y el aviso de la siguiente transición vuelve a
+    habilitar el envío.
+    """
+    return any(f.get("aviso") or f.get("aviso_estado") for f in filas[idx:])
+
+
+def pendiente(filas: list[dict]) -> dict | None:
+    """Si hoy corresponde avisar, con qué decir. None si no.
+
+    Se emite una sola vez por transición de fondo. La siguiente transición,
+    hacia el fondo contrario, vuelve a habilitar el aviso.
     """
     if not filas:
         return None
@@ -153,9 +164,9 @@ def pendiente(filas: list[dict]) -> dict | None:
     if t is None:
         return None
     idx, _, hacia = t
-    if len(filas) - 1 - idx >= DIAS_DE_AVISO:
+    if _ya_avisada(filas, idx):
         return None
-    if filas[-1].get("aviso_estado") == "enviado":
+    if len(filas) - 1 - idx >= DIAS_DE_AVISO:
         return None
     return _detalle(filas, idx, hacia)
 
@@ -235,7 +246,7 @@ def texto(a: dict) -> str:
     # La repeticion es para los avisos de verdad. Tres correos de prueba
     # entrenan a ignorarlos, que es lo contrario de lo que se busca.
     if not a.get("ensayo"):
-        lineas.append(f"Aviso {a['cual']} de {DIAS_DE_AVISO}.")
+        lineas.append(f"Aviso único de cambio de fondo.")
     lineas += ["", _pie(a)]
     return "\n".join(lineas) + "\n"
 
@@ -306,7 +317,7 @@ def html(a: dict) -> str:
     # La repeticion es para los avisos de verdad. Tres correos de prueba
     # entrenan a ignorarlos, que es lo contrario de lo que se busca.
     repeticion = ("" if a.get("ensayo") else
-                  f'<p class="ctx" style="{S["ctx"]}">Aviso {a["cual"]} de {DIAS_DE_AVISO}.</p>')
+                  f'<p class="ctx" style="{S["ctx"]}">Aviso único de cambio de fondo.</p>')
     th = lambda t, al: f'<th style="{S["th"]};text-align:{al}">{t}</th>'  # noqa: E731
     return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
