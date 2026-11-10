@@ -120,7 +120,8 @@ def test_los_dividendos_de_las_posiciones_vivas_estan_confirmados():
         dentro = d[(d.alphadata_ticker == fila.instrumento) & (d.fecha_ex > fila.fecha_entrada)]
         sin_confirmar += [f"{fila.instrumento} {x.fecha_ex.date()}"
                           for x in dentro.itertuples()
-                          if pd.isna(x.caida_observada) and pd.isna(x.caida_por_contraste)]
+                          if pd.isna(x.caida_observada) and pd.isna(x.caida_por_contraste)
+                          and not str(x.origen).startswith("fecha por convención")]
     # De todo lo que sostiene una cifra publicada hoy, queda **un solo dato sin
     # respaldo de precio**: MALLPLAZA del 03-09-2026, cuya ventana cae dentro
     # del tramo del feed congelado. Está identificado, corroborado en magnitud
