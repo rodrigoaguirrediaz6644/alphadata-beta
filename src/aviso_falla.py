@@ -31,8 +31,8 @@ SECRETOS = ("SMTP_HOST", "SMTP_USER", "SMTP_PASSWORD", "REPORT_RECIPIENTS")
 # avisa igual, sin esta línea.
 CONSECUENCIA = {
     "Captura diaria del cierre chileno":
-        "El cierre chileno de hoy no quedó guardado. Ese dato no se puede bajar después: "
-        "el proveedor sólo publica el último.",
+        "La corrida de captura diaria falló. El cierre puede haber quedado guardado si "
+        "el fallo ocurrió después de la captura; revisar el paso exacto en el log.",
     "Ejecutar AlphaData":
         "El informe semanal no salió. Se reintenta solo cuando termine bien la próxima "
         "captura diaria, y si vuelve a fallar llega otro aviso como éste.",
