@@ -71,7 +71,7 @@ jobs:
         run: |
           git config user.name "alphadata-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add data/market_prices_daily.csv data/revisiones_precios.csv data/ultima_captura_diaria.json data/cdv_precios.csv
+          git add data/market_prices_daily.csv data/revisiones_precios.csv data/ultima_captura_diaria.json data/cdv_precios.csv data/dividendos.csv data/dividendos_pendientes.csv
           if git diff --cached --quiet; then
             echo "Sin cierres nuevos que guardar."
             exit 0
