@@ -36,7 +36,7 @@ def test_nombra_el_paso_que_fallo_y_solo_ese():
 def test_el_correo_dice_que_fallo_donde_y_que_se_pierde():
     asunto, cuerpo = av.mensaje("Captura diaria del cierre chileno", av.pasos_fallidos(TRABAJOS), ENLACE, "schedule")
     assert asunto == "AlphaData — falló «Captura diaria del cierre chileno»"
-    for dato in ("programada", "capturar › Validar código", "no se puede bajar después", ENLACE):
+    for dato in ("programada", "capturar › Validar código", "revisar el paso exacto", ENLACE):
         assert dato in cuerpo
 
 
