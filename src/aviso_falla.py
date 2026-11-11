@@ -70,8 +70,10 @@ def mensaje(flujo: str, fallidos: list[str], enlace: str, evento: str = "") -> t
     solo_de_paso = bool(nombres) and all(n in CONSECUENCIA_PASO for n in nombres)
     if solo_de_paso:
         cuerpo += "\n" + "\n".join(dict.fromkeys(CONSECUENCIA_PASO[n] for n in nombres)) + "\n"
-    elif (flujo == "Captura diaria del cierre chileno"
-          and any("Capturar el cierre del día" in f for f in fallidos)):
+    elif flujo == "Captura diaria del cierre chileno":
+        # La validación corre antes de la captura. Si falla ahí, tampoco se
+        # ejecutan los pasos que guardan el cierre; solo una falla posterior a
+        # "Guardar el cierre capturado" puede conservarlo.
         cuerpo += "\nEl cierre chileno de hoy no quedó guardado. Ese dato no se puede "
         cuerpo += "bajar después: el proveedor sólo publica el último.\n"
     elif flujo in CONSECUENCIA:
