@@ -76,7 +76,7 @@ def mensaje(flujo: str, fallidos: list[str], enlace: str, evento: str = "") -> t
         # "Guardar el cierre capturado" puede conservarlo.
         cuerpo += "\nEl cierre chileno de hoy no quedó guardado. Ese dato no se puede "
         cuerpo += "bajar después: el proveedor sólo publica el último.\n"
-        cuerpo += "Revisar el paso exacto en el log para identificar la causa.\n"
+        cuerpo += "revisar el paso exacto en el log para identificar la causa.\n"
     elif flujo in CONSECUENCIA:
         cuerpo += "\n" + CONSECUENCIA[flujo] + "\n"
     cuerpo += f"\nLa corrida, con su log:\n{enlace}\n"
@@ -142,5 +142,5 @@ def main() -> None:                                             # pragma: no cov
     raise SystemExit(f"No se pudo enviar el aviso SMTP tras {reintentos} intentos: {ultimo_error}")
 
 
-if __name__ == "__main__":                                      # pragma: no cover
+if __name__ == "__main__":                                      # pragma: no cover - entrada
     main()
