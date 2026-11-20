@@ -38,7 +38,7 @@
       "dividendos_clp": null,
       "peso_real": 0.1,
       "caduca": "2026-11-24",
-      "dias_para_caducar": 12,
+      "dias_para_caducar": 5,
       "monto_clp": 0.0
     }
   ],
@@ -48,11 +48,11 @@
       "target_weight": 0.125,
       "opened_at": "2026-09-30",
       "entry_price": 24867.0,
-      "current_price": 22630.0,
-      "open_return": -0.08995857964370446,
+      "current_price": 22700.0,
+      "open_return": -0.08714360397313714,
       "con_dividendo": false,
       "dividendos_clp": null,
-      "peso_real": 0.1156970738567664,
+      "peso_real": 0.11693606797213754,
       "monto_clp": 937500.0
     },
     {
@@ -60,11 +60,11 @@
       "target_weight": 0.125,
       "opened_at": "2026-02-27",
       "entry_price": 20900.0,
-      "current_price": 22710.0,
-      "open_return": 0.15364245631039242,
+      "current_price": 22950.0,
+      "open_return": 0.16583418636387082,
       "con_dividendo": false,
       "dividendos_clp": 1187.2706,
-      "peso_real": 0.12670937289806689,
+      "peso_real": 0.12902061425192063,
       "monto_clp": 937500.0
     },
     {
@@ -72,11 +72,11 @@
       "target_weight": 0.125,
       "opened_at": "2026-06-30",
       "entry_price": 1800.0,
-      "current_price": 2000.0,
-      "open_return": 0.11111111111111116,
+      "current_price": 1965.0,
+      "open_return": 0.09166666666666656,
       "con_dividendo": false,
       "dividendos_clp": null,
-      "peso_real": 0.1260340548085005,
+      "peso_real": 0.12476859247146971,
       "monto_clp": 937500.0
     },
     {
@@ -84,11 +84,11 @@
       "target_weight": 0.125,
       "opened_at": "2026-06-30",
       "entry_price": 180.5,
-      "current_price": 193.03,
-      "open_return": 0.06941828254847637,
+      "current_price": 189.2,
+      "open_return": 0.04819944598337944,
       "con_dividendo": false,
       "dividendos_clp": null,
-      "peso_real": 0.12888709734915008,
+      "peso_real": 0.12728891144696788,
       "monto_clp": 937500.0
     },
     {
@@ -96,11 +96,11 @@
       "target_weight": 0.125,
       "opened_at": "2026-07-31",
       "entry_price": 80.99,
-      "current_price": 80.05,
-      "open_return": -0.01160637115693297,
+      "current_price": 77.59,
+      "open_return": -0.04198049141869353,
       "con_dividendo": false,
       "dividendos_clp": null,
-      "peso_real": 0.12811147074989052,
+      "peso_real": 0.1251172645010082,
       "monto_clp": 937500.0
     },
     {
@@ -108,11 +108,11 @@
       "target_weight": 0.125,
       "opened_at": "2026-08-31",
       "entry_price": 4530.0,
-      "current_price": 4788.9,
-      "open_return": 0.06606954543269516,
+      "current_price": 4771.0,
+      "open_return": 0.06208477964864345,
       "con_dividendo": false,
       "dividendos_clp": 40.15,
-      "peso_real": 0.12556990735573367,
+      "peso_real": 0.1260503424878725,
       "monto_clp": 937500.0
     },
     {
@@ -120,11 +120,11 @@
       "target_weight": 0.125,
       "opened_at": "2026-09-30",
       "entry_price": 50.9,
-      "current_price": 48.15,
-      "open_return": -0.05402750491159136,
+      "current_price": 47.89,
+      "open_return": -0.059135559921414504,
       "con_dividendo": false,
       "dividendos_clp": null,
-      "peso_real": 0.12704489909282887,
+      "peso_real": 0.12731822819681712,
       "monto_clp": 937500.0
     },
     {
@@ -132,11 +132,11 @@
       "target_weight": 0.125,
       "opened_at": "2026-10-30",
       "entry_price": 4509.0,
-      "current_price": 4500.0,
-      "open_return": -0.001996007984031989,
+      "current_price": 4523.0,
+      "open_return": 0.003104901308494057,
       "con_dividendo": false,
       "dividendos_clp": null,
-      "peso_real": 0.1219461238890631,
+      "peso_real": 0.12349997867180641,
       "monto_clp": 937500.0
     }
   ],
@@ -146,11 +146,11 @@
       "target_weight": 0.16666666666666666,
       "opened_at": "2026-07-31",
       "entry_price": 120441.505587616,
-      "current_price": 144509.15965151976,
-      "open_return": 0.2069109525523496,
+      "current_price": 133580.2939232178,
+      "open_return": 0.11563530069561323,
       "con_dividendo": true,
       "dividendos_clp": null,
-      "peso_real": 0.16441280451402385,
+      "peso_real": 0.1538859252757506,
       "monto_clp": 1250000.0
     },
     {
@@ -158,11 +158,11 @@
       "target_weight": 0.16666666666666666,
       "opened_at": "2026-09-30",
       "entry_price": 198696.3365325928,
-      "current_price": 212756.43567132577,
-      "open_return": 0.07076174319110651,
-      "con_dividendo": false,
+      "current_price": 207697.69747924805,
+      "open_return": 0.053982519501646564,
+      "con_dividendo": true,
       "dividendos_clp": null,
-      "peso_real": 0.15367190255172666,
+      "peso_real": 0.15316208272129378,
       "monto_clp": 1250000.0
     },
     {
@@ -170,11 +170,11 @@
       "target_weight": 0.16666666666666666,
       "opened_at": "2026-10-30",
       "entry_price": 30149.79270318756,
-      "current_price": 28351.13404728775,
-      "open_return": -0.045927491964838696,
+      "current_price": 27699.73258465575,
+      "open_return": -0.06784845731862277,
       "con_dividendo": true,
       "dividendos_clp": null,
-      "peso_real": 0.16033219530777243,
+      "peso_real": 0.15861422134539951,
       "monto_clp": 1250000.0
     },
     {
@@ -182,11 +182,11 @@
       "target_weight": 0.16666666666666666,
       "opened_at": "2026-07-31",
       "entry_price": 133660.4778176574,
-      "current_price": 158227.4473547973,
-      "open_return": 0.2012872254683029,
+      "current_price": 168431.27270861808,
+      "open_return": 0.2787562439816882,
       "con_dividendo": true,
       "dividendos_clp": null,
-      "peso_real": 0.17558105928834142,
+      "peso_real": 0.18924953314952805,
       "monto_clp": 1250000.0
     },
     {
@@ -194,11 +194,11 @@
       "target_weight": 0.16666666666666666,
       "opened_at": "2026-10-30",
       "entry_price": 340449.64124082035,
-      "current_price": 348985.4532001466,
-      "open_return": 0.025851041605874148,
+      "current_price": 351235.4051427003,
+      "open_return": 0.0324648288645315,
       "con_dividendo": true,
       "dividendos_clp": null,
-      "peso_real": 0.17239460122183206,
+      "peso_real": 0.17568345638927463,
       "monto_clp": 1250000.0
     },
     {
@@ -206,11 +206,11 @@
       "target_weight": 0.16666666666666666,
       "opened_at": "2026-10-30",
       "entry_price": 269886.0947249756,
-      "current_price": 278810.7261492797,
-      "open_return": 0.033068140962944526,
+      "current_price": 268689.42347241193,
+      "open_return": -0.004433986322204264,
       "con_dividendo": false,
       "dividendos_clp": null,
-      "peso_real": 0.17360743711630344,
+      "peso_real": 0.1694047811187533,
       "monto_clp": 1250000.0
     }
   ],
@@ -220,21 +220,21 @@
       "target_weight": 1.0,
       "opened_at": "2026-01-01",
       "entry_price": 73374.63739833981,
-      "current_price": 71580.96006658023,
-      "open_return": -0.024445467744146798,
+      "current_price": 69118.576388916,
+      "open_return": -0.05800452527374411,
       "con_dividendo": false,
       "dividendos_clp": null,
       "peso_real": 1.0,
       "monto_clp": 5000000.0
     }
   ],
-  "valuation_date": "2026-11-12",
+  "valuation_date": "2026-11-19",
   "nav": {
-    "Sigma-6": 97.77971613137927,
-    "Delta-12": 94.92152322564833,
-    "Gamma-6": 90.77752925208577,
-    "Oro": 92.62850279056421,
-    "Mercado chileno": 95.09116815917932
+    "Sigma-6": 97.72691711539971,
+    "Delta-12": 94.22815128648524,
+    "Gamma-6": 89.57260384229114,
+    "Oro": 89.44208403974265,
+    "Mercado chileno": 93.96369885881722
   },
   "reinicio": {
     "fecha": "2026-09-16",
@@ -249,10 +249,10 @@
     "uploaded_files": 0,
     "history_rows": 1108
   },
-  "last_run_utc": "2026-11-13T20:37:45.034718+00:00",
+  "last_run_utc": "2026-11-20T20:36:59.173675+00:00",
   "entry_dates_version": 3,
   "delta_last_period": "2026-10",
   "gamma_last_period": "2026-10",
   "vigencia_detenida": true,
-  "dias_sin_recomendaciones": 113
+  "dias_sin_recomendaciones": 120
 }
