@@ -1,13 +1,11 @@
 {
-  "ejecutada_utc": "2026-11-20T23:02:42+00:00",
+  "ejecutada_utc": "2026-11-23T23:02:49+00:00",
   "ruedas": [
     "2026-11-16",
-    "2026-11-17",
-    "2026-11-19",
-    "2026-11-20"
+    "2026-11-23"
   ],
   "leidos": 40,
-  "agregados": 35,
+  "agregados": 39,
   "incidencias": [],
   "ruedas_sin_cierre_local": [
     "2026-09-18",
